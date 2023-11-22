@@ -44,7 +44,7 @@ pub fn sort_guildroles_based_on_split(roles: &HashMap<RoleId, Role>) -> Vec<Role
         .collect::<Vec<_>>();
 
     // Sort roles by role name, using extract_split_from_role_name to extract the split and time.
-    // Sort first by split in this order : Bastion, Fortress, Blind, EyeSpy
+    // Sort first by split in this order : Structure1, Structure2, Blind, EyeSpy
     // Then sort by minutes, then seconds
     let mut roles = roles
         .iter()
@@ -73,8 +73,8 @@ pub fn sort_guildroles_based_on_split(roles: &HashMap<RoleId, Role>) -> Vec<Role
 
 fn get_split_order_number(split: &str) -> usize {
     match split {
-        "Bastion" => 0,
-        "Fortress" => 1,
+        "Structure1" => 0,
+        "Structure2" => 1,
         "Blind" => 2,
         "EyeSpy" => 3,
         _ => 4,
