@@ -1,4 +1,3 @@
-mod commands;
 mod components;
 mod handlers;
 #[cfg(test)]
@@ -17,9 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     let token = env::var("BOT_TOKEN").expect("Expected a token in the environment");
 
-    let framework = StandardFramework::new()
-        .configure(|c| c.prefix("!"))
-        .group(&commands::GENERAL_GROUP);
+    let framework = StandardFramework::new().configure(|c| c.prefix("!"));
 
     let mut client = Client::builder(&token, GatewayIntents::all())
         .event_handler(Handler)

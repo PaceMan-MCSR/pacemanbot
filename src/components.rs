@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use serenity::model::prelude::{GuildId, Role, RoleId};
+use serenity::model::prelude::application_command::ApplicationCommandInteraction;
+use serenity::model::prelude::{GuildId, InteractionResponseType, Role, RoleId};
 use serenity::prelude::Context;
 use serenity::utils::Color;
 use serenity::{
     builder::{CreateActionRow, CreateSelectMenuOption},
-    model::{id::ChannelId, prelude::component::ButtonStyle::Primary},
+    model::prelude::component::ButtonStyle::Primary,
 };
 
 use crate::utils::{extract_split_from_role_name, sort_guildroles_based_on_split};
@@ -13,26 +14,24 @@ use crate::utils::{extract_split_from_role_name, sort_guildroles_based_on_split}
 pub async fn send_role_selection_message(
     ctx: &Context,
     roles: &HashMap<RoleId, Role>,
-    channel_id: u64,
+    command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let channel_id = ChannelId(channel_id);
-
     let roles = sort_guildroles_based_on_split(roles);
     let mut select_bastion_role_action_row = CreateActionRow::default();
     let mut select_fortress_role_action_row = CreateActionRow::default();
     let mut select_blind_role_action_row = CreateActionRow::default();
     let mut select_eye_spy_role_action_row = CreateActionRow::default();
     select_bastion_role_action_row.create_select_menu(|m| {
-        m.custom_id("select_bastion_role")
-            .placeholder("Choose a Bastion Role...")
+        m.custom_id("select_structure1_role")
+            .placeholder("Choose a First Structure Role...")
             .options(|o| {
                 for role in &roles {
                     if role.name.starts_with("PMB") {
                         let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "Bastion" {
+                        if split == "FirstStructure" {
                             o.add_option(
                                 CreateSelectMenuOption::default()
-                                    .label(format!("Sub {}:{:02} Bastion", minutes, seconds))
+                                    .label(format!("Sub {}:{:02} Structure 1", minutes, seconds))
                                     .value(role.id.to_string())
                                     .to_owned(),
                             );
@@ -43,16 +42,16 @@ pub async fn send_role_selection_message(
             })
     });
     select_fortress_role_action_row.create_select_menu(|m| {
-        m.custom_id("select_fortress_role")
-            .placeholder("Choose a Fortress Role...")
+        m.custom_id("select_structure2_role")
+            .placeholder("Choose a Second Structure Role...")
             .options(|o| {
                 for role in &roles {
                     if role.name.starts_with("PMB") {
                         let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "Fortress" {
+                        if split == "SecondStructure" {
                             o.add_option(
                                 CreateSelectMenuOption::default()
-                                    .label(format!("Sub {}:{:02} Fort", minutes, seconds))
+                                    .label(format!("Sub {}:{:02} Structure 2", minutes, seconds))
                                     .value(role.id.to_string())
                                     .to_owned(),
                             );
@@ -110,37 +109,37 @@ pub async fn send_role_selection_message(
             .custom_id("remove_pmb_roles")
     });
 
-    channel_id
-            .send_message(&ctx.http, |m| {
-                m.content("
-Choose roles corresponding to a speedrunning split and time, such as \"PMBBastionSub2:30.\".
-You'll receive pings for the selected split and any faster paces within that category. Select roles based on the splits and paces you wish to follow.
-")
-                    .components(|c| {
-                        c.add_action_row(select_bastion_role_action_row)
+    let content = "Choose roles corresponding to a speedrunning split and time, such as \"PMBFirstStructureSub2:30.\".You'll receive pings for the selected split and any faster paces within that category. Select roles based on the splits and paces you wish to follow.";
+
+    command
+        .create_interaction_response(&ctx.http, |response| {
+            response.interaction_response_data(|data| {
+                data.content(content).components(|c| {
+                    c.add_action_row(select_bastion_role_action_row)
                         .add_action_row(select_fortress_role_action_row)
                         .add_action_row(select_blind_role_action_row)
                         .add_action_row(select_eye_spy_role_action_row)
-                            .add_action_row(remove_roles_action_row)
-                    })
+                        .add_action_row(remove_roles_action_row)
+                })
             })
-            .await?;
-
+        })
+        .await?;
     Ok(())
 }
 
 pub async fn setup_default_roles(
     ctx: &Context,
     guild: GuildId,
+    command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let default_roles = [
-        "PMBBastionSub3:00",
-        "PMBBastionSub2:30",
-        "PMBBastionSub2:00",
-        "PMBFortressSub6:00",
-        "PMBFortressSub5:30",
-        "PMBFortressSub5:00",
-        "PMBFortressSub4:30",
+        "PMBFirstStructureSub3:00",
+        "PMBFirstStructureSub2:30",
+        "PMBFirstStructureSub2:00",
+        "PMBSecondStructureSub6:00",
+        "PMBSecondStructureSub5:30",
+        "PMBSecondStructureSub5:00",
+        "PMBSecondStructureSub4:30",
         "PMBBlindSub8:00",
         "PMBBlindSub7:30",
         "PMBBlindSub7:00",
@@ -166,21 +165,15 @@ pub async fn setup_default_roles(
             })
             .await?;
     }
-    Ok(())
-}
-
-pub async fn remove_all_pmb_roles_from_guild(
-    ctx: &Context,
-    guild: GuildId,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let roles = guild.roles(&ctx.http).await.unwrap();
-    for (role_id, role) in roles.iter() {
-        if role.name.starts_with("PMB") {
-            guild
-                .delete_role(&ctx.http, *role_id)
-                .await
-                .expect("Failed to delete role");
-        }
-    }
+    command
+        .create_interaction_response(&ctx.http, |response| {
+            response
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|data| {
+                    data.content("Default pace-roles have been setup!")
+                        .ephemeral(true)
+                })
+        })
+        .await?;
     Ok(())
 }

@@ -13,7 +13,7 @@ use serenity::{
 use std::{collections::HashMap, sync::Arc, thread::sleep, time::Duration};
 
 use crate::{
-    components::send_role_selection_message,
+    components::{send_role_selection_message, setup_default_roles},
     utils::{
         extract_split_from_role_name, format_time, get_response_from_api, get_time,
         sort_guildroles_based_on_split,
@@ -103,9 +103,10 @@ impl EventHandler for Handler {
                             }
                         };
                         if event_ids_we_care_about.contains_key(event.event_id.as_str()) {
-                            let split = event_ids_we_care_about
+                            let mut split = event_ids_we_care_about
                                 .get(event.event_id.as_str())
                                 .unwrap();
+                            let mut structure: Option<&str> = None;
                             let messages = channel_to_send_to
                                 .messages(&ctx, |m| m.limit(100))
                                 .await
@@ -120,6 +121,32 @@ impl EventHandler for Handler {
                                         split
                                     );
                                     continue 'guild_loop;
+                                }
+                            }
+                            if split == &"Bastion" {
+                                structure = Some("- Bastion");
+                                if record
+                                    .event_list
+                                    .iter()
+                                    .filter(|evt| evt != &record.event_list.last().unwrap())
+                                    .any(|evt| evt.event_id == "rsg.enter_fortress")
+                                {
+                                    split = &"SecondStructure";
+                                } else {
+                                    split = &"FirstStructure";
+                                }
+                            }
+                            if split == &"Fortress" {
+                                structure = Some("- Fortress");
+                                if record
+                                    .event_list
+                                    .iter()
+                                    .filter(|evt| evt != &record.event_list.last().unwrap())
+                                    .any(|evt| evt.event_id == "rsg.enter_bastion")
+                                {
+                                    split = &"SecondStructure";
+                                } else {
+                                    split = &"FirstStructure";
                                 }
                             }
                             let roles_to_ping = guild_roles
@@ -141,10 +168,11 @@ impl EventHandler for Handler {
                             };
 
                             let content = format!(
-                                "{} `{}` {} split\n{}",
+                                "{} `{}` {} {} split\n{}",
                                 live_link,
                                 format_time(event.igt as u64),
                                 split,
+                                structure.unwrap_or(""),
                                 roles_to_ping
                                     .iter()
                                     .map(|role| role.mention().to_string())
@@ -173,13 +201,9 @@ impl EventHandler for Handler {
                 }
             };
             match match command.data.name.as_str() {
-                "send_message" => {
-                    send_role_selection_message(
-                        &ctx,
-                        &roles,
-                        command.channel_id.as_u64().to_owned(),
-                    )
-                    .await
+                "send_message" => send_role_selection_message(&ctx, &roles, command).await,
+                "setup_default_roles" => {
+                    setup_default_roles(&ctx, command.guild_id.unwrap(), command).await
                 }
                 _ => {
                     eprintln!("Unrecognized command: '{}'.", command.data.name);
@@ -196,11 +220,11 @@ impl EventHandler for Handler {
         if let Some(message_component) = interaction.as_message_component() {
             let res = match message_component.data.custom_id.as_str() {
                 "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
-                "select_bastion_role" => {
-                    handle_select_role(&ctx, &message_component, "Bastion").await
+                "select_structure1_role" => {
+                    handle_select_role(&ctx, &message_component, "FirstStructure").await
                 }
-                "select_fortress_role" => {
-                    handle_select_role(&ctx, &message_component, "Fortress").await
+                "select_structure2_role" => {
+                    handle_select_role(&ctx, &message_component, "SecondStructure").await
                 }
                 "select_blind_role" => handle_select_role(&ctx, &message_component, "Blind").await,
                 "select_eye_spy_role" => {
@@ -236,6 +260,11 @@ impl EventHandler for Handler {
                 command
                     .name("send_message")
                     .description("Send role message to the current channel.")
+            });
+            commands.create_application_command(|command| {
+                command
+                    .name("setup_default_roles")
+                    .description("Setup default pace-roles.")
             })
         })
         .await

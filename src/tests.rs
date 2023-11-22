@@ -17,8 +17,8 @@ async fn test_api_data() {
         "accessKey": access_key,
         "eventList": [
             "rsg.enter_nether 1000 1000",
-            "rsg.enter_bastion 2000 2000",
-            "rsg.enter_fortress 3030000 3030000",
+            "rsg.enter_bastion 123000 123000",
+            "rsg.enter_fortress 303000 303000",
         ],
         "gameData": {
             "worldId": "real-id",
@@ -48,13 +48,13 @@ async fn test_api_data() {
             },
             Event {
                 event_id: "rsg.enter_bastion".to_string(),
-                igt: 2000,
-                rta: 2000,
+                igt: 123000,
+                rta: 123000,
             },
             Event {
                 event_id: "rsg.enter_fortress".to_string(),
-                igt: 3030000,
-                rta: 3030000,
+                igt: 303000,
+                rta: 303000,
             },
         ],
         world_id: "real-id".to_string(),
@@ -72,12 +72,12 @@ async fn test_api_data() {
 #[test]
 pub fn test_extract_split_from_role_name() {
     assert_eq!(
-        extract_split_from_role_name("PMBBastionSub9:40"),
-        ("Bastion".to_string(), 9, 40)
+        extract_split_from_role_name("PMBFirstStructureSub9:40"),
+        ("FirstStructure".to_string(), 9, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("PMBBastionSub10:40"),
-        ("Bastion".to_string(), 10, 40)
+        extract_split_from_role_name("PMBFirstStructure10:40"),
+        ("FirstStructure".to_string(), 10, 40)
     );
     assert_eq!(
         extract_split_from_role_name("PMBEyeSpySub10:40"),
