@@ -193,6 +193,16 @@ impl EventHandler for Handler {
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Some(command) = interaction.as_application_command() {
+            if !command
+                .to_owned()
+                .member
+                .unwrap()
+                .permissions
+                .unwrap()
+                .manage_guild()
+            {
+                return;
+            }
             let roles = match command.guild_id.unwrap().roles(&ctx.http).await {
                 Ok(roles) => roles,
                 Err(err) => {
