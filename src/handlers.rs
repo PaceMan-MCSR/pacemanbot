@@ -27,7 +27,7 @@ impl EventHandler for Handler {
         let event_ids_we_care_about: HashMap<_, _> = vec![
             ("rsg.enter_bastion", "Bastion"),
             ("rsg.enter_fortress", "Fortress"),
-            ("rsg.nether_travel", "Blind"),
+            ("rsg.first_portal", "Blind"),
             ("rsg.enter_stronghold", "EyeSpy"),
             ("rsg.enter_end", "EndEnter"),
         ]
