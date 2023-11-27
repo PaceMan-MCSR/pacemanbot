@@ -14,6 +14,7 @@ use std::{collections::HashMap, sync::Arc, thread::sleep, time::Duration};
 
 use crate::{
     components::{send_role_selection_message, setup_default_roles},
+    types::MojangResponse,
     utils::{
         extract_split_from_role_name, format_time, get_response_from_api, get_time,
         sort_guildroles_based_on_split,
@@ -47,55 +48,83 @@ impl EventHandler for Handler {
                         let channels = guild_id.channels(&ctx).await.unwrap();
                         let (channel_to_send_to, _) =
                             channels.iter().find(|c| c.1.name == "pacemanbot").unwrap();
-                        let (channel_containing_player_names, _) = channels
-                            .iter()
-                            .find(|c| c.1.name == "pacemanbot-runner-names")
-                            .unwrap();
-                        let first_message = channel_containing_player_names
-                            .messages(&ctx, |m| m.limit(1))
-                            .await
-                            .unwrap();
-
-                        let player_names = first_message
-                            .first()
-                            .unwrap()
-                            .content
-                            .split("\n")
-                            .map(|s| s.to_string())
-                            .collect::<Vec<String>>();
-                        let mut player_names_with_uuid: HashMap<String, String> = HashMap::new();
-                        for name in player_names.iter() {
-                            let url =
-                                format!("https://api.mojang.com/users/profiles/minecraft/{}", name);
-                            let url = reqwest::Url::parse(&*url).ok().unwrap();
-                            let response = match reqwest::get(url).await {
-                                Ok(response) => response,
-                                Err(err) => {
-                                    panic!("Unabled to convert '{}' to uuid: {}", name, err)
-                                }
-                            };
-                            let res: HashMap<String, String> =
-                                match response.json::<HashMap<String, String>>().await {
-                                    Ok(map) => map,
-                                    Err(err) => panic!("Unable to parse to json: {}", err),
-                                };
-                            let uuid = &res["id"];
-                            player_names_with_uuid.insert(uuid.to_owned(), name.to_owned());
-                        }
+                        let name;
                         let guild_roles = guild_id.roles(&ctx).await.unwrap();
                         let guild_roles = sort_guildroles_based_on_split(&guild_roles);
-                        let name;
-                        match player_names_with_uuid.get(record.user.uuid.replace("-", "").as_str())
+                        if channels
+                            .iter()
+                            .any(|c| c.1.name == "pacemanbot-runner-names")
                         {
-                            Some(user_name) => name = user_name.to_owned(),
-                            None => {
-                                eprintln!(
+                            let (channel_containing_player_names, _) = channels
+                                .iter()
+                                .find(|c| c.1.name == "pacemanbot-runner-names")
+                                .unwrap();
+
+                            let first_message = channel_containing_player_names
+                                .messages(&ctx, |m| m.limit(1))
+                                .await
+                                .unwrap();
+                            let player_names = first_message
+                                .first()
+                                .unwrap()
+                                .content
+                                .split("\n")
+                                .map(|s| s.to_string())
+                                .collect::<Vec<String>>();
+                            let mut player_names_with_uuid: HashMap<String, String> =
+                                HashMap::new();
+                            for name in player_names.iter() {
+                                let url = format!(
+                                    "https://api.mojang.com/users/profiles/minecraft/{}",
+                                    name
+                                );
+                                let url = reqwest::Url::parse(&*url).ok().unwrap();
+                                let response = match reqwest::get(url).await {
+                                    Ok(response) => response,
+                                    Err(err) => {
+                                        panic!("Unabled to convert '{}' to uuid: {}", name, err)
+                                    }
+                                };
+                                let res: HashMap<String, String> =
+                                    match response.json::<HashMap<String, String>>().await {
+                                        Ok(map) => map,
+                                        Err(err) => panic!("Unable to parse to json: {}", err),
+                                    };
+                                let uuid = &res["id"];
+                                player_names_with_uuid.insert(uuid.to_owned(), name.to_owned());
+                            }
+                            match player_names_with_uuid
+                                .get(record.user.uuid.replace("-", "").as_str())
+                            {
+                                Some(user_name) => name = user_name.to_owned(),
+                                None => {
+                                    eprintln!(
                                 "Skipping because user, with uuid '{}', is not in this guild or is not in the runners' channel.",
                                 record.user.uuid
                             );
-                                continue;
-                            }
-                        };
+                                    continue;
+                                }
+                            };
+                        } else {
+                            let url = format!(
+                                "https://sessionserver.mojang.com/session/minecraft/profile/{}",
+                                record.user.uuid
+                            );
+                            let url = reqwest::Url::parse(&*url).ok().unwrap();
+                            let response = match reqwest::get(url).await {
+                                Ok(response) => response,
+                                Err(err) => panic!(
+                                    "Unable to convert uuid '{}' to name: {}",
+                                    record.user.uuid, err
+                                ),
+                            };
+                            let res: MojangResponse = match response.json::<MojangResponse>().await
+                            {
+                                Ok(map) => map,
+                                Err(err) => panic!("Unable to parse to json: {}", err),
+                            };
+                            name = res.name.to_owned();
+                        }
                         let event = match record.event_list.last() {
                             Some(event) => event.to_owned(),
                             None => {
@@ -114,7 +143,10 @@ impl EventHandler for Handler {
                             for message in messages.iter() {
                                 if message.content.contains(split)
                                     && message.content.contains(&format_time(event.igt as u64))
-                                    && message.content.contains(&name)
+                                    && (message.content.contains(&name)
+                                        || message.content.contains(
+                                            &record.user.live_account.to_owned().unwrap(),
+                                        ))
                                 {
                                     println!(
                                         "Skipping split '{}' because it's already in the channel",

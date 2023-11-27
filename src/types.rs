@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -43,4 +45,13 @@ impl PartialEq for Response {
         let event_list_check = self.event_list == other.event_list;
         world_id_check && event_list_check
     }
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct MojangResponse {
+    id: String,
+    pub name: String,
+    properties: Vec<HashMap<String, String>>,
+    profile_actions: Vec<String>,
 }
