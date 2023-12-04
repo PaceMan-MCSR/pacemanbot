@@ -10,7 +10,6 @@ pub struct Event {
     pub igt: i64,
 }
 
-// NOTE: This implementation is ONLY used in the test(test_api_data). DONT equate two `Event`s in production.
 impl PartialEq for Event {
     fn eq(&self, other: &Self) -> bool {
         let event_id_check = self.event_id == other.event_id;
@@ -38,15 +37,6 @@ pub struct Response {
     pub last_updated: i64,
 }
 
-// NOTE: This implementation is ONLY used in the test(test_api_data). DONT equate two `Response`s in production.
-impl PartialEq for Response {
-    fn eq(&self, other: &Self) -> bool {
-        let world_id_check = self.world_id == other.world_id;
-        let event_list_check = self.event_list == other.event_list;
-        world_id_check && event_list_check
-    }
-}
-
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MojangResponse {
@@ -54,4 +44,22 @@ pub struct MojangResponse {
     pub name: String,
     properties: Vec<HashMap<String, String>>,
     profile_actions: Vec<String>,
+}
+
+pub struct ResponseError {
+    reason: String,
+}
+
+impl ResponseError {
+    pub fn new<T: std::fmt::Display>(err: T) -> Self {
+        Self {
+            reason: format!("ResponseError: {}", err),
+        }
+    }
+}
+
+impl std::fmt::Display for ResponseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}", self.reason))
+    }
 }

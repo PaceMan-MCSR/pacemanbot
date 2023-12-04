@@ -6,7 +6,7 @@ use serenity::{
     prelude::Context,
 };
 
-use crate::types::Response;
+use crate::types::{Response, ResponseError};
 
 pub async fn remove_roles_starting_with(
     ctx: &Context,
@@ -66,7 +66,7 @@ pub fn sort_guildroles_based_on_split(roles: &HashMap<RoleId, Role>) -> Vec<Role
     });
     roles
         .iter()
-        .map(|(role, _, _, _)| role.clone())
+        .map(|(role, _, _, _)| role.to_owned())
         .cloned()
         .collect::<Vec<Role>>()
 }
@@ -93,22 +93,33 @@ pub fn format_time(milliseconds: u64) -> String {
     format!("{}:{:02}", minutes, seconds)
 }
 
-pub async fn get_response_from_api() -> Vec<Response> {
+pub async fn get_response_from_api() -> Result<Vec<Response>, ResponseError> {
     let url = "https://paceman.gg/api/ars/liveruns";
     let url = reqwest::Url::parse(&*url).ok().unwrap();
     let result = match match reqwest::get(url).await {
         Ok(res) => res,
-        Err(err) => panic!("Error getting from url: {}", err),
+        Err(err) => return Err(ResponseError::new(err)),
     }
     .text()
     .await
     {
         Ok(text) => text,
-        Err(err) => panic!("Unable to get text: {}", err),
+        Err(err) => return Err(ResponseError::new(err)),
     };
     let res: Vec<Response> = match serde_json::from_str(result.as_str()) {
         Ok(res) => res,
-        Err(err) => panic!("Unable to convert to response: {}", err),
+        Err(err) => return Err(ResponseError::new(err)),
     };
-    res
+    Ok(res)
+}
+
+pub fn event_id_to_split(event_id: &str) -> Option<&str> {
+    match event_id {
+        "rsg.enter_bastion" => Some("Bastion"),
+        "rsg.enter_fortress" => Some("Fortress"),
+        "rsg.first_portal" => Some("Blind"),
+        "rsg.enter_stronghold" => Some("EyeSpy"),
+        "rsg.enter_end" => Some("EndEnter"),
+        _ => None,
+    }
 }

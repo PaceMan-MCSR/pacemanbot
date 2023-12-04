@@ -1,4 +1,5 @@
 mod components;
+mod consts;
 mod handlers;
 #[cfg(test)]
 mod tests;

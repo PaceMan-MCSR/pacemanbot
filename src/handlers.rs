@@ -14,10 +14,11 @@ use std::{collections::HashMap, sync::Arc, thread::sleep, time::Duration};
 
 use crate::{
     components::{send_role_selection_message, setup_default_roles},
+    consts::TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES,
     types::MojangResponse,
     utils::{
-        extract_split_from_role_name, format_time, get_response_from_api, get_time,
-        sort_guildroles_based_on_split,
+        event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api,
+        get_time, sort_guildroles_based_on_split,
     },
 };
 pub struct Handler;
@@ -25,23 +26,16 @@ pub struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn cache_ready(&self, ctx: Context, guilds: Vec<GuildId>) {
-        let event_ids_we_care_about: HashMap<_, _> = vec![
-            ("rsg.enter_bastion", "Bastion"),
-            ("rsg.enter_fortress", "Fortress"),
-            ("rsg.first_portal", "Blind"),
-            ("rsg.enter_stronghold", "EyeSpy"),
-            ("rsg.enter_end", "EndEnter"),
-        ]
-        .into_iter()
-        .collect();
-
-        // Time to wait for between two consecutive queries in seconds.
-        let timeout_between_consecutive_queries = 20;
-
         let ctx = Arc::new(ctx);
         tokio::spawn(async move {
             loop {
-                let response = get_response_from_api().await;
+                let response = match get_response_from_api().await {
+                    Ok(response) => response,
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        continue;
+                    }
+                };
                 let ctx = ctx.clone();
                 for record in response.iter() {
                     'guild_loop: for guild_id in guilds.iter() {
@@ -64,6 +58,7 @@ impl EventHandler for Handler {
                                 .messages(&ctx, |m| m.limit(1))
                                 .await
                                 .unwrap();
+
                             let player_names = first_message
                                 .first()
                                 .unwrap()
@@ -82,13 +77,17 @@ impl EventHandler for Handler {
                                 let response = match reqwest::get(url).await {
                                     Ok(response) => response,
                                     Err(err) => {
-                                        panic!("Unabled to convert '{}' to uuid: {}", name, err)
+                                        eprintln!("Unabled to convert '{}' to uuid: {}", name, err);
+                                        continue;
                                     }
                                 };
                                 let res: HashMap<String, String> =
                                     match response.json::<HashMap<String, String>>().await {
                                         Ok(map) => map,
-                                        Err(err) => panic!("Unable to parse to json: {}", err),
+                                        Err(err) => {
+                                            eprintln!("Unable to parse to json: {}", err);
+                                            continue;
+                                        }
                                     };
                                 let uuid = &res["id"];
                                 player_names_with_uuid.insert(uuid.to_owned(), name.to_owned());
@@ -113,28 +112,33 @@ impl EventHandler for Handler {
                             let url = reqwest::Url::parse(&*url).ok().unwrap();
                             let response = match reqwest::get(url).await {
                                 Ok(response) => response,
-                                Err(err) => panic!(
-                                    "Unable to convert uuid '{}' to name: {}",
-                                    record.user.uuid, err
-                                ),
+                                Err(err) => {
+                                    eprintln!(
+                                        "Unable to convert uuid '{}' to name: {}",
+                                        record.user.uuid, err
+                                    );
+                                    continue;
+                                }
                             };
                             let res: MojangResponse = match response.json::<MojangResponse>().await
                             {
                                 Ok(map) => map,
-                                Err(err) => panic!("Unable to parse to json: {}", err),
+                                Err(err) => {
+                                    eprintln!("Unable to parse to json: {}", err);
+                                    continue;
+                                }
                             };
                             name = res.name.to_owned();
                         }
                         let event = match record.event_list.last() {
                             Some(event) => event.to_owned(),
                             None => {
-                                panic!("No events in event list for record: {:#?}.", record)
+                                eprintln!("No events in event list for record: {:#?}.", record);
+                                continue;
                             }
                         };
-                        if event_ids_we_care_about.contains_key(event.event_id.as_str()) {
-                            let mut split = event_ids_we_care_about
-                                .get(event.event_id.as_str())
-                                .unwrap();
+                        if event_id_to_split(event.event_id.as_str()).is_some() {
+                            let mut split = event_id_to_split(event.event_id.as_str()).unwrap();
                             let mut structure: Option<&str> = None;
                             let messages = channel_to_send_to
                                 .messages(&ctx, |m| m.limit(100))
@@ -155,7 +159,7 @@ impl EventHandler for Handler {
                                     continue 'guild_loop;
                                 }
                             }
-                            if split == &"Bastion" {
+                            if split == "Bastion" {
                                 structure = Some("- Bastion");
                                 if record
                                     .event_list
@@ -168,7 +172,7 @@ impl EventHandler for Handler {
                                     split = &"FirstStructure";
                                 }
                             }
-                            if split == &"Fortress" {
+                            if split == "Fortress" {
                                 structure = Some("- Fortress");
                                 if record
                                     .event_list
@@ -218,7 +222,7 @@ impl EventHandler for Handler {
                         }
                     }
                 }
-                sleep(Duration::from_secs(timeout_between_consecutive_queries));
+                sleep(Duration::from_secs(TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES));
             }
         });
     }
@@ -283,37 +287,31 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        let guild_id = match ready
+        let guild_ids = ready
             .guilds
             .into_iter()
             .map(|guild| guild.id)
-            .collect::<Vec<GuildId>>()
-            .pop()
-        {
-            Some(id) => id,
-            None => {
-                eprintln!("Error initiating guild id: Unable to get guild id from guilds.");
-                return;
-            }
-        };
+            .collect::<Vec<GuildId>>();
 
-        match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
-            commands.create_application_command(|command| {
-                command
-                    .name("send_message")
-                    .description("Send role message to the current channel.")
-            });
-            commands.create_application_command(|command| {
-                command
-                    .name("setup_default_roles")
-                    .description("Setup default pace-roles.")
+        for guild_id in guild_ids.iter() {
+            match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
+                commands.create_application_command(|command| {
+                    command
+                        .name("send_message")
+                        .description("Send role message to the current channel.")
+                });
+                commands.create_application_command(|command| {
+                    command
+                        .name("setup_default_roles")
+                        .description("Setup default pace-roles.")
+                })
             })
-        })
-        .await
-        {
-            Ok(_) => (),
-            Err(err) => eprintln!("Error creating command: {}", err),
-        };
+            .await
+            {
+                Ok(_) => (),
+                Err(err) => eprintln!("Error creating command: {}", err),
+            };
+        }
     }
 }
 
