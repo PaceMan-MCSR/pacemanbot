@@ -149,7 +149,11 @@ impl EventHandler for Handler {
                                     && message.content.contains(&format_time(event.igt as u64))
                                     && (message.content.contains(&name)
                                         || message.content.contains(
-                                            &record.user.live_account.to_owned().unwrap(),
+                                            &record
+                                                .user
+                                                .live_account
+                                                .to_owned()
+                                                .unwrap_or("".to_string()),
                                         ))
                                 {
                                     println!(
