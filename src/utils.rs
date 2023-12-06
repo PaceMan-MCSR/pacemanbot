@@ -123,3 +123,14 @@ pub fn event_id_to_split(event_id: &str) -> Option<&str> {
         _ => None,
     }
 }
+
+pub fn split_to_desc(split: &str) -> Option<&str> {
+    match split {
+        "Bastion" => Some("Enter Bastion"),
+        "Fortress" => Some("Enter Fortress"),
+        "Blind" => Some("First Portal"),
+        "EyeSpy" => Some("Enter Stronghold"),
+        "EndEnter" => Some("Enter End"),
+        _ => None,
+    }
+}

@@ -18,7 +18,7 @@ use crate::{
     types::MojangResponse,
     utils::{
         event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api,
-        get_time, sort_guildroles_based_on_split,
+        get_time, sort_guildroles_based_on_split, split_to_desc,
     },
 };
 pub struct Handler;
@@ -159,7 +159,6 @@ impl EventHandler for Handler {
                         };
                         if event_id_to_split(event.event_id.as_str()).is_some() {
                             let mut split = event_id_to_split(event.event_id.as_str()).unwrap();
-                            let mut structure: Option<&str> = None;
                             let messages = channel_to_send_to
                                 .messages(&ctx, |m| m.limit(100))
                                 .await
@@ -183,8 +182,8 @@ impl EventHandler for Handler {
                                     continue 'guild_loop;
                                 }
                             }
+                            let split_desc = split_to_desc(split).unwrap();
                             if split == "Bastion" {
-                                structure = Some("- Bastion");
                                 if record
                                     .event_list
                                     .iter()
@@ -195,9 +194,7 @@ impl EventHandler for Handler {
                                 } else {
                                     split = &"FirstStructure";
                                 }
-                            }
-                            if split == "Fortress" {
-                                structure = Some("- Fortress");
+                            } else if split == "Fortress" {
                                 if record
                                     .event_list
                                     .iter()
@@ -224,7 +221,7 @@ impl EventHandler for Handler {
 
                             let live_link = match record.user.live_account.to_owned() {
                                 Some(acc) => format!("https://twitch.tv/{}", acc),
-                                None => format!("Pacepal for {}", name),
+                                None => continue,
                             };
 
                             if roles_to_ping.is_empty() {
@@ -232,17 +229,17 @@ impl EventHandler for Handler {
                             }
 
                             let content = format!(
-                                "{} `{}` {} {} split\n{}",
-                                live_link,
+                                "## {} - {}\n\n{}\n{}",
                                 format_time(event.igt as u64),
-                                split,
-                                structure.unwrap_or(""),
+                                split_desc,
+                                live_link,
                                 roles_to_ping
                                     .iter()
                                     .map(|role| role.mention().to_string())
                                     .collect::<Vec<_>>()
                                     .join(" "),
                             );
+
                             channel_to_send_to
                                 .send_message(&ctx, |m| m.content(content))
                                 .await
