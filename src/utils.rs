@@ -43,7 +43,7 @@ pub fn sort_guildroles_based_on_split(roles: &HashMap<RoleId, Role>) -> Vec<Role
         .collect::<Vec<_>>();
 
     // Sort roles by role name, using extract_split_from_role_name to extract the split and time.
-    // Sort first by split in this order : FirstStructure, SecondStructure, Blind, EyeSpy, EndEnter
+    // Sort first by split in this order : SecondStructure, Blind, EyeSpy, EndEnter
     // Then sort by minutes, then seconds
     let mut roles = roles
         .iter()
@@ -72,12 +72,11 @@ pub fn sort_guildroles_based_on_split(roles: &HashMap<RoleId, Role>) -> Vec<Role
 
 fn get_split_order_number(split: &str) -> usize {
     match split {
-        "FS" => 0,
-        "SS" => 1,
-        "B" => 2,
-        "E" => 3,
-        "EE" => 4,
-        _ => 5,
+        "SS" => 0,
+        "B" => 1,
+        "E" => 2,
+        "EE" => 3,
+        _ => 4,
     }
 }
 pub fn get_time(milliseconds: u64) -> (u8, u8) {
@@ -115,7 +114,6 @@ pub async fn get_response_from_api() -> Result<Vec<Response>, ResponseError> {
 
 pub fn event_id_to_split(event_id: &str) -> Option<&str> {
     match event_id {
-        "rsg.enter_bastion" => Some("Ba"),
         "rsg.enter_fortress" => Some("F"),
         "rsg.first_portal" => Some("B"),
         "rsg.enter_stronghold" => Some("E"),
@@ -126,7 +124,6 @@ pub fn event_id_to_split(event_id: &str) -> Option<&str> {
 
 pub fn split_to_desc(split: &str) -> Option<&str> {
     match split {
-        "Ba" => Some("Enter Bastion"),
         "F" => Some("Enter Fortress"),
         "B" => Some("First Portal"),
         "E" => Some("Enter Stronghold"),
