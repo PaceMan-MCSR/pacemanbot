@@ -17,10 +17,35 @@ pub async fn send_role_selection_message(
     command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let roles = sort_guildroles_based_on_split(roles);
+    let mut select_bastion_role_action_row = CreateActionRow::default();
     let mut select_fortress_role_action_row = CreateActionRow::default();
     let mut select_blind_role_action_row = CreateActionRow::default();
     let mut select_eye_spy_role_action_row = CreateActionRow::default();
     let mut select_end_enter_role_action_row = CreateActionRow::default();
+    let send_bastion_picker = roles.iter().any(|role| {
+        let (split, _minutes, _seconds) = extract_split_from_role_name(&role.name);
+        split == "FS"
+    });
+    select_bastion_role_action_row.create_select_menu(|m| {
+        m.custom_id("select_structure1_role")
+            .placeholder("Choose a First Structure Role...")
+            .options(|o| {
+                for role in &roles {
+                    if role.name.starts_with("*") {
+                        let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
+                        if split == "FS" {
+                            o.add_option(
+                                CreateSelectMenuOption::default()
+                                    .label(format!("Sub {}:{:02} Structure 1", minutes, seconds))
+                                    .value(role.id.to_string())
+                                    .to_owned(),
+                            );
+                        }
+                    }
+                }
+                o
+            })
+    });
     select_fortress_role_action_row.create_select_menu(|m| {
         m.custom_id("select_structure2_role")
             .placeholder("Choose a Second Structure Role...")
@@ -115,15 +140,32 @@ pub async fn send_role_selection_message(
         .create_interaction_response(&ctx.http, |response| {
             response.interaction_response_data(|data| {
                 data.content(content).components(|c| {
-                    c.add_action_row(select_fortress_role_action_row)
-                        .add_action_row(select_blind_role_action_row)
-                        .add_action_row(select_eye_spy_role_action_row)
-                        .add_action_row(select_end_enter_role_action_row)
-                        .add_action_row(remove_roles_action_row)
+                    if send_bastion_picker {
+                        c.add_action_row(select_bastion_role_action_row)
+                            .add_action_row(select_fortress_role_action_row)
+                            .add_action_row(select_blind_role_action_row)
+                            .add_action_row(select_eye_spy_role_action_row)
+                            .add_action_row(select_end_enter_role_action_row)
+                    } else {
+                        c.add_action_row(select_fortress_role_action_row)
+                            .add_action_row(select_blind_role_action_row)
+                            .add_action_row(select_eye_spy_role_action_row)
+                            .add_action_row(select_end_enter_role_action_row)
+                            .add_action_row(remove_roles_action_row.to_owned())
+                    }
                 })
             })
         })
         .await?;
+    if send_bastion_picker {
+        command
+            .channel_id
+            .send_message(&ctx.http, |m| {
+                m.content("")
+                    .components(|c| c.add_action_row(remove_roles_action_row))
+            })
+            .await?;
+    }
     Ok(())
 }
 
@@ -133,8 +175,9 @@ pub async fn setup_default_roles(
     command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let default_roles = [
-        "*SS6:0", "*SS5:3", "*SS5:0", "*SS4:3", "*B8:0", "*B7:3", "*B7:0", "*B6:3", "*B6:0",
-        "*B5:3", "*E9:3", "*E9:0", "*E8:3", "*E8:0", "*EE8:3", "*EE9:0", "*EE9:3", "*EE10:0",
+        "*FS2:0", "*FS2:3", "*FS3:0", "*SS6:0", "*SS5:3", "*SS5:0", "*SS4:3", "*B8:0", "*B7:3",
+        "*B7:0", "*B6:3", "*B6:0", "*B5:3", "*E9:3", "*E9:0", "*E8:3", "*E8:0", "*EE8:3", "*EE9:0",
+        "*EE9:3", "*EE10:0",
     ];
 
     let roles = guild.roles(&ctx.http).await?;

@@ -193,7 +193,7 @@ impl EventHandler for Handler {
                                 {
                                     split = &"SS";
                                 } else {
-                                    split = &"None";
+                                    split = &"FS";
                                 }
                             } else if split == "F" {
                                 if record
@@ -204,7 +204,7 @@ impl EventHandler for Handler {
                                 {
                                     split = &"SS";
                                 } else {
-                                    split = &"None";
+                                    split = &"FS";
                                 }
                             }
                             let roles_to_ping = guild_roles
@@ -282,6 +282,9 @@ impl EventHandler for Handler {
         if let Some(message_component) = interaction.as_message_component() {
             let res = match message_component.data.custom_id.as_str() {
                 "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
+                "select_structure1_role" => {
+                    handle_select_role(&ctx, &message_component, "FS").await
+                }
                 "select_structure2_role" => {
                     handle_select_role(&ctx, &message_component, "SS").await
                 }
