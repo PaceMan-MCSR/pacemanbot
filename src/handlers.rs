@@ -6,7 +6,7 @@ use serenity::{
             Interaction, InteractionResponseType::ChannelMessageWithSource,
         },
         gateway::Ready,
-        prelude::{message_component::MessageComponentInteraction, GuildId, RoleId},
+        prelude::{message_component::MessageComponentInteraction, Guild, GuildId, RoleId},
     },
     prelude::Mentionable,
 };
@@ -25,6 +25,26 @@ pub struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
+    async fn guild_create(&self, ctx: Context, guild: Guild, _is_new: bool) {
+        let guild_id = guild.id;
+        match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
+            commands.create_application_command(|command| {
+                command
+                    .name("send_message")
+                    .description("Send role message to the current channel.")
+            });
+            commands.create_application_command(|command| {
+                command
+                    .name("setup_default_roles")
+                    .description("Setup default pace-roles.")
+            })
+        })
+        .await
+        {
+            Ok(_) => (),
+            Err(err) => eprintln!("Error creating command: {}", err),
+        };
+    }
     async fn cache_ready(&self, ctx: Context, guilds: Vec<GuildId>) {
         let ctx = Arc::new(ctx);
         tokio::spawn(async move {
@@ -278,34 +298,8 @@ impl EventHandler for Handler {
         }
     }
 
-    async fn ready(&self, ctx: Context, ready: Ready) {
+    async fn ready(&self, _ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
-
-        let guild_ids = ready
-            .guilds
-            .into_iter()
-            .map(|guild| guild.id)
-            .collect::<Vec<GuildId>>();
-
-        for guild_id in guild_ids.iter() {
-            match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
-                commands.create_application_command(|command| {
-                    command
-                        .name("send_message")
-                        .description("Send role message to the current channel.")
-                });
-                commands.create_application_command(|command| {
-                    command
-                        .name("setup_default_roles")
-                        .description("Setup default pace-roles.")
-                })
-            })
-            .await
-            {
-                Ok(_) => (),
-                Err(err) => eprintln!("Error creating command: {}", err),
-            };
-        }
     }
 }
 
