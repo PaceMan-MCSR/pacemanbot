@@ -163,8 +163,10 @@ impl EventHandler for Handler {
                                 .messages(&ctx, |m| m.limit(100))
                                 .await
                                 .unwrap();
+
+                            let split_desc = split_to_desc(split).unwrap();
                             for message in messages.iter() {
-                                if message.content.contains(split)
+                                if message.content.contains(split_desc)
                                     && message.content.contains(&format_time(event.igt as u64))
                                     && (message.content.contains(&name)
                                         || message.content.contains(
@@ -182,7 +184,6 @@ impl EventHandler for Handler {
                                     continue 'guild_loop;
                                 }
                             }
-                            let split_desc = split_to_desc(split).unwrap();
                             if split == "Bastion" {
                                 if record
                                     .event_list
