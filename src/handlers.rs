@@ -184,27 +184,27 @@ impl EventHandler for Handler {
                                     continue 'guild_loop;
                                 }
                             }
-                            if split == "Bastion" {
+                            if split == "Ba" {
                                 if record
                                     .event_list
                                     .iter()
                                     .filter(|evt| evt != &record.event_list.last().unwrap())
                                     .any(|evt| evt.event_id == "rsg.enter_fortress")
                                 {
-                                    split = &"SecondStructure";
+                                    split = &"SS";
                                 } else {
-                                    split = &"FirstStructure";
+                                    split = &"FS";
                                 }
-                            } else if split == "Fortress" {
+                            } else if split == "F" {
                                 if record
                                     .event_list
                                     .iter()
                                     .filter(|evt| evt != &record.event_list.last().unwrap())
                                     .any(|evt| evt.event_id == "rsg.enter_bastion")
                                 {
-                                    split = &"SecondStructure";
+                                    split = &"SS";
                                 } else {
-                                    split = &"FirstStructure";
+                                    split = &"FS";
                                 }
                             }
                             let roles_to_ping = guild_roles
@@ -283,15 +283,14 @@ impl EventHandler for Handler {
             let res = match message_component.data.custom_id.as_str() {
                 "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
                 "select_structure1_role" => {
-                    handle_select_role(&ctx, &message_component, "FirstStructure").await
+                    handle_select_role(&ctx, &message_component, "FS").await
                 }
                 "select_structure2_role" => {
-                    handle_select_role(&ctx, &message_component, "SecondStructure").await
+                    handle_select_role(&ctx, &message_component, "SS").await
                 }
-                "select_blind_role" => handle_select_role(&ctx, &message_component, "Blind").await,
-                "select_eye_spy_role" => {
-                    handle_select_role(&ctx, &message_component, "EyeSpy").await
-                }
+                "select_blind_role" => handle_select_role(&ctx, &message_component, "B").await,
+                "select_eye_spy_role" => handle_select_role(&ctx, &message_component, "E").await,
+                "select_end_enter_role" => handle_select_role(&ctx, &message_component, "EE").await,
                 _ => Err("Unknown custom ID".into()),
             };
             if let Err(why) = res {
@@ -315,13 +314,15 @@ async fn handle_remove_pmb_roles(
         .await
         .unwrap();
     // Remove all PMB roles
-    crate::utils::remove_roles_starting_with(&ctx, &guild_id, member, "PMB").await;
+    crate::utils::remove_roles_starting_with(&ctx, &guild_id, member, "*").await;
 
     // Respond to the interaction
     message_component
         .create_interaction_response(&ctx.http, |r| {
             r.kind(ChannelMessageWithSource)
-                .interaction_response_data(|d| d.content("PMB roles removed").ephemeral(true))
+                .interaction_response_data(|d| {
+                    d.content("PaceManBot roles removed").ephemeral(true)
+                })
         })
         .await
         .unwrap();
@@ -345,7 +346,7 @@ async fn handle_select_role(
         &ctx,
         &guild_id,
         member,
-        format!("PMB{}", split).as_str(),
+        format!("*{}", split).as_str(),
     )
     .await;
     let mut member = guild_id

@@ -26,9 +26,9 @@ pub async fn send_role_selection_message(
             .placeholder("Choose a First Structure Role...")
             .options(|o| {
                 for role in &roles {
-                    if role.name.starts_with("PMB") {
+                    if role.name.starts_with("*") {
                         let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "FirstStructure" {
+                        if split == "FS" {
                             o.add_option(
                                 CreateSelectMenuOption::default()
                                     .label(format!("Sub {}:{:02} Structure 1", minutes, seconds))
@@ -46,9 +46,9 @@ pub async fn send_role_selection_message(
             .placeholder("Choose a Second Structure Role...")
             .options(|o| {
                 for role in &roles {
-                    if role.name.starts_with("PMB") {
+                    if role.name.starts_with("*") {
                         let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "SecondStructure" {
+                        if split == "SS" {
                             o.add_option(
                                 CreateSelectMenuOption::default()
                                     .label(format!("Sub {}:{:02} Structure 2", minutes, seconds))
@@ -66,9 +66,9 @@ pub async fn send_role_selection_message(
             .placeholder("Choose a Blind Role...")
             .options(|o| {
                 for role in &roles {
-                    if role.name.starts_with("PMB") {
+                    if role.name.starts_with("*") {
                         let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "Blind" {
+                        if split == "B" {
                             o.add_option(
                                 CreateSelectMenuOption::default()
                                     .label(format!("Sub {}:{:02} Blind", minutes, seconds))
@@ -83,15 +83,35 @@ pub async fn send_role_selection_message(
     });
     select_eye_spy_role_action_row.create_select_menu(|m| {
         m.custom_id("select_eye_spy_role")
-            .placeholder("Choose a Eye Spy Role...")
+            .placeholder("Choose an Eye Spy Role...")
             .options(|o| {
                 for role in &roles {
-                    if role.name.starts_with("PMB") {
+                    if role.name.starts_with("*") {
                         let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "EyeSpy" {
+                        if split == "E" {
                             o.add_option(
                                 CreateSelectMenuOption::default()
                                     .label(format!("Sub {}:{:02} Eye Spy", minutes, seconds))
+                                    .value(role.id.to_string())
+                                    .to_owned(),
+                            );
+                        }
+                    }
+                }
+                o
+            })
+    });
+    select_eye_spy_role_action_row.create_select_menu(|m| {
+        m.custom_id("select_end_enter_role")
+            .placeholder("Choose an End Enter Role...")
+            .options(|o| {
+                for role in &roles {
+                    if role.name.starts_with("*") {
+                        let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
+                        if split == "EE" {
+                            o.add_option(
+                                CreateSelectMenuOption::default()
+                                    .label(format!("Sub {}:{:02} End Enter", minutes, seconds))
                                     .value(role.id.to_string())
                                     .to_owned(),
                             );
@@ -109,7 +129,7 @@ pub async fn send_role_selection_message(
             .custom_id("remove_pmb_roles")
     });
 
-    let content = "Choose roles corresponding to a speedrunning split and time, such as \"PMBFirstStructureSub2:30.\".You'll receive pings for the selected split and any faster paces within that category. Select roles based on the splits and paces you wish to follow.";
+    let content = "Choose roles corresponding to a speedrunning split and time, such as \"*FS2:30.\".You'll receive pings for the selected split and any faster paces within that category. Select roles based on the splits and paces you wish to follow.";
 
     command
         .create_interaction_response(&ctx.http, |response| {
@@ -133,23 +153,9 @@ pub async fn setup_default_roles(
     command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let default_roles = [
-        "PMBFirstStructureSub3:00",
-        "PMBFirstStructureSub2:30",
-        "PMBFirstStructureSub2:00",
-        "PMBSecondStructureSub6:00",
-        "PMBSecondStructureSub5:30",
-        "PMBSecondStructureSub5:00",
-        "PMBSecondStructureSub4:30",
-        "PMBBlindSub8:00",
-        "PMBBlindSub7:30",
-        "PMBBlindSub7:00",
-        "PMBBlindSub6:30",
-        "PMBBlindSub6:00",
-        "PMBBlindSub5:30",
-        "PMBEyeSpySub9:30",
-        "PMBEyeSpySub9:00",
-        "PMBEyeSpySub8:30",
-        "PMBEyeSpySub8:00",
+        "*FS3:0", "*FS2:3", "*FS2:0", "*SS6:0", "*SS5:3", "*SS5:0", "*SS4:3", "*B8:0", "*B7:3",
+        "*B7:0", "*B6:3", "*B6:0", "*B5:3", "*E9:3", "*E9:0", "*E8:3", "*E8:0", "*EE10:0",
+        "*EE9:3", "*EE9:0", "*EE8:3",
     ];
 
     let roles = guild.roles(&ctx.http).await?;
@@ -161,7 +167,7 @@ pub async fn setup_default_roles(
             .create_role(&ctx.http, |r| r.name(role))
             .await?
             .edit(&ctx.http, |r| {
-                r.colour(Color::from_rgb(255, 255, 0).0.into())
+                r.colour(Color::from_rgb(54, 57, 63).0.into())
             })
             .await?;
     }

@@ -25,14 +25,13 @@ pub async fn remove_roles_starting_with(
 }
 
 pub fn extract_split_from_role_name(role_name: &str) -> (String, u8, u8) {
-    let role_name = role_name.replace("PMB", "");
-    let role_name = role_name.replace("Sub", "");
+    let role_name = role_name.replace("*", "");
     let role_name = role_name.replace(" ", "");
     let re = Regex::new(r"([a-zA-Z]+)(\d+)\:(\d+)").unwrap();
     let caps = re.captures(&role_name).unwrap();
     let character = caps.get(1).unwrap().as_str().to_string();
     let minutes = caps.get(2).unwrap().as_str().parse::<u8>().unwrap();
-    let seconds = caps.get(3).unwrap().as_str().parse::<u8>().unwrap();
+    let seconds = caps.get(3).unwrap().as_str().parse::<u8>().unwrap() * 10;
     (character, minutes, seconds)
 }
 
@@ -40,11 +39,11 @@ pub fn sort_guildroles_based_on_split(roles: &HashMap<RoleId, Role>) -> Vec<Role
     let roles = roles
         .iter()
         .map(|(_, role)| role.clone())
-        .filter(|role| role.name.starts_with("PMB"))
+        .filter(|role| role.name.starts_with("*"))
         .collect::<Vec<_>>();
 
     // Sort roles by role name, using extract_split_from_role_name to extract the split and time.
-    // Sort first by split in this order : FirstStructure, SecondStructure, Blind, EyeSpy
+    // Sort first by split in this order : FirstStructure, SecondStructure, Blind, EyeSpy, EndEnter
     // Then sort by minutes, then seconds
     let mut roles = roles
         .iter()
@@ -73,11 +72,12 @@ pub fn sort_guildroles_based_on_split(roles: &HashMap<RoleId, Role>) -> Vec<Role
 
 fn get_split_order_number(split: &str) -> usize {
     match split {
-        "FirstStructure" => 0,
-        "SecondStructure" => 1,
-        "Blind" => 2,
-        "EyeSpy" => 3,
-        _ => 4,
+        "FS" => 0,
+        "SS" => 1,
+        "B" => 2,
+        "E" => 3,
+        "EE" => 4,
+        _ => 5,
     }
 }
 pub fn get_time(milliseconds: u64) -> (u8, u8) {
@@ -115,22 +115,22 @@ pub async fn get_response_from_api() -> Result<Vec<Response>, ResponseError> {
 
 pub fn event_id_to_split(event_id: &str) -> Option<&str> {
     match event_id {
-        "rsg.enter_bastion" => Some("Bastion"),
-        "rsg.enter_fortress" => Some("Fortress"),
-        "rsg.first_portal" => Some("Blind"),
-        "rsg.enter_stronghold" => Some("EyeSpy"),
-        "rsg.enter_end" => Some("EndEnter"),
+        "rsg.enter_bastion" => Some("Ba"),
+        "rsg.enter_fortress" => Some("F"),
+        "rsg.first_portal" => Some("B"),
+        "rsg.enter_stronghold" => Some("E"),
+        "rsg.enter_end" => Some("EE"),
         _ => None,
     }
 }
 
 pub fn split_to_desc(split: &str) -> Option<&str> {
     match split {
-        "Bastion" => Some("Enter Bastion"),
-        "Fortress" => Some("Enter Fortress"),
-        "Blind" => Some("First Portal"),
-        "EyeSpy" => Some("Enter Stronghold"),
-        "EndEnter" => Some("Enter End"),
+        "Ba" => Some("Enter Bastion"),
+        "F" => Some("Enter Fortress"),
+        "B" => Some("First Portal"),
+        "E" => Some("Enter Stronghold"),
+        "EE" => Some("Enter End"),
         _ => None,
     }
 }
