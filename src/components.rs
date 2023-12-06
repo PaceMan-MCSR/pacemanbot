@@ -109,7 +109,7 @@ pub async fn send_role_selection_message(
             .custom_id("remove_pmb_roles")
     });
 
-    let content = "Choose roles corresponding to a speedrunning split and time, such as \"*FS2:30.\".You'll receive pings for the selected split and any faster paces within that category. Select roles based on the splits and paces you wish to follow.";
+    let content = "Select roles based on the splits and paces you wish to follow.";
 
     command
         .create_interaction_response(&ctx.http, |response| {
@@ -133,8 +133,8 @@ pub async fn setup_default_roles(
     command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let default_roles = [
-        "*FS3:0", "*FS2:3", "*FS2:0", "*SS6:0", "*SS5:3", "*SS5:0", "*SS4:3", "*B8:0", "*B7:3",
-        "*B7:0", "*B6:3", "*B6:0", "*B5:3", "*E9:3", "*E9:0", "*E8:3", "*E8:0",
+        "*SS6:0", "*SS5:3", "*SS5:0", "*SS4:3", "*B8:0", "*B7:3", "*B7:0", "*B6:3", "*B6:0",
+        "*B5:3", "*E9:3", "*E9:0", "*E8:3", "*E8:0", "*EE8:3", "*EE9:0", "*EE9:3", "*EE10:0",
     ];
 
     let roles = guild.roles(&ctx.http).await?;
