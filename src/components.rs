@@ -21,6 +21,7 @@ pub async fn send_role_selection_message(
     let mut select_fortress_role_action_row = CreateActionRow::default();
     let mut select_blind_role_action_row = CreateActionRow::default();
     let mut select_eye_spy_role_action_row = CreateActionRow::default();
+    let mut select_end_enter_role_action_row = CreateActionRow::default();
     select_bastion_role_action_row.create_select_menu(|m| {
         m.custom_id("select_structure1_role")
             .placeholder("Choose a First Structure Role...")
@@ -101,7 +102,7 @@ pub async fn send_role_selection_message(
                 o
             })
     });
-    select_eye_spy_role_action_row.create_select_menu(|m| {
+    select_end_enter_role_action_row.create_select_menu(|m| {
         m.custom_id("select_end_enter_role")
             .placeholder("Choose an End Enter Role...")
             .options(|o| {
@@ -139,6 +140,7 @@ pub async fn send_role_selection_message(
                         .add_action_row(select_fortress_role_action_row)
                         .add_action_row(select_blind_role_action_row)
                         .add_action_row(select_eye_spy_role_action_row)
+                        .add_action_row(select_end_enter_role_action_row)
                         .add_action_row(remove_roles_action_row)
                 })
             })
