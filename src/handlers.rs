@@ -227,6 +227,10 @@ impl EventHandler for Handler {
                                 None => format!("Pacepal for {}", name),
                             };
 
+                            if roles_to_ping.is_empty() {
+                                continue;
+                            }
+
                             let content = format!(
                                 "{} `{}` {} {} split\n{}",
                                 live_link,
