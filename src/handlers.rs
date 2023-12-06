@@ -220,7 +220,7 @@ impl EventHandler for Handler {
                                 .collect::<Vec<_>>();
 
                             let live_link = match record.user.live_account.to_owned() {
-                                Some(acc) => format!("https://twitch.tv/{}", acc),
+                                Some(acc) => format!("<https://twitch.tv/{}>", acc),
                                 None => continue,
                             };
 
