@@ -47,7 +47,7 @@ impl EventHandler for Handler {
             Ok(_) => (),
             Err(err) => eprintln!("Error creating command: {}", err),
         };
-        ctx.set_presence(Some(Activity::playing("paceman.gg")), OnlineStatus::Online)
+        ctx.set_presence(Some(Activity::watching("paceman.gg")), OnlineStatus::Online)
             .await;
     }
     async fn cache_ready(&self, ctx: Context, guilds: Vec<GuildId>) {
