@@ -6,7 +6,10 @@ use serenity::{
             Interaction, InteractionResponseType::ChannelMessageWithSource,
         },
         gateway::Ready,
-        prelude::{message_component::MessageComponentInteraction, Guild, GuildId, RoleId},
+        prelude::{
+            message_component::MessageComponentInteraction, Activity, Guild, GuildId, RoleId,
+        },
+        user::OnlineStatus,
     },
     prelude::Mentionable,
 };
@@ -44,6 +47,11 @@ impl EventHandler for Handler {
             Ok(_) => (),
             Err(err) => eprintln!("Error creating command: {}", err),
         };
+        ctx.set_presence(
+            Some(Activity::playing("Watching paceman.gg.")),
+            OnlineStatus::Online,
+        )
+        .await;
     }
     async fn cache_ready(&self, ctx: Context, guilds: Vec<GuildId>) {
         let ctx = Arc::new(ctx);
