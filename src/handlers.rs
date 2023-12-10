@@ -59,11 +59,38 @@ impl EventHandler for Handler {
                 let ctx = ctx.clone();
                 for record in response.iter() {
                     'guild_loop: for guild_id in guilds.iter() {
-                        let channels = guild_id.channels(&ctx).await.unwrap();
+                        let channels = match guild_id.channels(&ctx).await {
+                            Ok(channels) => channels,
+                            Err(err) => {
+                                eprintln!(
+                                    "Error getting channels in guild id: {} due to: {}",
+                                    guild_id, err
+                                );
+                                continue;
+                            }
+                        };
                         let (channel_to_send_to, _) =
-                            channels.iter().find(|c| c.1.name == "pacemanbot").unwrap();
+                            match channels.iter().find(|c| c.1.name == "pacemanbot") {
+                                Some(tup) => tup,
+                                None => {
+                                    eprintln!(
+                                        "Error finding #pacemanbot channel in guild id: {}.",
+                                        guild_id
+                                    );
+                                    continue;
+                                }
+                            };
                         let name;
-                        let guild_roles = guild_id.roles(&ctx).await.unwrap();
+                        let guild_roles = match guild_id.roles(&ctx).await {
+                            Ok(roles) => roles,
+                            Err(err) => {
+                                eprintln!(
+                                    "Unable to get roles in guild id: {} due to: {}",
+                                    guild_id, err
+                                );
+                                continue;
+                            }
+                        };
                         let guild_roles = sort_guildroles_based_on_split(&guild_roles);
                         if channels
                             .iter()
@@ -74,41 +101,65 @@ impl EventHandler for Handler {
                                 .find(|c| c.1.name == "pacemanbot-runner-names")
                                 .unwrap();
 
-                            let first_message = channel_containing_player_names
+                            let messages = match channel_containing_player_names
                                 .messages(&ctx, |m| m.limit(1))
                                 .await
-                                .unwrap();
+                            {
+                                Ok(messages) => messages,
+                                Err(err) => {
+                                    eprintln!(
+                                        "Error getting messages from #pacemanbot-runner-names for guild id: {} due to: {}",
+                                        guild_id, err
+                                    );
+                                    continue;
+                                }
+                            };
 
-                            let player_names = first_message
-                                .first()
-                                .unwrap()
-                                .content
-                                .split("\n")
-                                .map(|s| s.to_string())
-                                .collect::<Vec<String>>();
+                            let player_names = match messages.first() {
+                                Some(message) => message,
+                                None => {
+                                    eprintln!(
+                                        "Error getting first message from #pacemanbot-runner-names for guild id: {}",
+                                        guild_id
+                                    );
+                                    continue;
+                                }
+                            }
+                            .content
+                            .split("\n")
+                            .map(|s| s.to_string())
+                            .collect::<Vec<String>>();
                             let mut player_names_with_uuid: HashMap<String, String> =
                                 HashMap::new();
                             for name in player_names.iter() {
-                                let url = format!(
+                                let raw_url = format!(
                                     "https://api.mojang.com/users/profiles/minecraft/{}",
                                     name
                                 );
-                                let url = reqwest::Url::parse(&*url).ok().unwrap();
-                                let response = match reqwest::get(url).await {
+                                let url = reqwest::Url::parse(&*raw_url).ok().unwrap();
+                                let response = match reqwest::get(url.to_owned()).await {
                                     Ok(response) => response,
                                     Err(err) => {
-                                        eprintln!("Unabled to convert '{}' to uuid: {}", name, err);
+                                        eprintln!(
+                                            "Unabled to convert '{}' to uuid due to: {}",
+                                            name, err
+                                        );
                                         continue;
                                     }
                                 };
-                                let res: HashMap<String, String> =
-                                    match response.json::<HashMap<String, String>>().await {
-                                        Ok(map) => map,
-                                        Err(err) => {
-                                            eprintln!("Unable to parse to json: {}", err);
-                                            continue;
-                                        }
-                                    };
+                                let res: HashMap<String, String> = match response
+                                    .json::<HashMap<String, String>>()
+                                    .await
+                                {
+                                    Ok(map) => map,
+                                    Err(err) => {
+                                        eprintln!(
+                                            "Unable to parse API response for url '{}' to json due to: {}",
+                                            raw_url, err
+                                        );
+                                        continue;
+                                    }
+                                };
                                 let uuid = &res["id"];
                                 player_names_with_uuid.insert(uuid.to_owned(), name.to_owned());
                             }
@@ -125,16 +176,16 @@ impl EventHandler for Handler {
                                 }
                             };
                         } else {
-                            let url = format!(
+                            let raw_url = format!(
                                 "https://sessionserver.mojang.com/session/minecraft/profile/{}",
                                 record.user.uuid
                             );
-                            let url = reqwest::Url::parse(&*url).ok().unwrap();
-                            let response = match reqwest::get(url).await {
+                            let url = reqwest::Url::parse(&*raw_url).ok().unwrap();
+                            let response = match reqwest::get(url.to_owned()).await {
                                 Ok(response) => response,
                                 Err(err) => {
                                     eprintln!(
-                                        "Unable to convert uuid '{}' to name: {}",
+                                        "Unable to convert uuid '{}' to name due to: {}",
                                         record.user.uuid, err
                                     );
                                     continue;
@@ -144,7 +195,10 @@ impl EventHandler for Handler {
                             {
                                 Ok(map) => map,
                                 Err(err) => {
-                                    eprintln!("Unable to parse to json: {}", err);
+                                    eprintln!(
+                                        "Unable to parse API response for url '{}' to json due to: {}",
+                                        raw_url, err
+                                    );
                                     continue;
                                 }
                             };
@@ -159,12 +213,28 @@ impl EventHandler for Handler {
                         };
                         if event_id_to_split(event.event_id.as_str()).is_some() {
                             let mut split = event_id_to_split(event.event_id.as_str()).unwrap();
-                            let messages = channel_to_send_to
+
+                            let messages = match channel_to_send_to
                                 .messages(&ctx, |m| m.limit(100))
                                 .await
-                                .unwrap();
+                            {
+                                Ok(messages) => messages,
+                                Err(err) => {
+                                    eprintln!(
+                                            "Unable to get messages from #pacemanbot for guild id: {} due to: {}",
+                                            guild_id, err
+                                        );
+                                    continue;
+                                }
+                            };
 
-                            let split_desc = split_to_desc(split).unwrap();
+                            let split_desc = match split_to_desc(split) {
+                                Some(desc) => desc,
+                                None => {
+                                    eprintln!("Unable to get description for split: {}.", split);
+                                    continue;
+                                }
+                            };
                             for message in messages.iter() {
                                 if message.content.contains(split_desc)
                                     && message.content.contains(&format_time(event.igt as u64))
@@ -179,16 +249,26 @@ impl EventHandler for Handler {
                                 {
                                     println!(
                                         "Skipping split '{}' because it's already in the channel",
-                                        split
+                                        split_desc
                                     );
                                     continue 'guild_loop;
                                 }
                             }
+                            let last_event = match record.event_list.last() {
+                                Some(event) => event,
+                                None => {
+                                    eprintln!(
+                                        "Unable to get last event in event list for record: {:#?}.",
+                                        record
+                                    );
+                                    continue;
+                                }
+                            };
                             if split == "Ba" {
                                 if record
                                     .event_list
                                     .iter()
-                                    .filter(|evt| evt != &record.event_list.last().unwrap())
+                                    .filter(|evt| evt != &last_event)
                                     .any(|evt| evt.event_id == "rsg.enter_fortress")
                                 {
                                     split = &"SS";
@@ -199,7 +279,7 @@ impl EventHandler for Handler {
                                 if record
                                     .event_list
                                     .iter()
-                                    .filter(|evt| evt != &record.event_list.last().unwrap())
+                                    .filter(|evt| evt != &last_event)
                                     .any(|evt| evt.event_id == "rsg.enter_bastion")
                                 {
                                     split = &"SS";
@@ -222,10 +302,17 @@ impl EventHandler for Handler {
 
                             let live_link = match record.user.live_account.to_owned() {
                                 Some(acc) => format!("<https://twitch.tv/{}>", acc),
-                                None => continue,
+                                None => {
+                                    println!(
+                                        "Skipping split: '{}' because user: {} is not live.",
+                                        split_desc, name
+                                    );
+                                    continue;
+                                }
                             };
 
                             if roles_to_ping.is_empty() {
+                                println!("Skipping split: '{}' because there are no roles to ping in guild id: {}.", split, guild_id);
                                 continue;
                             }
 
@@ -241,10 +328,18 @@ impl EventHandler for Handler {
                                     .join(" "),
                             );
 
-                            channel_to_send_to
+                            match channel_to_send_to
                                 .send_message(&ctx, |m| m.content(content))
                                 .await
-                                .unwrap();
+                            {
+                                Ok(_) => (),
+                                Err(err) => {
+                                    eprintln!(
+                                        "Unable to send split: '{}' with roles: {:?} due to: {}",
+                                        split_desc, roles_to_ping, err
+                                    );
+                                }
+                            }
                         }
                     }
                 }
@@ -255,32 +350,43 @@ impl EventHandler for Handler {
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Some(command) = interaction.as_application_command() {
-            let roles = match command.guild_id.unwrap().roles(&ctx.http).await {
+            let guild_id = match command.guild_id {
+                Some(guild_id) => guild_id,
+                None => {
+                    eprintln!(
+                        "Unable to get guild id for the command: {}.",
+                        command.data.name
+                    );
+                    return;
+                }
+            };
+            let roles = match guild_id.roles(&ctx.http).await {
                 Ok(roles) => roles,
                 Err(err) => {
-                    eprintln!("Unable to get roles: {}", err);
+                    eprintln!(
+                        "Unable to get roles for guild id: {} due to: {}",
+                        guild_id, err
+                    );
                     return;
                 }
             };
             match match command.data.name.as_str() {
                 "send_message" => send_role_selection_message(&ctx, &roles, command).await,
-                "setup_default_roles" => {
-                    setup_default_roles(&ctx, command.guild_id.unwrap(), command).await
-                }
+                "setup_default_roles" => setup_default_roles(&ctx, guild_id, command).await,
                 _ => {
-                    eprintln!("Unrecognized command: '{}'.", command.data.name);
+                    eprintln!("Unrecognized command: {}.", command.data.name);
                     return;
                 }
             } {
                 Ok(_) => (),
                 Err(err) => eprintln!(
-                    "Error while handling command '{}': {}",
+                    "Unable to handle command: {} due to: {}",
                     command.data.name, err
                 ),
             };
         }
         if let Some(message_component) = interaction.as_message_component() {
-            let res = match message_component.data.custom_id.as_str() {
+            let custom_id = match message_component.data.custom_id.as_str() {
                 "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
                 "select_structure1_role" => {
                     handle_select_role(&ctx, &message_component, "FS").await
@@ -291,11 +397,16 @@ impl EventHandler for Handler {
                 "select_blind_role" => handle_select_role(&ctx, &message_component, "B").await,
                 "select_eye_spy_role" => handle_select_role(&ctx, &message_component, "E").await,
                 "select_end_enter_role" => handle_select_role(&ctx, &message_component, "EE").await,
-                _ => Err("Unknown custom ID".into()),
+                _ => {
+                    Err(format!("Unknown custom id: {}.", message_component.data.custom_id).into())
+                }
             };
-            if let Err(why) = res {
-                eprintln!("Error handling interaction: {:?}", why);
-            }
+            match custom_id {
+                Ok(_) => (),
+                Err(err) => {
+                    eprintln!("Error while handling interaction: {}", err);
+                }
+            };
         }
     }
 
@@ -308,13 +419,30 @@ async fn handle_remove_pmb_roles(
     ctx: &Context,
     message_component: &MessageComponentInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let guild_id = message_component.guild_id.unwrap();
-    let member = guild_id
-        .member(&ctx, message_component.member.as_ref().unwrap().user.id)
-        .await
-        .unwrap();
+    let guild_id = match message_component.guild_id {
+        Some(guild_id) => guild_id,
+        None => {
+            return Err(format!(
+                "Unable to get guild id for message component: {:#?}.",
+                message_component,
+            )
+            .into())
+        }
+    };
+    let member = match message_component.member.as_ref() {
+        Some(member) => member,
+        None => {
+            return Err(format!(
+                "Unable to get member for message component: {:#?}.",
+                message_component
+            )
+            .into())
+        }
+    };
+    let mut member = guild_id.member(&ctx, member.user.id).await?;
+
     // Remove all PMB roles
-    crate::utils::remove_roles_starting_with(&ctx, &guild_id, member, "*").await;
+    crate::utils::remove_roles_starting_with(&ctx, &guild_id, &mut member, "*").await;
 
     // Respond to the interaction
     message_component
@@ -324,9 +452,7 @@ async fn handle_remove_pmb_roles(
                     d.content("PaceManBot roles removed").ephemeral(true)
                 })
         })
-        .await
-        .unwrap();
-
+        .await?;
     Ok(())
 }
 
@@ -335,30 +461,43 @@ async fn handle_select_role(
     message_component: &MessageComponentInteraction,
     split: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let guild_id = message_component.guild_id.unwrap();
-    let member = guild_id
-        .member(&ctx, message_component.member.as_ref().unwrap().user.id)
-        .await
-        .unwrap();
+    let guild_id = match message_component.guild_id {
+        Some(guild_id) => guild_id,
+        None => {
+            return Err(format!(
+                "Unable to get guild id for message component: {:#?}.",
+                message_component
+            )
+            .into())
+        }
+    };
+    let member = match message_component.member.as_ref() {
+        Some(member) => member,
+        None => {
+            return Err(format!(
+                "Unable to get member for message component: {:#?}.",
+                message_component
+            )
+            .into())
+        }
+    };
+    let mut member = guild_id.member(&ctx, member.user.id).await?;
 
     // Remove all PMB roles
     crate::utils::remove_roles_starting_with(
         &ctx,
         &guild_id,
-        member,
+        &mut member,
         format!("*{}", split).as_str(),
     )
     .await;
-    let mut member = guild_id
-        .member(&ctx, message_component.member.as_ref().unwrap().user.id)
-        .await
-        .unwrap();
+
     // Add the new roles
     let mut roles_to_add = Vec::new();
     for value in &message_component.data.values {
-        roles_to_add.push(RoleId(value.parse::<u64>().unwrap()));
+        roles_to_add.push(RoleId(value.parse::<u64>()?));
     }
-    member.add_roles(&ctx, &roles_to_add).await.unwrap();
+    member.add_roles(&ctx, &roles_to_add).await?;
 
     // Respond to the interaction
     message_component
@@ -366,8 +505,7 @@ async fn handle_select_role(
             r.kind(ChannelMessageWithSource)
                 .interaction_response_data(|d| d.content("Roles updated").ephemeral(true))
         })
-        .await
-        .unwrap();
+        .await?;
 
     Ok(())
 }

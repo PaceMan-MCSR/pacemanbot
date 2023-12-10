@@ -11,7 +11,7 @@ use crate::types::{Response, ResponseError};
 pub async fn remove_roles_starting_with(
     ctx: &Context,
     guild_id: &serenity::model::prelude::GuildId,
-    mut member: serenity::model::prelude::Member,
+    member: &mut serenity::model::prelude::Member,
     role_prefix: &str,
 ) {
     // Remove roles starting with role_prefix
