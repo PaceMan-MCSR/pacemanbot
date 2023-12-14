@@ -260,7 +260,7 @@ pub async fn setup_roles(
     }
 
     let roles = guild.roles(&ctx).await?;
-    for minutes in split_start..split_end + 1 {
+    for minutes in split_start..split_end {
         let seconds = 0;
         let role = format!("*{}{}:{}", role_prefix, minutes, seconds);
         if !roles.iter().any(|(_, r)| r.name == role) {
@@ -279,6 +279,15 @@ pub async fn setup_roles(
                 })
                 .await?;
         }
+    }
+    let seconds = 0;
+    let role = format!("*{}{}:{}", role_prefix, split_end, seconds);
+    if !roles.iter().any(|(_, r)| r.name == role) {
+        guild
+            .create_role(ctx, |r| {
+                r.name(role).colour(Color::from_rgb(54, 57, 63).0.into())
+            })
+            .await?;
     }
     command
         .create_interaction_response(&ctx.http, |response| {
