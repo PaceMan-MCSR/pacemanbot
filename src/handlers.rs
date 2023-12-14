@@ -236,7 +236,10 @@ impl EventHandler for Handler {
                             let split_desc = match split_to_desc(split) {
                                 Some(desc) => desc,
                                 None => {
-                                    eprintln!("Unable to get description for split: {}.", split);
+                                    eprintln!(
+                                        "Unable to get description for split code: {}.",
+                                        split
+                                    );
                                     continue;
                                 }
                             };
@@ -317,7 +320,7 @@ impl EventHandler for Handler {
                             };
 
                             if roles_to_ping.is_empty() {
-                                println!("Skipping split: '{}' because there are no roles to ping in guild id: {}.", split, guild_id);
+                                println!("Skipping split: '{}' because there are no roles to ping in guild id: {}.", split_desc, guild_id);
                                 continue;
                             }
 
