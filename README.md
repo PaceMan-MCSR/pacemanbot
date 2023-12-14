@@ -11,7 +11,7 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 - This channel will be used to see what runner's pace-pings need to be sent in this server. So if you want to add more runners, just edit the first message in the channel and add the new runner's in-game name in a new line.
 - This channel is optional however and if it is absent, the bot will check every runner's pace and send them if the conditions are met.
 - Now in any channel (doesn't matter), type in `/setup_roles` and the command takes in a couple of required options:
-  - `split_name`: This is the name of the split whose roles you want to configure. It can take values like `first_structure`, `second_structure`, `blind, `eye_spy` and `end_enter`. Any other split name given would just be disregarded.
+  - `split_name`: This is the name of the split whose roles you want to configure. It can take values like `first_structure`, `second_structure`, `blind`, `eye_spy` and `end_enter`. Any other split name given would just be disregarded.
   - `split_start`: This is the lower bound of the igt in minutes that you want your pace-roles to start from.
   - `split_end`: This is the upper bound of the igt in minutes that you want your pace-roles to end at.
 - Eg: If you want all pace-roles for first structure entry from sub 3 minutes all the way to sub 5 minutes setup, then you would type in:
