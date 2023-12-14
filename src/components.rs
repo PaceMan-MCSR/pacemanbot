@@ -205,3 +205,91 @@ pub async fn setup_default_roles(
         .await?;
     Ok(())
 }
+
+pub async fn setup_roles(
+    ctx: &Context,
+    guild: GuildId,
+    command: &ApplicationCommandInteraction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut split_name = "".to_string();
+    let mut split_start = 0;
+    let mut split_end = 0;
+    for option in command.data.options.iter() {
+        match option.name.as_str() {
+            "split_name" => {
+                split_name = match option.value.to_owned() {
+                    Some(value) => match value.as_str() {
+                        Some(str) => str.to_owned(),
+                        None => return Err("Unable to convert 'split_name' into '&str'.".into()),
+                    },
+                    None => return Err("Unable to get value for option name: 'split_name'.".into()),
+                }
+            }
+            "split_start" => {
+                split_start = match option.value.to_owned() {
+                    Some(value) => match value.as_u64() {
+                        Some(int) => int,
+                        None => return Err("Unable to convert 'split_start' into 'u64'.".into()),
+                    },
+                    None => {
+                        return Err("Unable to get value for option name: 'split_start'.".into())
+                    }
+                }
+            }
+            "split_end" => {
+                split_end = match option.value.to_owned() {
+                    Some(value) => match value.as_u64() {
+                        Some(int) => int,
+                        None => return Err("Unable to convert 'split_end' into 'u64'.".into()),
+                    },
+                    None => return Err("Unable to get value for option name: 'split_end'.".into()),
+                }
+            }
+            _ => return Err("Unrecognized option name.".into()),
+        };
+    }
+
+    let role_prefix;
+    match split_name.as_str() {
+        "first_structure" => role_prefix = "FS",
+        "second_structure" => role_prefix = "SS",
+        "blind" => role_prefix = "B",
+        "eye_spy" => role_prefix = "ES",
+        "end_enter" => role_prefix = "EE",
+        _ => return Err(format!("Unrecognized split name: '{}'.", split_name).into()),
+    }
+
+    let roles = guild.roles(&ctx).await?;
+    for minutes in split_start..split_end + 1 {
+        let seconds = 0;
+        let role = format!("*{}{}:{}", role_prefix, minutes, seconds);
+        if !roles.iter().any(|(_, r)| r.name == role) {
+            guild
+                .create_role(ctx, |r| {
+                    r.name(role).colour(Color::from_rgb(54, 57, 63).0.into())
+                })
+                .await?;
+        }
+        let seconds = 3;
+        let role = format!("*{}{}:{}", role_prefix, minutes, seconds);
+        if !roles.iter().any(|(_, r)| r.name == role) {
+            guild
+                .create_role(ctx, |r| {
+                    r.name(role).colour(Color::from_rgb(54, 57, 63).0.into())
+                })
+                .await?;
+        }
+    }
+    command
+        .create_interaction_response(&ctx.http, |response| {
+            response
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|data| {
+                    data.content(format!("Pace-roles for split name: {} with lower bound: {} and upper bound: {} have been setup!", split_name, split_start, split_end))
+                        .ephemeral(true)
+                })
+        })
+        .await?;
+
+    Ok(())
+}

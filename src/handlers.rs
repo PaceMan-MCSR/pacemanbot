@@ -7,7 +7,8 @@ use serenity::{
         },
         gateway::Ready,
         prelude::{
-            message_component::MessageComponentInteraction, Activity, Guild, GuildId, RoleId,
+            command::CommandOptionType, message_component::MessageComponentInteraction, Activity,
+            Guild, GuildId, RoleId,
         },
         user::OnlineStatus,
     },
@@ -16,7 +17,7 @@ use serenity::{
 use std::{collections::HashMap, sync::Arc, thread::sleep, time::Duration};
 
 use crate::{
-    components::{send_role_selection_message, setup_default_roles},
+    components::{send_role_selection_message, setup_default_roles, setup_roles},
     consts::TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES,
     types::MojangResponse,
     utils::{
@@ -39,7 +40,32 @@ impl EventHandler for Handler {
             commands.create_application_command(|command| {
                 command
                     .name("setup_default_roles")
-                    .description("Setup default pace-roles.")
+                    .description("Setup default pace-roles for sub 10.")
+            });
+            commands.create_application_command(|command| {
+                command.name("setup_roles").description(
+                    "Setup pace-roles based on split, start time and end time in increments of 30s.",
+                ).create_option(|option| {
+                    option.name("split_name")
+                        .description("The name of the split.")
+                        .kind(CommandOptionType::String)
+                        .required(true)
+                        .add_string_choice("First Structure", "first_structure")
+                        .add_string_choice("Second Structure", "second_structure")
+                        .add_string_choice("Blind", "blind")
+                        .add_string_choice("Eye Spy", "eye_spy")
+                        .add_string_choice("End Enter", "end_enter")
+                }).create_option(|option| {
+                    option.name("split_start")
+                        .description("The lower bound for the split in minutes.")
+                        .kind(CommandOptionType::Integer)
+                        .required(true)
+                }).create_option(|option|{
+                    option.name("split_end")
+                        .description("The upper bound for the split in minutes.")
+                        .kind(CommandOptionType::Integer)
+                        .required(true)
+                })
             })
         })
         .await
@@ -381,6 +407,7 @@ impl EventHandler for Handler {
             match match command.data.name.as_str() {
                 "send_message" => send_role_selection_message(&ctx, &roles, command).await,
                 "setup_default_roles" => setup_default_roles(&ctx, guild_id, command).await,
+                "setup_roles" => setup_roles(&ctx, guild_id, command).await,
                 _ => {
                     eprintln!("Unrecognized command: {}.", command.data.name);
                     return;
