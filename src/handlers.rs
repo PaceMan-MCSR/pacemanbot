@@ -19,7 +19,6 @@ use std::{collections::HashMap, sync::Arc, thread::sleep, time::Duration};
 use crate::{
     components::{send_role_selection_message, setup_default_roles, setup_roles},
     consts::TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES,
-    types::MojangResponse,
     utils::{
         event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api,
         get_time, sort_guildroles_based_on_split, split_to_desc,
@@ -80,6 +79,7 @@ impl EventHandler for Handler {
         let ctx = Arc::new(ctx);
         tokio::spawn(async move {
             println!("Starting main loop in guild with name: {}.", guild_name);
+            let mut player_names_with_uuid: HashMap<String, String> = HashMap::new();
             loop {
                 let response = match get_response_from_api().await {
                     Ok(response) => response,
@@ -111,7 +111,6 @@ impl EventHandler for Handler {
                                 continue;
                             }
                         };
-                    let name;
                     let guild_roles = match guild_id.roles(&ctx).await {
                         Ok(roles) => roles,
                         Err(err) => {
@@ -139,9 +138,9 @@ impl EventHandler for Handler {
                             Ok(messages) => messages,
                             Err(err) => {
                                 eprintln!(
-                                        "Error getting messages from #pacemanbot-runner-names for guild name: {} due to: {}",
-                                        guild_name, err
-                                    );
+                                    "Error getting messages from #pacemanbot-runner-names for guild name: {} due to: {}",
+                                    guild_name, err
+                                );
                                 continue;
                             }
                         };
@@ -160,8 +159,10 @@ impl EventHandler for Handler {
                             .split("\n")
                             .map(|s| s.to_string())
                             .collect::<Vec<String>>();
-                        let mut player_names_with_uuid: HashMap<String, String> = HashMap::new();
                         for name in player_names.iter() {
+                            if player_names_with_uuid.get(name).is_some() {
+                                continue;
+                            }
                             let raw_url =
                                 format!("https://api.mojang.com/users/profiles/minecraft/{}", name);
                             let url = reqwest::Url::parse(&*raw_url).ok().unwrap();
@@ -182,54 +183,25 @@ impl EventHandler for Handler {
                                 Ok(map) => map,
                                 Err(err) => {
                                     eprintln!(
-                                            "Unable to parse API response for url '{}' to json due to: {}",
-                                            raw_url, err
-                                        );
+                                        "Unable to parse API response for url '{}' to json due to: {}",
+                                        raw_url, err
+                                    );
                                     continue;
                                 }
                             };
                             let uuid = &res["id"];
                             player_names_with_uuid.insert(uuid.to_owned(), name.to_owned());
                         }
-                        match player_names_with_uuid.get(record.user.uuid.replace("-", "").as_str())
+                        if let None =
+                            player_names_with_uuid.get(record.user.uuid.replace("-", "").as_str())
                         {
-                            Some(user_name) => name = user_name.to_owned(),
-                            None => {
-                                eprintln!(
+                            eprintln!(
                                 "Skipping because user, with uuid '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
                                 record.user.uuid,
                                 guild_name,
                             );
-                                continue;
-                            }
-                        };
-                    } else {
-                        let raw_url = format!(
-                            "https://sessionserver.mojang.com/session/minecraft/profile/{}",
-                            record.user.uuid
-                        );
-                        let url = reqwest::Url::parse(&*raw_url).ok().unwrap();
-                        let response = match reqwest::get(url.to_owned()).await {
-                            Ok(response) => response,
-                            Err(err) => {
-                                eprintln!(
-                                    "Unable to convert uuid '{}' to name due to: {}",
-                                    record.user.uuid, err
-                                );
-                                continue;
-                            }
-                        };
-                        let res: MojangResponse = match response.json::<MojangResponse>().await {
-                            Ok(map) => map,
-                            Err(err) => {
-                                eprintln!(
-                                    "Unable to parse API response for url '{}' to json due to: {}",
-                                    raw_url, err
-                                );
-                                continue;
-                            }
-                        };
-                        name = res.name.to_owned();
+                            continue;
+                        }
                     }
                     let event = match record.event_list.last() {
                         Some(event) => event.to_owned(),
@@ -248,9 +220,9 @@ impl EventHandler for Handler {
                             Ok(messages) => messages,
                             Err(err) => {
                                 eprintln!(
-                                            "Unable to get messages from #pacemanbot for guild name: {} due to: {}",
-                                            guild_name, err
-                                        );
+                                    "Unable to get messages from #pacemanbot for guild name: {} due to: {}",
+                                    guild_name, err
+                                );
                                 continue;
                             }
                         };
@@ -265,14 +237,13 @@ impl EventHandler for Handler {
                         for message in messages.iter() {
                             if message.content.contains(split_desc)
                                 && message.content.contains(&format_time(event.igt as u64))
-                                && (message.content.contains(&name)
-                                    || message.content.contains(
-                                        &record
-                                            .user
-                                            .live_account
-                                            .to_owned()
-                                            .unwrap_or("".to_string()),
-                                    ))
+                                && (message.content.contains(
+                                    &record
+                                        .user
+                                        .live_account
+                                        .to_owned()
+                                        .unwrap_or("".to_string()),
+                                ))
                             {
                                 println!(
                                     "Skipping split '{}' because it's already in the channel",
@@ -331,8 +302,8 @@ impl EventHandler for Handler {
                             Some(acc) => format!("<https://twitch.tv/{}>", acc),
                             None => {
                                 println!(
-                                    "Skipping split: '{}' because user: {} is not live.",
-                                    split_desc, name
+                                    "Skipping split: '{}' because user with uuid: {} is not live.",
+                                    split_desc, record.user.uuid,
                                 );
                                 continue;
                             }

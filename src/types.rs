@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -35,15 +33,6 @@ pub struct Response {
     pub is_cheated: bool,
     pub is_hidden: bool,
     pub last_updated: i64,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct MojangResponse {
-    id: String,
-    pub name: String,
-    properties: Vec<HashMap<String, String>>,
-    profile_actions: Vec<String>,
 }
 
 pub struct ResponseError {
