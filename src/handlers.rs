@@ -195,8 +195,8 @@ impl EventHandler for Handler {
                             None => {
                                 eprintln!(
                                 "Skipping because user, with uuid '{}', is not in this guild, with guild id: {}, or is not in the runners' channel.",
-                                guild_id,
                                 record.user.uuid,
+                                guild_id,
                             );
                                 continue;
                             }
