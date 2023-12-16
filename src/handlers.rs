@@ -89,7 +89,7 @@ impl EventHandler for Handler {
                     }
                 };
                 let ctx = ctx.clone();
-                for record in response.iter() {
+                'record_loop: for record in response.iter() {
                     let channels = match guild_id.channels(&ctx).await {
                         Ok(channels) => channels,
                         Err(err) => {
@@ -278,7 +278,7 @@ impl EventHandler for Handler {
                                     "Skipping split '{}' because it's already in the channel",
                                     split_desc
                                 );
-                                return;
+                                continue 'record_loop;
                             }
                         }
                         let last_event = match record.event_list.last() {
