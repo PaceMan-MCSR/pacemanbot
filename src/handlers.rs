@@ -31,6 +31,7 @@ pub struct Handler;
 impl EventHandler for Handler {
     async fn guild_create(&self, ctx: Context, guild: Guild, _is_new: bool) {
         let guild_id = guild.id;
+        let guild_name = guild.name;
         match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
             commands.create_application_command(|command| {
                 command
@@ -78,6 +79,7 @@ impl EventHandler for Handler {
 
         let ctx = Arc::new(ctx);
         tokio::spawn(async move {
+            println!("Starting main loop in guild with name: {}.", guild_name);
             loop {
                 let response = match get_response_from_api().await {
                     Ok(response) => response,
@@ -92,8 +94,8 @@ impl EventHandler for Handler {
                         Ok(channels) => channels,
                         Err(err) => {
                             eprintln!(
-                                "Error getting channels in guild id: {} due to: {}",
-                                guild_id, err
+                                "Error getting channels in guild name: {} due to: {}",
+                                guild_name, err
                             );
                             continue;
                         }
@@ -103,8 +105,8 @@ impl EventHandler for Handler {
                             Some(tup) => tup,
                             None => {
                                 eprintln!(
-                                    "Error finding #pacemanbot channel in guild id: {}.",
-                                    guild_id
+                                    "Error finding #pacemanbot channel in guild name: {}.",
+                                    guild_name
                                 );
                                 continue;
                             }
@@ -114,8 +116,8 @@ impl EventHandler for Handler {
                         Ok(roles) => roles,
                         Err(err) => {
                             eprintln!(
-                                "Unable to get roles in guild id: {} due to: {}",
-                                guild_id, err
+                                "Unable to get roles in guild name: {} due to: {}",
+                                guild_name, err
                             );
                             continue;
                         }
@@ -137,8 +139,8 @@ impl EventHandler for Handler {
                             Ok(messages) => messages,
                             Err(err) => {
                                 eprintln!(
-                                        "Error getting messages from #pacemanbot-runner-names for guild id: {} due to: {}",
-                                        guild_id, err
+                                        "Error getting messages from #pacemanbot-runner-names for guild name: {} due to: {}",
+                                        guild_name, err
                                     );
                                 continue;
                             }
@@ -148,8 +150,8 @@ impl EventHandler for Handler {
                                 Some(message) => message,
                                 None => {
                                     eprintln!(
-                                        "Error getting first message from #pacemanbot-runner-names for guild id: {}",
-                                        guild_id
+                                        "Error getting first message from #pacemanbot-runner-names for guild name: {}",
+                                        guild_name
                                     );
                                     continue;
                                 }
@@ -194,9 +196,9 @@ impl EventHandler for Handler {
                             Some(user_name) => name = user_name.to_owned(),
                             None => {
                                 eprintln!(
-                                "Skipping because user, with uuid '{}', is not in this guild, with guild id: {}, or is not in the runners' channel.",
+                                "Skipping because user, with uuid '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
                                 record.user.uuid,
-                                guild_id,
+                                guild_name,
                             );
                                 continue;
                             }
@@ -246,8 +248,8 @@ impl EventHandler for Handler {
                             Ok(messages) => messages,
                             Err(err) => {
                                 eprintln!(
-                                            "Unable to get messages from #pacemanbot for guild id: {} due to: {}",
-                                            guild_id, err
+                                            "Unable to get messages from #pacemanbot for guild name: {} due to: {}",
+                                            guild_name, err
                                         );
                                 continue;
                             }
@@ -337,7 +339,7 @@ impl EventHandler for Handler {
                         };
 
                         if roles_to_ping.is_empty() {
-                            println!("Skipping split: '{}' because there are no roles to ping in guild id: {}.", split_desc, guild_id);
+                            println!("Skipping split: '{}' because there are no roles to ping in guild name: {}.", split_desc, guild_name);
                             continue;
                         }
 
@@ -359,8 +361,8 @@ impl EventHandler for Handler {
                         {
                             Ok(_) => {
                                 println!(
-                                    "Sent pace-ping for user with uuid: '{}' for split: '{}' in guild id: {}.", 
-                                     record.user.uuid, split_desc, guild_id
+                                    "Sent pace-ping for user with uuid: '{}' for split: '{}' in guild name: {}.", 
+                                     record.user.uuid, split_desc, guild_name
                                 );
                             }
                             Err(err) => {
