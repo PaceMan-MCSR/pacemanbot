@@ -77,7 +77,72 @@ impl EventHandler for Handler {
             .await;
     }
 
-    async fn cache_ready(&self, ctx: Context, guilds: Vec<GuildId>) {
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Some(command) = interaction.as_application_command() {
+            let guild_id = match command.guild_id {
+                Some(guild_id) => guild_id,
+                None => {
+                    eprintln!(
+                        "Unable to get guild id for the command: {}.",
+                        command.data.name
+                    );
+                    return;
+                }
+            };
+            let roles = match guild_id.roles(&ctx.http).await {
+                Ok(roles) => roles,
+                Err(err) => {
+                    eprintln!(
+                        "Unable to get roles for guild id: {} due to: {}",
+                        guild_id, err
+                    );
+                    return;
+                }
+            };
+            match match command.data.name.as_str() {
+                "send_message" => send_role_selection_message(&ctx, &roles, command).await,
+                "setup_default_roles" => setup_default_roles(&ctx, guild_id, command).await,
+                "setup_roles" => setup_roles(&ctx, guild_id, command).await,
+                _ => {
+                    eprintln!("Unrecognized command: {}.", command.data.name);
+                    return;
+                }
+            } {
+                Ok(_) => (),
+                Err(err) => eprintln!(
+                    "Unable to handle command: {} due to: {}",
+                    command.data.name, err
+                ),
+            };
+        }
+        if let Some(message_component) = interaction.as_message_component() {
+            let custom_id = match message_component.data.custom_id.as_str() {
+                "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
+                "select_structure1_role" => {
+                    handle_select_role(&ctx, &message_component, "FS").await
+                }
+                "select_structure2_role" => {
+                    handle_select_role(&ctx, &message_component, "SS").await
+                }
+                "select_blind_role" => handle_select_role(&ctx, &message_component, "B").await,
+                "select_eye_spy_role" => handle_select_role(&ctx, &message_component, "E").await,
+                "select_end_enter_role" => handle_select_role(&ctx, &message_component, "EE").await,
+                _ => {
+                    Err(format!("Unknown custom id: {}.", message_component.data.custom_id).into())
+                }
+            };
+            match custom_id {
+                Ok(_) => (),
+                Err(err) => {
+                    eprintln!("Error while handling interaction: {}", err);
+                }
+            };
+        }
+    }
+
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        println!("{} is connected!", ready.user.name);
+
         let ctx = Arc::new(ctx);
         tokio::spawn(async move {
             let mut player_names_with_uuid: HashMap<String, String> = HashMap::new();
@@ -91,7 +156,7 @@ impl EventHandler for Handler {
                 };
                 let ctx = ctx.clone();
                 for record in response.iter() {
-                    'guild_loop: for guild_id in guilds.iter() {
+                    'guild_loop: for guild_id in &ctx.cache.guilds() {
                         let guild_name = match guild_id.name(&ctx.cache) {
                             Some(name) => name,
                             None => {
@@ -363,73 +428,6 @@ impl EventHandler for Handler {
                 }
             }
         });
-    }
-
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Some(command) = interaction.as_application_command() {
-            let guild_id = match command.guild_id {
-                Some(guild_id) => guild_id,
-                None => {
-                    eprintln!(
-                        "Unable to get guild id for the command: {}.",
-                        command.data.name
-                    );
-                    return;
-                }
-            };
-            let roles = match guild_id.roles(&ctx.http).await {
-                Ok(roles) => roles,
-                Err(err) => {
-                    eprintln!(
-                        "Unable to get roles for guild id: {} due to: {}",
-                        guild_id, err
-                    );
-                    return;
-                }
-            };
-            match match command.data.name.as_str() {
-                "send_message" => send_role_selection_message(&ctx, &roles, command).await,
-                "setup_default_roles" => setup_default_roles(&ctx, guild_id, command).await,
-                "setup_roles" => setup_roles(&ctx, guild_id, command).await,
-                _ => {
-                    eprintln!("Unrecognized command: {}.", command.data.name);
-                    return;
-                }
-            } {
-                Ok(_) => (),
-                Err(err) => eprintln!(
-                    "Unable to handle command: {} due to: {}",
-                    command.data.name, err
-                ),
-            };
-        }
-        if let Some(message_component) = interaction.as_message_component() {
-            let custom_id = match message_component.data.custom_id.as_str() {
-                "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
-                "select_structure1_role" => {
-                    handle_select_role(&ctx, &message_component, "FS").await
-                }
-                "select_structure2_role" => {
-                    handle_select_role(&ctx, &message_component, "SS").await
-                }
-                "select_blind_role" => handle_select_role(&ctx, &message_component, "B").await,
-                "select_eye_spy_role" => handle_select_role(&ctx, &message_component, "E").await,
-                "select_end_enter_role" => handle_select_role(&ctx, &message_component, "EE").await,
-                _ => {
-                    Err(format!("Unknown custom id: {}.", message_component.data.custom_id).into())
-                }
-            };
-            match custom_id {
-                Ok(_) => (),
-                Err(err) => {
-                    eprintln!("Error while handling interaction: {}", err);
-                }
-            };
-        }
-    }
-
-    async fn ready(&self, _ctx: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
     }
 }
 
