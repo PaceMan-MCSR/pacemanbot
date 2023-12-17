@@ -24,7 +24,7 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 - That's it! You should be getting all pace-pings from paceman.gg on your community discord server while running the tracker! Enjoyy!!
 
 # Issues
-You can report any issues related to the bot [here](https://github.com/paceman-mcsr/pacemnabot/issues).
+You can report any issues related to the bot [here](https://github.com/paceman-mcsr/pacemanbot/issues).
 
 # Usage (for developers/contributors)
 - Build the project with a `.env` file using `cargo build -r` (first compile takes a long time)
