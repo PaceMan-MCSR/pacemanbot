@@ -232,8 +232,7 @@ impl EventHandler for Handler {
                             .split("\n")
                             .map(|s| s.to_string())
                             .collect::<Vec<String>>();
-                            let mut player_names_with_uuid: HashMap<String, String> =
-                                HashMap::new();
+                            let mut player_present_in_guild = false;
                             for name in player_names.iter() {
                                 let raw_url = format!(
                                     "https://api.mojang.com/users/profiles/minecraft/{}",
@@ -264,11 +263,12 @@ impl EventHandler for Handler {
                                     }
                                 };
                                 let uuid = &res["id"];
-                                player_names_with_uuid.insert(uuid.to_owned(), name.to_owned());
+                                if uuid == record.user.uuid.replace("-", "").as_str() {
+                                    player_present_in_guild = true;
+                                    break;
+                                }
                             }
-                            if let None = player_names_with_uuid
-                                .get(record.user.uuid.replace("-", "").as_str())
-                            {
+                            if !player_present_in_guild {
                                 eprintln!(
                                 "Skipping because user, with uuid '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
                                 record.user.uuid,
