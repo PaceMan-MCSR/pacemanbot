@@ -145,7 +145,6 @@ impl EventHandler for Handler {
 
         let ctx = Arc::new(ctx);
         tokio::spawn(async move {
-            let mut player_names_with_uuid: HashMap<String, String> = HashMap::new();
             loop {
                 let response = match get_response_from_api().await {
                     Ok(response) => response,
@@ -233,10 +232,9 @@ impl EventHandler for Handler {
                             .split("\n")
                             .map(|s| s.to_string())
                             .collect::<Vec<String>>();
+                            let mut player_names_with_uuid: HashMap<String, String> =
+                                HashMap::new();
                             for name in player_names.iter() {
-                                if player_names_with_uuid.get(name).is_some() {
-                                    continue;
-                                }
                                 let raw_url = format!(
                                     "https://api.mojang.com/users/profiles/minecraft/{}",
                                     name
