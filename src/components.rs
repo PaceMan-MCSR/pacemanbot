@@ -255,7 +255,7 @@ pub async fn setup_roles(
         "first_structure" => role_prefix = "FS",
         "second_structure" => role_prefix = "SS",
         "blind" => role_prefix = "B",
-        "eye_spy" => role_prefix = "ES",
+        "eye_spy" => role_prefix = "E",
         "end_enter" => role_prefix = "EE",
         _ => return Err(format!("Unrecognized split name: '{}'.", split_name).into()),
     }
