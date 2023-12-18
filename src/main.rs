@@ -1,12 +1,14 @@
 mod components;
 mod consts;
-mod handlers;
+mod core;
+mod handler;
+mod handler_utils;
 #[cfg(test)]
 mod tests;
 mod types;
 mod utils;
 use dotenv::dotenv;
-use handlers::Handler;
+use handler::Handler;
 use serenity::client::Client;
 use serenity::framework::standard::StandardFramework;
 use serenity::prelude::GatewayIntents;

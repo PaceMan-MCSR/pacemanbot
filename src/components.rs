@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use serenity::model::prelude::application_command::ApplicationCommandInteraction;
+use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::{GuildId, InteractionResponseType, Role, RoleId};
 use serenity::prelude::Context;
 use serenity::utils::Color;
@@ -289,16 +290,71 @@ pub async fn setup_roles(
             })
             .await?;
     }
+
+    let response_content = format!(
+        "Pace-roles for split name: {} with lower bound: {} minutes and upper bound: {} minutes have been setup!",
+        split_name, split_start, split_end
+    );
     command
         .create_interaction_response(&ctx.http, |response| {
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|data| {
-                    data.content(format!("Pace-roles for split name: {} with lower bound: {} and upper bound: {} have been setup!", split_name, split_start, split_end))
-                        .ephemeral(true)
-                })
+                .interaction_response_data(|data| data.content(response_content).ephemeral(true))
         })
         .await?;
 
     Ok(())
+}
+
+pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
+    match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
+        commands.create_application_command(|command| {
+            command
+                .name("send_message")
+                .description("Send role message to the current channel.")
+        });
+        commands.create_application_command(|command| {
+            command
+                .name("setup_default_roles")
+                .description("Setup default pace-roles for sub 10.")
+        });
+        commands.create_application_command(|command| {
+            command
+            .name("setup_roles")
+            .description(
+                "Setup pace-roles based on split, start time and end time in increments of 30s.",
+            )
+            .create_option(|option| {
+                option
+                    .name("split_name")
+                    .description("The name of the split.")
+                    .kind(CommandOptionType::String)
+                    .required(true)
+                    .add_string_choice("First Structure", "first_structure")
+                    .add_string_choice("Second Structure", "second_structure")
+                    .add_string_choice("Blind", "blind")
+                    .add_string_choice("Eye Spy", "eye_spy")
+                    .add_string_choice("End Enter", "end_enter")
+            })
+            .create_option(|option| {
+                option
+                    .name("split_start")
+                    .description("The lower bound for the split in minutes.")
+                    .kind(CommandOptionType::Integer)
+                    .required(true)
+            })
+            .create_option(|option| {
+                option
+                    .name("split_end")
+                    .description("The upper bound for the split in minutes.")
+                    .kind(CommandOptionType::Integer)
+                    .required(true)
+            })
+        })
+    })
+    .await
+    {
+        Ok(_) => (),
+        Err(err) => eprintln!("Error creating command: {}", err),
+    };
 }

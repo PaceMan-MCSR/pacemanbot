@@ -6,7 +6,7 @@ use serenity::{
     prelude::Context,
 };
 
-use crate::types::{Response, ResponseError};
+use crate::types::{MojangResponse, Response, ResponseError};
 
 pub async fn remove_roles_starting_with(
     ctx: &Context,
@@ -111,6 +111,29 @@ pub async fn get_response_from_api() -> Result<Vec<Response>, ResponseError> {
         Err(err) => return Err(ResponseError::new(err)),
     };
     Ok(res)
+}
+
+pub async fn get_username_for_uuid(uuid: &str) -> Result<String, ResponseError> {
+    let url = format!(
+        "https://sessionserver.mojang.com/session/minecraft/profile/{}",
+        uuid
+    );
+    let url = reqwest::Url::parse(&*url).ok().unwrap();
+    let result = match match reqwest::get(url).await {
+        Ok(res) => res,
+        Err(err) => return Err(ResponseError::new(err)),
+    }
+    .text()
+    .await
+    {
+        Ok(text) => text,
+        Err(err) => return Err(ResponseError::new(err)),
+    };
+    let res: MojangResponse = match serde_json::from_str(result.as_str()) {
+        Ok(res) => res,
+        Err(err) => return Err(ResponseError::new(err)),
+    };
+    Ok(res.name)
 }
 
 pub fn event_id_to_split(event_id: &str) -> Option<&str> {
