@@ -23,6 +23,6 @@ impl EventHandler for Handler {
         println!("{} is connected!", ready.user.name);
 
         let ctx = Arc::new(ctx);
-        tokio::spawn(async move { start_main_loop(ctx) });
+        tokio::spawn(async move { start_main_loop(ctx.clone()).await });
     }
 }
