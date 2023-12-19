@@ -1,7 +1,6 @@
 use serenity::{
     client::Context,
     model::{
-        application::interaction::InteractionResponseType::ChannelMessageWithSource,
         prelude::{
             application_command::ApplicationCommandInteraction,
             message_component::MessageComponentInteraction, Activity, GuildId, Interaction, RoleId,
@@ -36,6 +35,8 @@ pub async fn handle_remove_pmb_roles(
     ctx: &Context,
     message_component: &MessageComponentInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    message_component.defer_ephemeral(&ctx).await?;
+
     let guild_id = match message_component.guild_id {
         Some(guild_id) => guild_id,
         None => {
@@ -63,12 +64,7 @@ pub async fn handle_remove_pmb_roles(
 
     // Respond to the interaction
     message_component
-        .create_interaction_response(&ctx.http, |r| {
-            r.kind(ChannelMessageWithSource)
-                .interaction_response_data(|d| {
-                    d.content("PaceManBot roles removed").ephemeral(true)
-                })
-        })
+        .edit_original_interaction_response(&ctx.http, |r| r.content("PaceManBot roles removed"))
         .await?;
     Ok(())
 }
@@ -78,6 +74,8 @@ pub async fn handle_select_role(
     message_component: &MessageComponentInteraction,
     split: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    message_component.defer_ephemeral(&ctx).await?;
+
     let guild_id = match message_component.guild_id {
         Some(guild_id) => guild_id,
         None => {
@@ -112,10 +110,7 @@ pub async fn handle_select_role(
 
     // Respond to the interaction
     message_component
-        .create_interaction_response(&ctx.http, |r| {
-            r.kind(ChannelMessageWithSource)
-                .interaction_response_data(|d| d.content("Roles updated").ephemeral(true))
-        })
+        .edit_original_interaction_response(&ctx.http, |r| r.content("Roles updated"))
         .await?;
 
     Ok(())

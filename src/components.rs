@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serenity::model::prelude::application_command::ApplicationCommandInteraction;
 use serenity::model::prelude::command::CommandOptionType;
-use serenity::model::prelude::{GuildId, InteractionResponseType, Role, RoleId};
+use serenity::model::prelude::{GuildId, Role, RoleId};
 use serenity::prelude::Context;
 use serenity::utils::Color;
 use serenity::{
@@ -17,6 +17,8 @@ pub async fn send_role_selection_message(
     roles: &HashMap<RoleId, Role>,
     command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    command.defer(&ctx).await?;
+
     let roles = sort_guildroles_based_on_split(roles);
     let mut select_bastion_role_action_row = CreateActionRow::default();
     let mut select_fortress_role_action_row = CreateActionRow::default();
@@ -138,23 +140,21 @@ pub async fn send_role_selection_message(
     let content = "Select roles based on the splits and paces you wish to follow.";
 
     command
-        .create_interaction_response(&ctx.http, |response| {
-            response.interaction_response_data(|data| {
-                data.content(content).components(|c| {
-                    if send_bastion_picker {
-                        c.add_action_row(select_bastion_role_action_row)
-                            .add_action_row(select_fortress_role_action_row)
-                            .add_action_row(select_blind_role_action_row)
-                            .add_action_row(select_eye_spy_role_action_row)
-                            .add_action_row(select_end_enter_role_action_row)
-                    } else {
-                        c.add_action_row(select_fortress_role_action_row)
-                            .add_action_row(select_blind_role_action_row)
-                            .add_action_row(select_eye_spy_role_action_row)
-                            .add_action_row(select_end_enter_role_action_row)
-                            .add_action_row(remove_roles_action_row.to_owned())
-                    }
-                })
+        .edit_original_interaction_response(&ctx.http, |data| {
+            data.content(content).components(|c| {
+                if send_bastion_picker {
+                    c.add_action_row(select_bastion_role_action_row)
+                        .add_action_row(select_fortress_role_action_row)
+                        .add_action_row(select_blind_role_action_row)
+                        .add_action_row(select_eye_spy_role_action_row)
+                        .add_action_row(select_end_enter_role_action_row)
+                } else {
+                    c.add_action_row(select_fortress_role_action_row)
+                        .add_action_row(select_blind_role_action_row)
+                        .add_action_row(select_eye_spy_role_action_row)
+                        .add_action_row(select_end_enter_role_action_row)
+                        .add_action_row(remove_roles_action_row.to_owned())
+                }
             })
         })
         .await?;
@@ -175,6 +175,8 @@ pub async fn setup_default_roles(
     guild: GuildId,
     command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    command.defer_ephemeral(&ctx).await?;
+
     let default_roles = [
         "*FS2:0", "*FS2:3", "*FS3:0", "*SS6:0", "*SS5:3", "*SS5:0", "*SS4:3", "*B8:0", "*B7:3",
         "*B7:0", "*B6:3", "*B6:0", "*B5:3", "*E9:3", "*E9:0", "*E8:3", "*E8:0", "*EE8:3", "*EE9:0",
@@ -195,13 +197,8 @@ pub async fn setup_default_roles(
             .await?;
     }
     command
-        .create_interaction_response(&ctx.http, |response| {
-            response
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|data| {
-                    data.content("Default pace-roles have been setup!")
-                        .ephemeral(true)
-                })
+        .edit_original_interaction_response(&ctx.http, |data| {
+            data.content("Default pace-roles have been setup!")
         })
         .await?;
     Ok(())
@@ -212,6 +209,8 @@ pub async fn setup_roles(
     guild: GuildId,
     command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    command.defer_ephemeral(&ctx).await?;
+
     let mut split_name = "".to_string();
     let mut split_start = 0;
     let mut split_end = 0;
@@ -296,11 +295,7 @@ pub async fn setup_roles(
         split_name, split_start, split_end
     );
     command
-        .create_interaction_response(&ctx.http, |response| {
-            response
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|data| data.content(response_content).ephemeral(true))
-        })
+        .edit_original_interaction_response(&ctx.http, |data| data.content(response_content))
         .await?;
 
     Ok(())
