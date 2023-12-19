@@ -31,8 +31,8 @@ pub async fn handle_interaction_create(ctx: &Context, interaction: Interaction) 
             Ok(_) => (),
             Err(err) => {
                 eprintln!(
-                    "Unable to defer_ephemeral on message_component: {:#?} due to: {}",
-                    message_component, err
+                    "Unable to defer_ephemeral on message_component due to: {}",
+                    err
                 );
                 return;
             }
@@ -45,8 +45,6 @@ pub async fn handle_remove_pmb_roles(
     ctx: &Context,
     message_component: &MessageComponentInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // message_component.defer_ephemeral(&ctx).await?;
-
     let guild_id = match message_component.guild_id {
         Some(guild_id) => guild_id,
         None => {
@@ -84,8 +82,6 @@ pub async fn handle_select_role(
     message_component: &MessageComponentInteraction,
     split: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // message_component.defer_ephemeral(&ctx).await?;
-
     let guild_id = match message_component.guild_id {
         Some(guild_id) => guild_id,
         None => {
