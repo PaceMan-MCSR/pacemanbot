@@ -189,10 +189,8 @@ pub async fn setup_default_roles(
             continue;
         }
         guild
-            .create_role(&ctx.http, |r| r.name(role))
-            .await?
-            .edit(&ctx.http, |r| {
-                r.colour(Color::from_rgb(54, 57, 63).0.into())
+            .create_role(&ctx.http, |r| {
+                r.name(role).colour(Color::from_rgb(54, 57, 63).0.into())
             })
             .await?;
     }

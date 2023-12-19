@@ -27,6 +27,16 @@ pub async fn handle_interaction_create(ctx: &Context, interaction: Interaction) 
         handle_application_command_interaction(ctx, command).await;
     }
     if let Some(message_component) = interaction.as_message_component() {
+        match message_component.defer_ephemeral(&ctx).await {
+            Ok(_) => (),
+            Err(err) => {
+                eprintln!(
+                    "Unable to defer_ephemeral on message_component: {:#?} due to: {}",
+                    message_component, err
+                );
+                return;
+            }
+        };
         handle_message_component_interaction(ctx, message_component).await;
     }
 }
