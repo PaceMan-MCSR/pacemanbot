@@ -45,7 +45,7 @@ pub async fn handle_remove_pmb_roles(
     ctx: &Context,
     message_component: &MessageComponentInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    message_component.defer_ephemeral(&ctx).await?;
+    // message_component.defer_ephemeral(&ctx).await?;
 
     let guild_id = match message_component.guild_id {
         Some(guild_id) => guild_id,
@@ -84,7 +84,7 @@ pub async fn handle_select_role(
     message_component: &MessageComponentInteraction,
     split: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    message_component.defer_ephemeral(&ctx).await?;
+    // message_component.defer_ephemeral(&ctx).await?;
 
     let guild_id = match message_component.guild_id {
         Some(guild_id) => guild_id,
