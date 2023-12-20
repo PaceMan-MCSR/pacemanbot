@@ -5,7 +5,8 @@ use serenity::{
     model::{application::interaction::Interaction, gateway::Ready, prelude::Guild},
 };
 use std::sync::Arc;
-use std::{thread::sleep, time::Duration};
+use std::time::Duration;
+use tokio::time::sleep;
 
 use crate::core::start_main_loop;
 pub struct Handler;
@@ -27,7 +28,7 @@ impl EventHandler for Handler {
         tokio::spawn(async move {
             loop {
                 start_main_loop(ctx.clone()).await;
-                sleep(Duration::from_secs(TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES));
+                sleep(Duration::from_secs(TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES)).await;
             }
         });
     }
