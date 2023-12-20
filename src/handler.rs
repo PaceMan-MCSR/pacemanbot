@@ -1,10 +1,11 @@
-use crate::handler_utils::*;
+use crate::{consts::TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES, handler_utils::*};
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
     model::{application::interaction::Interaction, gateway::Ready, prelude::Guild},
 };
 use std::sync::Arc;
+use std::{thread::sleep, time::Duration};
 
 use crate::core::start_main_loop;
 pub struct Handler;
@@ -23,6 +24,11 @@ impl EventHandler for Handler {
         println!("{} is connected!", ready.user.name);
 
         let ctx = Arc::new(ctx);
-        tokio::spawn(async move { start_main_loop(ctx.clone()).await });
+        tokio::spawn(async move {
+            loop {
+                start_main_loop(ctx.clone()).await;
+                sleep(Duration::from_secs(TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES));
+            }
+        });
     }
 }
