@@ -104,8 +104,8 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
                         .any(|name| name.to_owned() == record.nickname.to_owned())
                     {
                         println!(
-                            "Skipping because user, with uuid '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
-                            record.user.uuid,
+                            "Skipping because user, with name '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
+                            record.nickname,
                             guild_name,
                         );
                         continue;
@@ -206,8 +206,8 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
                     Some(acc) => format!("<https://twitch.tv/{}>", acc),
                     None => {
                         println!(
-                            "Skipping split: '{}' because user with uuid: {} is not live.",
-                            split_desc, record.user.uuid,
+                            "Skipping split: '{}' because user with name: '{}' is not live.",
+                            split_desc, record.nickname,
                         );
                         continue;
                     }
@@ -236,8 +236,8 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
                 {
                     Ok(_) => {
                         println!(
-                            "Sent pace-ping for user with uuid: '{}' for split: '{}' in guild name: {}.", 
-                             record.user.uuid, split_desc, guild_name
+                            "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.", 
+                             record.nickname, split_desc, guild_name
                         );
                     }
                     Err(err) => {
