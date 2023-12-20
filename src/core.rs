@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, thread::sleep, time::Duration};
+use std::{sync::Arc, thread::sleep, time::Duration};
 
 use serenity::prelude::{Context, Mentionable};
 
@@ -6,12 +6,11 @@ use crate::{
     consts::TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES,
     utils::{
         event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api,
-        get_time, get_username_for_uuid, sort_guildroles_based_on_split, split_to_desc,
+        get_time, sort_guildroles_based_on_split, split_to_desc,
     },
 };
 
 pub async fn start_main_loop(ctx: Arc<Context>) {
-    let mut username_cache: HashMap<String, String> = HashMap::new();
     loop {
         let response = match get_response_from_api().await {
             Ok(response) => response,
@@ -22,21 +21,6 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
         };
         let ctx = ctx.clone();
         for record in response.iter() {
-            let uuid = record.user.uuid.replace("-", "");
-            let uuid = uuid.as_str();
-            let record_username;
-            if username_cache.get(uuid).is_some() {
-                record_username = username_cache.get(uuid).unwrap().to_owned();
-            } else {
-                record_username = match get_username_for_uuid(&uuid).await {
-                    Ok(username) => username,
-                    Err(err) => {
-                        eprintln!("Error getting username for uuid: {} due to: {}", uuid, err);
-                        continue;
-                    }
-                };
-                username_cache.insert(uuid.to_owned(), record_username.to_owned());
-            }
             'guild_loop: for guild_id in &ctx.cache.guilds() {
                 let guild_name = match guild_id.name(&ctx.cache) {
                     Some(name) => name,
@@ -117,7 +101,7 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
 
                     if !player_names
                         .iter()
-                        .any(|name| name.to_owned() == record_username)
+                        .any(|name| name.to_owned() == record.nickname.to_owned())
                     {
                         println!(
                             "Skipping because user, with uuid '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
@@ -264,7 +248,7 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
                     }
                 }
             }
-            sleep(Duration::from_secs(TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES));
         }
+        sleep(Duration::from_secs(TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES));
     }
 }

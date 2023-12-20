@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -35,6 +33,7 @@ pub struct Response {
     pub is_cheated: bool,
     pub is_hidden: bool,
     pub last_updated: i64,
+    pub nickname: String,
 }
 
 pub struct ResponseError {
@@ -53,13 +52,4 @@ impl std::fmt::Display for ResponseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{}", self.reason))
     }
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct MojangResponse {
-    id: String,
-    pub name: String,
-    properties: Vec<HashMap<String, String>>,
-    profile_actions: Vec<String>,
 }
