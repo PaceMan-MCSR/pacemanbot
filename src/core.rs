@@ -221,7 +221,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                         );
                         continue;
                     } else {
-                        record.nickname.to_owned()
+                        format!("Offline - {}", record.nickname.to_owned())
                     }
                 }
             };
