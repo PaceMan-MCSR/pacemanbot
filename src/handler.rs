@@ -2,10 +2,14 @@ use crate::{consts::TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES, handler_utils::*};
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
-    model::{application::interaction::Interaction, gateway::Ready, prelude::Guild},
+    model::{
+        application::interaction::Interaction,
+        gateway::Ready,
+        prelude::{Guild, GuildId, Message},
+    },
 };
-use std::sync::Arc;
 use std::time::Duration;
+use std::{collections::HashMap, sync::Arc};
 use tokio::time::sleep;
 
 use crate::core::start_main_loop;
@@ -25,9 +29,10 @@ impl EventHandler for Handler {
         println!("{} is connected!", ready.user.name);
 
         let ctx = Arc::new(ctx);
+        let mut guild_cache: HashMap<GuildId, Vec<Message>> = HashMap::new();
         tokio::spawn(async move {
             loop {
-                start_main_loop(ctx.clone()).await;
+                start_main_loop(ctx.clone(), &mut guild_cache).await;
                 sleep(Duration::from_secs(TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES)).await;
             }
         });

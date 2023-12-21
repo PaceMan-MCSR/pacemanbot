@@ -1,13 +1,16 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
-use serenity::prelude::{Context, Mentionable};
+use serenity::{
+    model::prelude::{GuildId, Message},
+    prelude::{Context, Mentionable},
+};
 
 use crate::utils::{
     event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api, get_time,
     sort_guildroles_based_on_split, split_to_desc,
 };
 
-pub async fn start_main_loop(ctx: Arc<Context>) {
+pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildId, Vec<Message>>) {
     let response = match get_response_from_api().await {
         Ok(response) => response,
         Err(err) => {
@@ -56,6 +59,20 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
                 }
             };
             let guild_roles = sort_guildroles_based_on_split(&guild_roles);
+
+            if guild_cache.get(guild_id).is_none() {
+                let messages = match channel_to_send_to.messages(&ctx, |m| m.limit(100)).await {
+                    Ok(messages) => messages,
+                    Err(err) => {
+                        eprintln!(
+                            "Unable to get messages from #pacemanbot for guild name: {} due to: {}",
+                            guild_name, err
+                        );
+                        continue;
+                    }
+                };
+                guild_cache.insert(guild_id.to_owned(), messages);
+            }
             if channels
                 .iter()
                 .any(|c| c.1.name == "pacemanbot-runner-names")
@@ -122,16 +139,8 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
             }
 
             let mut split = event_id_to_split(last_event.event_id.as_str()).unwrap();
-            let messages = match channel_to_send_to.messages(&ctx, |m| m.limit(100)).await {
-                Ok(messages) => messages,
-                Err(err) => {
-                    eprintln!(
-                        "Unable to get messages from #pacemanbot for guild name: {} due to: {}",
-                        guild_name, err
-                    );
-                    continue;
-                }
-            };
+
+            let messages = guild_cache.get_mut(guild_id).unwrap();
 
             let split_desc = match split_to_desc(split) {
                 Some(desc) => desc,
@@ -233,16 +242,42 @@ pub async fn start_main_loop(ctx: Arc<Context>) {
             {
                 Ok(_) => {
                     println!(
-                            "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.", 
-                             record.nickname, split_desc, guild_name
-                        );
+                        "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.", 
+                         record.nickname, split_desc, guild_name
+                    );
                 }
                 Err(err) => {
                     eprintln!(
                         "Unable to send split: '{}' with roles: {:?} due to: {}",
                         split_desc, roles_to_ping, err
                     );
+                    continue;
                 }
+            }
+
+            let updated_messages = match channel_to_send_to.messages(&ctx, |m| m.limit(1)).await {
+                Ok(messages) => messages,
+                Err(err) => {
+                    eprintln!(
+                        "Unable to get messages from guild name: {} due to: {}",
+                        guild_name, err
+                    );
+                    continue;
+                }
+            };
+            let last_pace_message = match updated_messages.first() {
+                Some(message) => message,
+                None => {
+                    eprintln!(
+                        "Unable to get last pace message from guild name: {}.",
+                        guild_name
+                    );
+                    continue;
+                }
+            };
+            messages.push(last_pace_message.to_owned());
+            if messages.len() > 100 {
+                messages.remove(0);
             }
         }
     }
