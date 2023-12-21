@@ -77,6 +77,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 };
                 guild_cache.insert(guild_id.to_owned(), messages);
             }
+            let mut override_offline = false;
             if channels
                 .iter()
                 .any(|c| c.1.name == "pacemanbot-runner-names")
@@ -93,9 +94,9 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     Ok(messages) => messages,
                     Err(err) => {
                         eprintln!(
-                                "Error getting messages from #pacemanbot-runner-names for guild name: {} due to: {}",
-                                guild_name, err
-                            );
+                            "Error getting messages from #pacemanbot-runner-names for guild name: {} due to: {}",
+                            guild_name, err
+                        );
                         continue;
                     }
                 };
@@ -120,12 +121,13 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     .any(|name| name.to_owned() == record.nickname.to_owned())
                 {
                     println!(
-                            "Skipping because user, with name '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
-                            record.nickname,
-                            guild_name,
-                        );
+                        "Skipping because user, with name '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
+                        record.nickname,
+                        guild_name,
+                    );
                     continue;
                 }
+                override_offline = true;
             }
             let last_event = match record.event_list.last() {
                 Some(event) => event.to_owned(),
@@ -212,11 +214,15 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
             let live_link = match record.user.live_account.to_owned() {
                 Some(acc) => format!("<https://twitch.tv/{}>", acc),
                 None => {
-                    println!(
-                        "Skipping split: '{}' because user with name: '{}' is not live.",
-                        split_desc, record.nickname,
-                    );
-                    continue;
+                    if !override_offline {
+                        println!(
+                            "Skipping split: '{}' because user with name: '{}' is not live.",
+                            split_desc, record.nickname,
+                        );
+                        continue;
+                    } else {
+                        record.nickname.to_owned()
+                    }
                 }
             };
 
