@@ -7,7 +7,7 @@ use serenity::{
 
 use crate::utils::{
     event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api, get_time,
-    sort_guildroles_based_on_split, split_to_desc,
+    split_to_desc,
 };
 
 pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildId, Vec<Message>>) {
@@ -58,7 +58,11 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     continue;
                 }
             };
-            let guild_roles = sort_guildroles_based_on_split(&guild_roles);
+            let guild_roles = guild_roles
+                .iter()
+                .filter(|(_, role)| role.name.starts_with("*"))
+                .map(|(_, role)| role)
+                .collect::<Vec<_>>();
 
             if guild_cache.get(guild_id).is_none() {
                 let messages = match channel_to_send_to.messages(&ctx, |m| m.limit(100)).await {

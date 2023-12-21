@@ -10,7 +10,7 @@ use serenity::{
     model::prelude::component::ButtonStyle::Primary,
 };
 
-use crate::utils::{extract_split_from_role_name, sort_guildroles_based_on_split};
+use crate::utils::extract_split_from_role_name;
 
 pub async fn send_role_selection_message(
     ctx: &Context,
@@ -19,7 +19,7 @@ pub async fn send_role_selection_message(
 ) -> Result<(), Box<dyn std::error::Error>> {
     command.defer(&ctx).await?;
 
-    let roles = sort_guildroles_based_on_split(roles);
+    let roles = roles.iter().map(|(_, role)| role).collect::<Vec<_>>();
     let mut select_bastion_role_action_row = CreateActionRow::default();
     let mut select_fortress_role_action_row = CreateActionRow::default();
     let mut select_blind_role_action_row = CreateActionRow::default();

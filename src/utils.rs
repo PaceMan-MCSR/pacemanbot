@@ -1,10 +1,5 @@
-use std::collections::HashMap;
-
 use regex::Regex;
-use serenity::{
-    model::prelude::{Role, RoleId},
-    prelude::Context,
-};
+use serenity::prelude::Context;
 
 use crate::types::{Response, ResponseError};
 
@@ -35,51 +30,6 @@ pub fn extract_split_from_role_name(role_name: &str) -> (String, u8, u8) {
     (character, minutes, seconds)
 }
 
-pub fn sort_guildroles_based_on_split(roles: &HashMap<RoleId, Role>) -> Vec<Role> {
-    let roles = roles
-        .iter()
-        .map(|(_, role)| role.clone())
-        .filter(|role| role.name.starts_with("*"))
-        .collect::<Vec<_>>();
-
-    // Sort roles by role name, using extract_split_from_role_name to extract the split and time.
-    // Sort first by split in this order : SecondStructure, Blind, EyeSpy, EndEnter
-    // Then sort by minutes, then seconds
-    let mut roles = roles
-        .iter()
-        .map(|role| {
-            let (character, minutes, seconds) = extract_split_from_role_name(&role.name);
-            (role, character, minutes, seconds)
-        })
-        .collect::<Vec<_>>();
-    roles.sort_by(|a, b| {
-        let (_, a_split, a_minutes, a_seconds) = a;
-        let (_, b_split, b_minutes, b_seconds) = b;
-        let order_a = get_split_order_number(&a_split);
-        let order_b = get_split_order_number(&b_split);
-
-        order_a
-            .cmp(&order_b)
-            .then_with(|| a_minutes.cmp(&b_minutes))
-            .then_with(|| a_seconds.cmp(&b_seconds))
-    });
-    roles
-        .iter()
-        .map(|(role, _, _, _)| role.to_owned())
-        .cloned()
-        .collect::<Vec<Role>>()
-}
-
-fn get_split_order_number(split: &str) -> usize {
-    match split {
-        "FS" => 0,
-        "SS" => 1,
-        "B" => 2,
-        "E" => 3,
-        "EE" => 4,
-        _ => 5,
-    }
-}
 pub fn get_time(milliseconds: u64) -> (u8, u8) {
     let seconds_total = milliseconds / 1000;
     let minutes = seconds_total / 60;
