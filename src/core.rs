@@ -77,7 +77,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 };
                 guild_cache.insert(guild_id.to_owned(), messages);
             }
-            let mut override_offline = false;
+            let mut player_in_runner_names = false;
             if channels
                 .iter()
                 .any(|c| c.1.name == "pacemanbot-runner-names")
@@ -127,7 +127,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     );
                     continue;
                 }
-                override_offline = true;
+                player_in_runner_names = true;
             }
             let last_event = match record.event_list.last() {
                 Some(event) => event.to_owned(),
@@ -177,15 +177,15 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
             }
 
             if split == "Ba" {
-                if record
+                if !record
                     .event_list
                     .iter()
                     .filter(|evt| evt != &last_event)
                     .any(|evt| evt.event_id == "rsg.enter_fortress")
                 {
-                    split = &"SS";
-                } else {
                     split = &"FS";
+                } else if player_in_runner_names {
+                    split = &"SS";
                 }
             } else if split == "F" {
                 if record
@@ -195,7 +195,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     .any(|evt| evt.event_id == "rsg.enter_bastion")
                 {
                     split = &"SS";
-                } else {
+                } else if player_in_runner_names {
                     split = &"FS";
                 }
             }
@@ -214,7 +214,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
             let live_link = match record.user.live_account.to_owned() {
                 Some(acc) => format!("<https://twitch.tv/{}>", acc),
                 None => {
-                    if !override_offline {
+                    if !player_in_runner_names {
                         println!(
                             "Skipping split: '{}' because user with name: '{}' is not live.",
                             split_desc, record.nickname,
