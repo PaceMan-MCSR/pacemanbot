@@ -105,14 +105,21 @@ pub async fn handle_select_role(
     };
     let mut member = guild_id.member(&ctx, member.user.id).await?;
 
-    // Remove all PMB roles
-    remove_roles_starting_with(&ctx, &guild_id, &mut member, format!("*{}", split).as_str()).await;
-
     // Add the new roles
+    let mut remove_roles = true;
     let mut roles_to_add = Vec::new();
     for value in &message_component.data.values {
+        if value.contains("PB") {
+            remove_roles = false;
+        }
         roles_to_add.push(RoleId(value.parse::<u64>()?));
     }
+    // Remove all PMB roles
+    if remove_roles {
+        remove_roles_starting_with(&ctx, &guild_id, &mut member, format!("*{}", split).as_str())
+            .await;
+    }
+
     member.add_roles(&ctx, &roles_to_add).await?;
 
     // Respond to the interaction

@@ -13,7 +13,7 @@ pub async fn remove_roles_starting_with(
     let guild_roles = guild_id.roles(&ctx.http).await.unwrap();
     for role_id in member.roles.clone() {
         let role = guild_roles.get(&role_id).unwrap().clone();
-        if role.name.starts_with(role_prefix) {
+        if role.name.starts_with(role_prefix) && !role.name.contains("PB") {
             member.remove_role(&ctx.http, role_id).await.unwrap();
         }
     }
