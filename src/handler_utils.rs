@@ -11,7 +11,8 @@ use serenity::{
 
 use crate::{
     components::{
-        send_role_selection_message, setup_default_commands, setup_default_roles, setup_roles,
+        send_role_selection_message, setup_default_commands, setup_default_roles, setup_pb_roles,
+        setup_roles,
     },
     utils::remove_roles_starting_with,
 };
@@ -150,6 +151,7 @@ pub async fn handle_application_command_interaction(
         "send_message" => send_role_selection_message(&ctx, &roles, command).await,
         "setup_default_roles" => setup_default_roles(&ctx, guild_id, command).await,
         "setup_roles" => setup_roles(&ctx, guild_id, command).await,
+        "setup_pb_roles" => setup_pb_roles(&ctx, guild_id, command).await,
         _ => {
             eprintln!("Unrecognized command: {}.", command.data.name);
             return;

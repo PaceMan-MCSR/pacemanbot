@@ -7,7 +7,7 @@ use serenity::{
 
 use crate::utils::{
     event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api, get_time,
-    split_to_desc,
+    split_to_desc, extract_split_from_pb_role_name, extract_name_and_splits_from_line,
 };
 
 pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildId, Vec<Message>>) {
@@ -76,6 +76,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 guild_cache.insert(guild_id.to_owned(), messages);
             }
             let mut player_in_runner_names = false;
+            let mut player_splits: HashMap<String, u8> = HashMap::new(); 
             if channels.iter().any(|c| c.name == "pacemanbot-runner-names") {
                 let channel_containing_player_names = channels
                     .iter()
@@ -111,19 +112,40 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     .split("\n")
                     .map(|s| s.to_string())
                     .collect::<Vec<String>>();
+    
+                let split_codes = vec!["FS", "SS", "B", "E", "EE"];
+                
+                for line in player_names.iter(){
+                    let (player_name, splits) = match extract_name_and_splits_from_line(line.as_str()){
+                        Ok(tup) => tup,
+                        Err(err) => {
+                            eprintln!("Unable to parse runner-names in guild, with name {} due to: {}", guild_name, err);
+                            continue 'guild_loop;
+                        }
+                    };
+                    
+                    // Nish did this :PagMan:
+                    if player_name.to_lowercase() == record.nickname.to_owned().to_lowercase(){
+                        let mut split_no = 0;
+                        for split_minutes in splits{
+                            let split = split_codes[split_no];
+                            player_splits.insert(split.to_string(), split_minutes);
+                            split_no += 1;
+                        }
+                        player_in_runner_names = true;
+                        break;
+                    }
+                }
 
-                if !player_names
-                    .iter()
-                    .any(|name| name.to_owned() == record.nickname.to_owned())
-                {
+                if !player_in_runner_names{
                     println!(
-                        "Skipping because user, with name '{}', is not in this guild, with guild name: {}, or is not in the runners' channel.",
-                        record.nickname,
-                        guild_name,
-                    );
+                        "Skipping because player, with name '{}' is not in this guild, with guild name: '{}', or is not in the runners channel.", 
+                         record.nickname.to_owned(),
+                         guild_name
+                     );
                     continue;
                 }
-                player_in_runner_names = true;
+                
             }
             let last_event = match record.event_list.last() {
                 Some(event) => event.to_owned(),
@@ -198,12 +220,18 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
             let roles_to_ping = guild_roles
                 .iter()
                 .filter(|role| {
-                    let (role_split_name, role_minutes, role_seconds) =
-                        extract_split_from_role_name(role.name.as_str());
                     let (split_minutes, split_seconds) = get_time(last_event.igt as u64);
-                    role_split_name == *split
-                        && role_minutes >= split_minutes
-                        && (role_minutes != split_minutes || role_seconds >= split_seconds)
+                    if role.name.contains("PB") && player_in_runner_names{
+                        let role_split = extract_split_from_pb_role_name(role.name.as_str());
+                        let pb_minutes = player_splits.get(&role_split).unwrap().to_owned();
+                        role_split == *split && pb_minutes >= split_minutes
+                    } else{
+                        let (role_split_name, role_minutes, role_seconds) =
+                            extract_split_from_role_name(role.name.as_str());
+                        role_split_name == *split
+                            && role_minutes >= split_minutes
+                            && (role_minutes != split_minutes || role_seconds >= split_seconds)
+                    }
                 })
                 .collect::<Vec<_>>();
 

@@ -30,6 +30,34 @@ pub fn extract_split_from_role_name(role_name: &str) -> (String, u8, u8) {
     (character, minutes, seconds)
 }
 
+pub fn extract_split_from_pb_role_name(role_name: &str) -> String {
+    let role_name = role_name.replace("*", "");
+    let role_name = role_name.replace(" ", "");
+    let role_name = role_name.replace("PB", "");
+    role_name
+}
+
+pub fn extract_name_and_splits_from_line(
+    line: &str,
+) -> Result<(String, Vec<u8>), Box<dyn std::error::Error>> {
+    let line = line.trim();
+    let line = line.replace(" ", "");
+    let line_splits = line.split(':').collect::<Vec<&str>>();
+    if line_splits.len() != 2 {
+        return Err(format!("Unable to parse line contents: '{}'.", line).into());
+    }
+    let (player_name, splits_string) = (line_splits[0], line_splits[1]);
+    let splits = splits_string.split('/').collect::<Vec<&str>>();
+    if splits.len() != 5 {
+        return Err(format!("Unable to parse line contents: '{}'.", line).into());
+    }
+    let splits = splits
+        .iter()
+        .map(|split| split.parse::<u8>().unwrap())
+        .collect::<Vec<u8>>();
+    Ok((player_name.to_string(), splits))
+}
+
 pub fn get_time(milliseconds: u64) -> (u8, u8) {
     let seconds_total = milliseconds / 1000;
     let minutes = seconds_total / 60;

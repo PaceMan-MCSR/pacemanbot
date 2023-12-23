@@ -10,7 +10,7 @@ use serenity::{
     model::prelude::component::ButtonStyle::Primary,
 };
 
-use crate::utils::extract_split_from_role_name;
+use crate::utils::{extract_split_from_pb_role_name, extract_split_from_role_name};
 
 pub async fn send_role_selection_message(
     ctx: &Context,
@@ -26,6 +26,9 @@ pub async fn send_role_selection_message(
     let mut select_eye_spy_role_action_row = CreateActionRow::default();
     let mut select_end_enter_role_action_row = CreateActionRow::default();
     let send_bastion_picker = roles.iter().any(|role| {
+        if role.name.contains("PB") {
+            return false;
+        }
         let (split, _minutes, _seconds) = extract_split_from_role_name(&role.name);
         split == "FS"
     });
@@ -35,14 +38,30 @@ pub async fn send_role_selection_message(
             .options(|o| {
                 for role in &roles {
                     if role.name.starts_with("*") {
-                        let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "FS" {
-                            o.add_option(
-                                CreateSelectMenuOption::default()
-                                    .label(format!("Sub {}:{:02} Structure 1", minutes, seconds))
-                                    .value(role.id.to_string())
-                                    .to_owned(),
-                            );
+                        if role.name.contains("PB") {
+                            let split = extract_split_from_pb_role_name(&role.name);
+                            if split == "FS" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label("PB Pace Structure 1")
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
+                        } else {
+                            let (split, minutes, seconds) =
+                                extract_split_from_role_name(&role.name);
+                            if split == "FS" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label(format!(
+                                            "Sub {}:{:02} Structure 1",
+                                            minutes, seconds
+                                        ))
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
                         }
                     }
                 }
@@ -55,14 +74,30 @@ pub async fn send_role_selection_message(
             .options(|o| {
                 for role in &roles {
                     if role.name.starts_with("*") {
-                        let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "SS" {
-                            o.add_option(
-                                CreateSelectMenuOption::default()
-                                    .label(format!("Sub {}:{:02} Structure 2", minutes, seconds))
-                                    .value(role.id.to_string())
-                                    .to_owned(),
-                            );
+                        if role.name.contains("PB") {
+                            let split = extract_split_from_pb_role_name(&role.name);
+                            if split == "SS" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label("PB Pace Structure 2")
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
+                        } else {
+                            let (split, minutes, seconds) =
+                                extract_split_from_role_name(&role.name);
+                            if split == "SS" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label(format!(
+                                            "Sub {}:{:02} Structure 2",
+                                            minutes, seconds
+                                        ))
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
                         }
                     }
                 }
@@ -75,14 +110,27 @@ pub async fn send_role_selection_message(
             .options(|o| {
                 for role in &roles {
                     if role.name.starts_with("*") {
-                        let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "B" {
-                            o.add_option(
-                                CreateSelectMenuOption::default()
-                                    .label(format!("Sub {}:{:02} Blind", minutes, seconds))
-                                    .value(role.id.to_string())
-                                    .to_owned(),
-                            );
+                        if role.name.contains("PB") {
+                            let split = extract_split_from_pb_role_name(&role.name);
+                            if split == "B" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label("PB Pace Blind")
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
+                        } else {
+                            let (split, minutes, seconds) =
+                                extract_split_from_role_name(&role.name);
+                            if split == "B" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label(format!("Sub {}:{:02} Blind", minutes, seconds))
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
                         }
                     }
                 }
@@ -95,14 +143,27 @@ pub async fn send_role_selection_message(
             .options(|o| {
                 for role in &roles {
                     if role.name.starts_with("*") {
-                        let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "E" {
-                            o.add_option(
-                                CreateSelectMenuOption::default()
-                                    .label(format!("Sub {}:{:02} Eye Spy", minutes, seconds))
-                                    .value(role.id.to_string())
-                                    .to_owned(),
-                            );
+                        if role.name.contains("PB") {
+                            let split = extract_split_from_pb_role_name(&role.name);
+                            if split == "E" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label("PB Pace Eye Spy")
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
+                        } else {
+                            let (split, minutes, seconds) =
+                                extract_split_from_role_name(&role.name);
+                            if split == "E" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label(format!("Sub {}:{:02} Eye Spy", minutes, seconds))
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
                         }
                     }
                 }
@@ -115,14 +176,27 @@ pub async fn send_role_selection_message(
             .options(|o| {
                 for role in &roles {
                     if role.name.starts_with("*") {
-                        let (split, minutes, seconds) = extract_split_from_role_name(&role.name);
-                        if split == "EE" {
-                            o.add_option(
-                                CreateSelectMenuOption::default()
-                                    .label(format!("Sub {}:{:02} End Enter", minutes, seconds))
-                                    .value(role.id.to_string())
-                                    .to_owned(),
-                            );
+                        if role.name.contains("PB") {
+                            let split = extract_split_from_pb_role_name(&role.name);
+                            if split == "EE" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label("PB Pace End Enter")
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
+                        } else {
+                            let (split, minutes, seconds) =
+                                extract_split_from_role_name(&role.name);
+                            if split == "EE" {
+                                o.add_option(
+                                    CreateSelectMenuOption::default()
+                                        .label(format!("Sub {}:{:02} End Enter", minutes, seconds))
+                                        .value(role.id.to_string())
+                                        .to_owned(),
+                                );
+                            }
                         }
                     }
                 }
@@ -299,6 +373,33 @@ pub async fn setup_roles(
     Ok(())
 }
 
+pub async fn setup_pb_roles(
+    ctx: &Context,
+    guild: GuildId,
+    command: &ApplicationCommandInteraction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    command.defer_ephemeral(&ctx).await?;
+    let splits: Vec<&str> = vec!["FS", "SS", "B", "E", "EE"];
+    let roles = guild.roles(&ctx).await?;
+    for split in splits {
+        let role_name = format!("*{}PB", split);
+        if !roles.iter().any(|(_, role)| role.name == role_name) {
+            guild
+                .create_role(ctx, |r| {
+                    r.name(role_name)
+                        .colour(Color::from_rgb(54, 57, 63).0.into())
+                })
+                .await?;
+        }
+    }
+    command
+        .edit_original_interaction_response(&ctx.http, |data| {
+            data.content("PB Pace pace-roles have been setup!")
+        })
+        .await?;
+    Ok(())
+}
+
 pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
     match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
         commands.create_application_command(|command| {
@@ -310,6 +411,11 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
             command
                 .name("setup_default_roles")
                 .description("Setup default pace-roles for sub 10.")
+        });
+        commands.create_application_command(|command| {
+            command.name("setup_pb_roles").description(
+                "Setup split PB pace-roles(as specified per runner in #pacemanbot-runner-names).",
+            )
         });
         commands.create_application_command(|command| {
             command

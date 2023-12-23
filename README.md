@@ -7,9 +7,16 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 - Go to your server settings and go into the `Integrations` tab. Under there, select `PaceManBot` and just disable the option that says `@everyone` under `Role & Members`. You can add in like an `admin` role and enable that role to be able to use this role in this same tab.
 - Now in your discord server, create a new channel named `#pacemanbot`.
 - This is where your pace pings will go. So make sure to give the role `PaceManBot` all the necessary perms for sending, reading and mentioning roles in that channel.
-- And then, create a new channel named `#pacemanbot-runner-names` and send a message in that channel with your in-game name. You can even make this channel private but make sure to give the `Read Messages` permission to the `PaceManBot` role for this channel.
-- This channel will be used to see what runner's pace-pings need to be sent in this server. So if you want to add more runners, just edit the first message in the channel and add the new runner's in-game name in a new line.
-- This channel is optional however and if it is absent, the bot will check every runner's pace and send them if the conditions are met.
+- And then, create a new channel named `#pacemanbot-runner-names` and send a message in that channel with your in-game name along with the splits that you are going for along with it in the following format
+```
+<in-game name> : <first structure>/<second structure>/<blind>/<eye spy>/<end enter>
+```
+- Eg: `SathyaPramodh : 10/20/30/40/50` would be a valid runner name entry.
+- This method of pinging only works rounded to the minute at the moment. So getting pinged for say a Sub 3:30 bastion enter would not be possible with this config.
+- This method is useful also when you have a huge number of runners with varied PBs in your server.
+- You can even make this channel private but make sure to give the `Read Messages` permission to the `PaceManBot` role for this channel.
+- This channel will be used to see what runner's pace-pings need to be sent in this server. So if you want to add more runners, just edit the first message in the channel and add the new runner's in-game name and their splits in a new line.
+- This channel is optional however and if it is absent, the bot will check every runner's pace and send them if the conditions are met and the bot will send online pings only (pings only when the runner is live).
 - Now in any channel (doesn't matter), type in `/setup_roles` and the command takes in a couple of required options:
   - `split_name`: This is the name of the split whose roles you want to configure. It can take values like `first_structure`, `second_structure`, `blind`, `eye_spy` and `end_enter`. Any other split name given would just be disregarded.
   - `split_start`: This is the lower bound of the igt in minutes that you want your pace-roles to start from.
