@@ -29,6 +29,8 @@ impl EventHandler for Handler {
         println!("{} is connected!", ready.user.name);
 
         let ctx = Arc::new(ctx);
+        ctx.cache.set_max_messages(100);
+
         let mut guild_cache: HashMap<GuildId, Vec<Message>> = HashMap::new();
         tokio::spawn(async move {
             loop {

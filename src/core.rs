@@ -28,18 +28,15 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     continue;
                 }
             };
-            let channels = match guild_id.channels(&ctx).await {
-                Ok(channels) => channels,
-                Err(err) => {
-                    eprintln!(
-                        "Error getting channels in guild name: {} due to: {}",
-                        guild_name, err
-                    );
+            let channels = match ctx.cache.guild_channels(guild_id) {
+                Some(channels) => channels.to_owned(),
+                None => {
+                    eprintln!("Unable to get channels for guild with name: {}", guild_name);
                     continue;
                 }
             };
-            let (channel_to_send_to, _) = match channels.iter().find(|c| c.1.name == "pacemanbot") {
-                Some(tup) => tup,
+            let channel_to_send_to = match channels.iter().find(|c| c.name == "pacemanbot") {
+                Some(channel) => channel,
                 None => {
                     eprintln!(
                         "Error finding #pacemanbot channel in guild name: {}.",
@@ -48,13 +45,10 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     continue;
                 }
             };
-            let guild_roles = match guild_id.roles(&ctx).await {
-                Ok(roles) => roles,
-                Err(err) => {
-                    eprintln!(
-                        "Unable to get roles in guild name: {} due to: {}",
-                        guild_name, err
-                    );
+            let guild_roles = match ctx.cache.guild_roles(guild_id) {
+                Some(roles) => roles,
+                None => {
+                    eprintln!("Unable to get roles in guild name: {}.", guild_name);
                     continue;
                 }
             };
@@ -78,13 +72,10 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 guild_cache.insert(guild_id.to_owned(), messages);
             }
             let mut player_in_runner_names = false;
-            if channels
-                .iter()
-                .any(|c| c.1.name == "pacemanbot-runner-names")
-            {
-                let (channel_containing_player_names, _) = channels
+            if channels.iter().any(|c| c.name == "pacemanbot-runner-names") {
+                let channel_containing_player_names = channels
                     .iter()
-                    .find(|c| c.1.name == "pacemanbot-runner-names")
+                    .find(|c| c.name == "pacemanbot-runner-names")
                     .unwrap();
 
                 let messages = match channel_containing_player_names
@@ -101,20 +92,21 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     }
                 };
 
-                let player_names = match messages.last() {
-                                Some(message) => message,
-                                None => {
-                                    eprintln!(
-                                        "Error getting first message from #pacemanbot-runner-names for guild name: {}",
-                                        guild_name
-                                    );
-                                    continue;
-                                }
-                            }
-                            .content
-                            .split("\n")
-                            .map(|s| s.to_string())
-                            .collect::<Vec<String>>();
+                let player_names = 
+                    match messages.last() {
+                        Some(message) => message,
+                        None => {
+                            eprintln!(
+                                "Error getting first message from #pacemanbot-runner-names for guild name: {}",
+                                guild_name
+                            );
+                            continue;
+                        }
+                    }
+                    .content
+                    .split("\n")
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>();
 
                 if !player_names
                     .iter()
@@ -245,16 +237,17 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     .collect::<Vec<_>>()
                     .join(" "),
             );
-
+            let message_id;
             match channel_to_send_to
                 .send_message(&ctx, |m| m.content(content))
                 .await
             {
-                Ok(_) => {
+                Ok(message) => {
                     println!(
                         "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.", 
                          record.nickname, split_desc, guild_name
                     );
+                    message_id = message.id;
                 }
                 Err(err) => {
                     eprintln!(
@@ -265,21 +258,11 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 }
             }
 
-            let updated_messages = match channel_to_send_to.messages(&ctx, |m| m.limit(1)).await {
-                Ok(messages) => messages,
-                Err(err) => {
-                    eprintln!(
-                        "Unable to get messages from guild name: {} due to: {}",
-                        guild_name, err
-                    );
-                    continue;
-                }
-            };
-            let last_pace_message = match updated_messages.first() {
+            let last_pace_message = match ctx.cache.message(channel_to_send_to.id, message_id) {
                 Some(message) => message,
                 None => {
                     eprintln!(
-                        "Unable to get last pace message from guild name: {}.",
+                        "Unable to construct last pace message from message id in guild name: {}.",
                         guild_name
                     );
                     continue;
