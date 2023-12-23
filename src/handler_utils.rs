@@ -3,7 +3,7 @@ use serenity::{
     model::{
         prelude::{
             application_command::ApplicationCommandInteraction,
-            message_component::MessageComponentInteraction, Activity, GuildId, Interaction, Role,
+            message_component::MessageComponentInteraction, Activity, GuildId, Interaction
             RoleId,
         },
         user::OnlineStatus,
