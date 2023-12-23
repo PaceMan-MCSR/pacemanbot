@@ -8,12 +8,16 @@ pub async fn remove_roles_starting_with(
     guild_id: &serenity::model::prelude::GuildId,
     member: &mut serenity::model::prelude::Member,
     role_prefix: &str,
+    skip_pb_roles: bool,
 ) {
     // Remove roles starting with role_prefix
     let guild_roles = guild_id.roles(&ctx.http).await.unwrap();
     for role_id in member.roles.clone() {
         let role = guild_roles.get(&role_id).unwrap().clone();
-        if role.name.starts_with(role_prefix) && !role.name.contains("PB") {
+        if role.name.starts_with(role_prefix) {
+            if skip_pb_roles && role.name.contains("PB") {
+                continue;
+            }
             member.remove_role(&ctx.http, role_id).await.unwrap();
         }
     }

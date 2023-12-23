@@ -69,7 +69,7 @@ pub async fn handle_remove_pmb_roles(
     let mut member = guild_id.member(&ctx, member.user.id).await?;
 
     // Remove all PMB roles
-    remove_roles_starting_with(&ctx, &guild_id, &mut member, "*").await;
+    remove_roles_starting_with(&ctx, &guild_id, &mut member, "*", false).await;
 
     // Respond to the interaction
     message_component
@@ -127,8 +127,30 @@ pub async fn handle_select_role(
     }
     // Remove all PMB roles
     if remove_roles {
-        remove_roles_starting_with(&ctx, &guild_id, &mut member, format!("*{}", split).as_str())
-            .await;
+        remove_roles_starting_with(
+            &ctx,
+            &guild_id,
+            &mut member,
+            format!("*{}", split).as_str(),
+            true,
+        )
+        .await;
+    } else {
+        let member_roles = match member.roles(&ctx) {
+            Some(roles) => roles,
+            None => {
+                return Err(format!(
+                    "Unable to get roles for member with name: {}.",
+                    member.display_name()
+                )
+                .into())
+            }
+        };
+        for role in member_roles {
+            if role.name.starts_with(&format!("*{}", split)) && role.name.contains("PB") {
+                member.remove_role(&ctx, role.id).await?;
+            }
+        }
     }
 
     member.add_roles(&ctx, &roles_to_add).await?;
