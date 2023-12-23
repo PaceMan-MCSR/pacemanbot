@@ -26,7 +26,7 @@ pub async fn send_role_selection_message(
     let mut select_eye_spy_role_action_row = CreateActionRow::default();
     let mut select_end_enter_role_action_row = CreateActionRow::default();
     let send_bastion_picker = roles.iter().any(|role| {
-        if role.name.contains("PB") {
+        if !role.name.starts_with("*") || (role.name.starts_with("*") && role.name.contains("PB")) {
             return false;
         }
         let (split, _minutes, _seconds) = extract_split_from_role_name(&role.name);
