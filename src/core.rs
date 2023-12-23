@@ -11,13 +11,17 @@ use crate::utils::{
 };
 
 pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildId, Vec<Message>>) {
-    let response = match get_response_from_api().await {
+    let mut response = match get_response_from_api().await {
         Ok(response) => response,
         Err(err) => {
             eprintln!("{}", err);
             return;
         }
     };
+    response.sort_by(|r1, r2|{
+        r1.event_list.len().cmp(&r2.event_list.len())
+    });
+    response.reverse();
     let ctx = ctx.clone();
     for record in response.iter() {
         'guild_loop: for guild_id in &ctx.cache.guilds() {
