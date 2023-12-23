@@ -12,6 +12,7 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 <in-game name> : <first structure>/<second structure>/<blind>/<eye spy>/<end enter>
 ```
 - Eg: `SathyaPramodh : 10/20/30/40/50` would be a valid runner name entry.
+- Now run `/setup_pb_roles` in any channel to setup the valid PB roles to ping for these runners.
 - This method of pinging only works rounded to the minute at the moment. So getting pinged for say a Sub 3:30 bastion enter would not be possible with this config.
 - This method is useful also when you have a huge number of runners with varied PBs in your server.
 - You can even make this channel private but make sure to give the `Read Messages` permission to the `PaceManBot` role for this channel.
