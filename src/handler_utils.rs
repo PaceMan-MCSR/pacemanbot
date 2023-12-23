@@ -3,7 +3,8 @@ use serenity::{
     model::{
         prelude::{
             application_command::ApplicationCommandInteraction,
-            message_component::MessageComponentInteraction, Activity, GuildId, Interaction, RoleId,
+            message_component::MessageComponentInteraction, Activity, GuildId, Interaction, Role,
+            RoleId,
         },
         user::OnlineStatus,
     },
@@ -109,10 +110,21 @@ pub async fn handle_select_role(
     let mut remove_roles = true;
     let mut roles_to_add = Vec::new();
     for value in &message_component.data.values {
-        if value.contains("PB") {
+        let role_id = RoleId(value.parse::<u64>()?);
+        let role_name = match role_id.to_role_cached(&ctx.cache) {
+            Some(role) => role.name,
+            None => {
+                return Err(format!(
+                    "Unable to convert role id: {} to role for guild id: {}.",
+                    role_id, guild_id
+                )
+                .into())
+            }
+        };
+        if role_name.contains("PB") {
             remove_roles = false;
         }
-        roles_to_add.push(RoleId(value.parse::<u64>()?));
+        roles_to_add.push(role_id);
     }
     // Remove all PMB roles
     if remove_roles {
