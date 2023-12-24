@@ -139,8 +139,8 @@ pub async fn update_leaderboard(
     let messages = leaderboard_channel.messages(&ctx, |m| m.limit(1)).await?;
     if messages.is_empty() {
         let leaderboard_content = format!(
-            "## Runner Leaderboard\n\n{}\t\t`{}:{}`",
-            nickname, time.0, time.1,
+            "## Runner Leaderboard\n\n`{}:{}`\t\t{}",
+            time.0, time.1, nickname
         );
         leaderboard_channel
             .send_message(&ctx.http, |m| m.content(leaderboard_content))
@@ -155,8 +155,8 @@ pub async fn update_leaderboard(
         let mut player_names_with_time: HashMap<String, u64> = HashMap::new();
         for l in leaderboard_lines {
             let splits = l.split("\t\t").collect::<Vec<&str>>();
-            let player_name = splits[0];
-            let time = splits[1].replace("`", "");
+            let player_name = splits[1];
+            let time = splits[0].replace("`", "");
             let time_splits = time
                 .split(':')
                 .map(|sp| sp.parse::<u8>().unwrap())
@@ -182,7 +182,7 @@ pub async fn update_leaderboard(
         for entry in entry_vector {
             let name = entry.0;
             let time = format_time(entry.1.to_owned());
-            updated_contents.push(format!("{}\t\t`{}`", name, time));
+            updated_contents.push(format!("`{}`\t\t{}", time, name));
         }
         let leaderboard_content =
             format!("## Runner Leaderboard\n\n{}", updated_contents.join("\n"));
