@@ -168,7 +168,7 @@ pub async fn update_leaderboard(
         let current_finish_time = time.0 as u64 * 60000 + time.1 as u64 * 1000;
         if player_names_with_time.get(&nickname).is_some() {
             let time = player_names_with_time.get(&nickname).unwrap();
-            if time < &current_finish_time {
+            if time > &current_finish_time {
                 player_names_with_time.insert(nickname.to_owned(), current_finish_time);
             }
         } else {
