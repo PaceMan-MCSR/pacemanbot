@@ -164,7 +164,15 @@ pub async fn update_leaderboard(
             let time_millis: u64 = minutes as u64 * 60000 + seconds as u64 * 1000;
             player_names_with_time.insert(player_name.to_owned(), time_millis);
         }
-        player_names_with_time.insert(nickname, time.0 as u64 * 60000 + time.1 as u64 * 1000);
+        let current_finish_time = time.0 as u64 * 60000 + time.1 as u64 * 1000;
+        if player_names_with_time.get(&nickname).is_some() {
+            let time = player_names_with_time.get(&nickname).unwrap();
+            if time < &current_finish_time {
+                player_names_with_time.insert(nickname.to_owned(), current_finish_time);
+            }
+        } else {
+            player_names_with_time.insert(nickname, time.0 as u64 * 60000 + time.1 as u64 * 1000);
+        }
         let mut entry_vector: Vec<(&String, &u64)> = player_names_with_time
             .iter()
             .collect::<Vec<(&String, &u64)>>();
