@@ -221,7 +221,10 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 .iter()
                 .filter(|role| {
                     let (split_minutes, split_seconds) = get_time(last_event.igt as u64);
-                    if role.name.contains("PB") && player_in_runner_names{
+                    if role.name.contains("PB") {
+                        if !player_in_runner_names{
+                            return false;
+                        }
                         let role_split = extract_split_from_pb_role_name(role.name.as_str());
                         let pb_minutes = player_splits.get(&role_split).unwrap().to_owned();
                         role_split == *split && pb_minutes >= split_minutes
@@ -259,9 +262,10 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
             }
 
             let content = format!(
-                "## {} - {}\n\n{}\n{}",
+                "## {} - {}\n<t:{}:R>\n\n{}\n{}",
                 format_time(last_event.igt as u64),
                 split_desc,
+                (record.last_updated/1000) as u64,
                 live_link,
                 roles_to_ping
                     .iter()
