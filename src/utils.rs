@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use regex::Regex;
-use serenity::prelude::Context;
+use serenity::{model::prelude::GuildId, prelude::Context};
 
 use crate::types::{Response, ResponseError};
 
@@ -115,4 +117,69 @@ pub fn split_to_desc(split: &str) -> Option<&str> {
         "EE" => Some("Enter End"),
         _ => None,
     }
+}
+
+pub async fn update_leaderboard(
+    ctx: &Context,
+    guild_id: &GuildId,
+    nickname: String,
+    time: (u8, u8),
+) -> Result<(), Box<dyn std::error::Error>> {
+    let channels = match ctx.cache.guild_channels(guild_id) {
+        Some(channels) => channels,
+        None => return Err("Unable to get channels.".into()),
+    };
+    let leaderboard_channel = match channels
+        .iter()
+        .find(|c| c.name == "pacemanbot-runner-leaderboard")
+    {
+        Some(channel) => channel,
+        None => return Err("No channel with name: 'pacemanbot-runner-leaderboard'.".into()),
+    };
+    let messages = leaderboard_channel.messages(&ctx, |m| m.limit(1)).await?;
+    if messages.is_empty() {
+        let leaderboard_content = format!(
+            "## Runner Leaderboard\n\n{}\t\t`{}:{}`",
+            nickname, time.0, time.1,
+        );
+        leaderboard_channel
+            .send_message(&ctx.http, |m| m.content(leaderboard_content))
+            .await?;
+    } else {
+        let first_message = messages.last().unwrap().content.to_owned();
+        let leaderboard_lines = first_message
+            .split("\n")
+            .filter(|l| l != &"## Runner Leaderboard" && l != &"")
+            .collect::<Vec<&str>>();
+        let mut player_names_with_time: HashMap<String, u64> = HashMap::new();
+        for l in leaderboard_lines {
+            let splits = l.split("\t\t").collect::<Vec<&str>>();
+            let player_name = splits[0];
+            let time = splits[1].replace("`", "");
+            let time_splits = time
+                .split(':')
+                .map(|sp| sp.parse::<u8>().unwrap())
+                .collect::<Vec<u8>>();
+            let (minutes, seconds) = (time_splits[0], time_splits[1]);
+            let time_millis: u64 = minutes as u64 * 60000 + seconds as u64 * 1000;
+            player_names_with_time.insert(player_name.to_owned(), time_millis);
+        }
+        player_names_with_time.insert(nickname, time.0 as u64 * 60000 + time.1 as u64 * 1000);
+        let mut entry_vector: Vec<(&String, &u64)> = player_names_with_time
+            .iter()
+            .collect::<Vec<(&String, &u64)>>();
+        entry_vector.sort_by(|a, b| a.1.cmp(b.1));
+        let mut updated_contents: Vec<String> = vec![];
+        for entry in entry_vector {
+            let name = entry.0;
+            let time = format_time(entry.1.to_owned());
+            updated_contents.push(format!("{}\t\t{}", name, time));
+        }
+        let leaderboard_content =
+            format!("## Runner Leaderboard\n\n{}", updated_contents.join("\n"));
+        leaderboard_channel
+            .send_message(&ctx, |m| m.content(leaderboard_content))
+            .await?;
+    }
+    Ok(())
 }

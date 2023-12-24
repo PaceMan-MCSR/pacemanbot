@@ -7,7 +7,7 @@ use serenity::{
 
 use crate::utils::{
     event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api, get_time,
-    split_to_desc, extract_split_from_pb_role_name, extract_name_and_splits_from_line,
+    split_to_desc, extract_split_from_pb_role_name, extract_name_and_splits_from_line, update_leaderboard,
 };
 
 pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildId, Vec<Message>>) {
@@ -154,6 +154,31 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     continue;
                 }
             };
+
+            if last_event.event_id.as_str() == "rsg.credits" && player_in_runner_names{
+                let runner_name = record.nickname.to_owned();
+                let (minutes, seconds) = get_time(last_event.igt as u64);
+                match update_leaderboard(&ctx, guild_id, runner_name.to_owned(), (minutes, seconds)).await{
+                    Ok(_) => {
+                        println!(
+                            "Updated leaderboard in #pacemanbot-runner-leaderboard for guild name: {}, runner name: {} with time: {}.", 
+                            guild_name, 
+                            runner_name, 
+                            format_time(last_event.igt as u64),
+                        );
+                        continue;
+                    },
+                    Err(err) =>{
+                        eprintln!(
+                            "Unable to update leaderboard in guild name: {} for runner name: {} due to: {}",
+                            guild_name, 
+                            record.nickname.to_owned(), 
+                            err
+                        );
+                        continue;
+                    }
+                };
+            }
             if event_id_to_split(last_event.event_id.as_str()).is_none() {
                 println!(
                     "Skipping event id: '{}' as it is unrecognized.",
