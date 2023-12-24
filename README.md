@@ -18,6 +18,9 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 - You can even make this channel private but make sure to give the `Read Messages` permission to the `PaceManBot` role for this channel.
 - This channel will be used to see what runner's pace-pings need to be sent in this server. So if you want to add more runners, just edit the first message in the channel and add the new runner's in-game name and their splits in a new line.
 - This channel is optional however and if it is absent, the bot will check every runner's pace and send them if the conditions are met and the bot will send online pings only (pings only when the runner is live).
+- You can even setup a channel named #pacemanbot-runner-leaderboard to have your own personal leaderboard for your server's whitelisted runners. You need to give perms such as `Read Messages` and `Manage Messages` to the `PaceManBot` role in the same in order for it to be able to send the leaderboard in the first place.
+- After you have made the channel, just wait for any whitelisted runner to get a completion. It will update the leaderboard with the name of the runner and the time they got.
+- This leaderboard is also sorted automatically as new completions come in!
 - Now in any channel (doesn't matter), type in `/setup_roles` and the command takes in a couple of required options:
   - `split_name`: This is the name of the split whose roles you want to configure. It can take values like `first_structure`, `second_structure`, `blind`, `eye_spy` and `end_enter`. Any other split name given would just be disregarded.
   - `split_start`: This is the lower bound of the igt in minutes that you want your pace-roles to start from.
