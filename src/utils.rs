@@ -182,7 +182,7 @@ pub async fn update_leaderboard(
         for entry in entry_vector {
             let name = entry.0;
             let time = format_time(entry.1.to_owned());
-            updated_contents.push(format!("{}\t\t{}", name, time));
+            updated_contents.push(format!("{}\t\t`{}`", name, time));
         }
         let leaderboard_content =
             format!("## Runner Leaderboard\n\n{}", updated_contents.join("\n"));
