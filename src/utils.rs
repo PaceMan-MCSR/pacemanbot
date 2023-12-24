@@ -146,6 +146,7 @@ pub async fn update_leaderboard(
             .send_message(&ctx.http, |m| m.content(leaderboard_content))
             .await?;
     } else {
+        let first_message_id = messages.last().unwrap().id;
         let first_message = messages.last().unwrap().content.to_owned();
         let leaderboard_lines = first_message
             .split("\n")
@@ -186,7 +187,7 @@ pub async fn update_leaderboard(
         let leaderboard_content =
             format!("## Runner Leaderboard\n\n{}", updated_contents.join("\n"));
         leaderboard_channel
-            .send_message(&ctx, |m| m.content(leaderboard_content))
+            .edit_message(&ctx, first_message_id, |m| m.content(leaderboard_content))
             .await?;
     }
     Ok(())
