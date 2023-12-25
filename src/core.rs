@@ -329,10 +329,12 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     continue;
                 }
             };
+            messages.reverse();
             messages.push(last_pace_message.to_owned());
             if messages.len() > 100 {
                 messages.remove(0);
             }
+            messages.reverse();
         }
     }
 }
