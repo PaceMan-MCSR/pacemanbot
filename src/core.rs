@@ -331,13 +331,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
             };
             messages.push(last_pace_message.to_owned());
             if messages.len() > 100 {
-                match messages.pop(){
-                    Some(_) => (),
-                    None => {
-                        eprintln!("Unable to remove the 100th message for guild name: {}.", guild_name);
-                        continue;
-                    }
-                };
+                messages.remove(0);
             }
         }
     }
