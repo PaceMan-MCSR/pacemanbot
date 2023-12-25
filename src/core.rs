@@ -264,7 +264,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 .collect::<Vec<_>>();
 
             let live_link = match record.user.live_account.to_owned() {
-                Some(acc) => format!("<https://twitch.tv/{}>", acc),
+                Some(acc) => format!("[{}](<https://twitch.tv/{}>)", acc, acc),
                 None => {
                     if !player_in_runner_names {
                         println!(
@@ -287,11 +287,11 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
             }
 
             let content = format!(
-                "## {} - {}\n<t:{}:R>\n\n{}\n{}",
+                "## {} - {}\n{}\t<t:{}:R>\n\n{}",
                 format_time(last_event.igt as u64),
                 split_desc,
-                (record.last_updated/1000) as u64,
                 live_link,
+                (record.last_updated/1000) as u64,
                 roles_to_ping
                     .iter()
                     .map(|role| role.mention().to_string())
