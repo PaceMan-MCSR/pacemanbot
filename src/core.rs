@@ -252,7 +252,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                         }
                         let role_split = extract_split_from_pb_role_name(role.name.as_str());
                         let pb_minutes = player_splits.get(&role_split).unwrap().to_owned();
-                        role_split == *split && pb_minutes >= split_minutes
+                        role_split == *split && pb_minutes > split_minutes
                     } else{
                         let (role_split_name, role_minutes, role_seconds) =
                             extract_split_from_role_name(role.name.as_str());
