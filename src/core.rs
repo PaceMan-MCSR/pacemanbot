@@ -258,7 +258,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                             extract_split_from_role_name(role.name.as_str());
                         role_split_name == *split
                             && role_minutes >= split_minutes
-                            && (role_minutes != split_minutes || role_seconds >= split_seconds)
+                            && (role_minutes != split_minutes || role_seconds > split_seconds)
                     }
                 })
                 .collect::<Vec<_>>();
