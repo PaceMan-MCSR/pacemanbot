@@ -270,7 +270,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 .collect::<Vec<_>>();
 
             let live_link = match record.user.live_account.to_owned() {
-                Some(acc) => format!("[{}](<https://twitch.tv/{}>)", acc, acc),
+                Some(acc) => format!("[{}](<https://twitch.tv/{}>)", record.nickname, acc),
                 None => {
                     if !player_in_runner_names {
                         println!(
