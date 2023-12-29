@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 
 use regex::Regex;
-use serenity::{model::prelude::GuildId, prelude::Context};
+use serenity::{
+    builder::{CreateSelectMenuOption, CreateSelectMenuOptions},
+    model::prelude::{GuildId, Role},
+    prelude::Context,
+};
 
 use crate::types::{Response, ResponseError};
 
@@ -11,29 +15,71 @@ pub async fn remove_roles_starting_with(
     member: &mut serenity::model::prelude::Member,
     role_prefix: &str,
     skip_pb_roles: bool,
-) {
+) -> Result<(), Box<dyn std::error::Error>> {
     // Remove roles starting with role_prefix
-    let guild_roles = guild_id.roles(&ctx.http).await.unwrap();
+    let guild_roles = guild_id.roles(&ctx.http).await?;
     for role_id in member.roles.clone() {
         let role = guild_roles.get(&role_id).unwrap().clone();
         if role.name.starts_with(role_prefix) {
             if skip_pb_roles && role.name.contains("PB") {
                 continue;
             }
-            member.remove_role(&ctx.http, role_id).await.unwrap();
+            member.remove_role(&ctx.http, role_id).await?;
         }
     }
+    Ok(())
 }
 
-pub fn extract_split_from_role_name(role_name: &str) -> (String, u8, u8) {
+pub fn extract_split_from_role_name(
+    role_name: &str,
+) -> Result<(String, u8, u8), Box<dyn std::error::Error>> {
     let role_name = role_name.replace("*", "");
     let role_name = role_name.replace(" ", "");
-    let re = Regex::new(r"([a-zA-Z]+)(\d+)\:(\d+)").unwrap();
-    let caps = re.captures(&role_name).unwrap();
-    let character = caps.get(1).unwrap().as_str().to_string();
-    let minutes = caps.get(2).unwrap().as_str().parse::<u8>().unwrap();
-    let seconds = caps.get(3).unwrap().as_str().parse::<u8>().unwrap() * 10;
-    (character, minutes, seconds)
+    let re = Regex::new(r"([a-zA-Z]+)(\d+)\:(\d+)")?;
+    let caps = match re.captures(&role_name) {
+        Some(caps) => caps,
+        None => {
+            return Err(format!("Unable to capture regex for role name: '{}'.", role_name).into())
+        }
+    };
+    let character = match caps.get(1) {
+        Some(capture) => capture,
+        None => {
+            return Err(format!(
+                "Unable to get first regex capture for role name: '{}'.",
+                role_name
+            )
+            .into())
+        }
+    }
+    .as_str()
+    .to_string();
+    let minutes = match caps.get(2) {
+        Some(capture) => capture,
+        None => {
+            return Err(format!(
+                "Unable to get second regex capture for role name: '{}'.",
+                role_name
+            )
+            .into())
+        }
+    }
+    .as_str()
+    .parse::<u8>()?;
+    let seconds = match caps.get(3) {
+        Some(capture) => capture,
+        None => {
+            return Err(format!(
+                "Unable to get third regex capture for role name: '{}'.",
+                role_name
+            )
+            .into())
+        }
+    }
+    .as_str()
+    .parse::<u8>()?
+        * 10;
+    Ok((character, minutes, seconds))
 }
 
 pub fn extract_split_from_pb_role_name(role_name: &str) -> String {
@@ -57,11 +103,17 @@ pub fn extract_name_and_splits_from_line(
     if splits.len() != 5 {
         return Err(format!("Unable to parse line contents: '{}'.", line).into());
     }
-    let splits = splits
-        .iter()
-        .map(|split| split.parse::<u8>().unwrap())
-        .collect::<Vec<u8>>();
-    Ok((player_name.to_string(), splits))
+    let mut splits_u8: Vec<u8> = vec![];
+    for split in splits {
+        let split_u8 = match split.parse::<u8>() {
+            Ok(split) => split,
+            Err(err) => {
+                return Err(format!("Unable to parse to u8 due to: {}", err).into());
+            }
+        };
+        splits_u8.push(split_u8);
+    }
+    Ok((player_name.to_string(), splits_u8))
 }
 
 pub fn get_time(milliseconds: u64) -> (u8, u8) {
@@ -191,4 +243,38 @@ pub async fn update_leaderboard(
             .await?;
     }
     Ok(())
+}
+
+pub fn create_select_option<'a>(
+    o: &'a mut CreateSelectMenuOptions,
+    roles: &Vec<&Role>,
+    split_name: &str,
+    split_desc: &str,
+) -> Result<&'a mut CreateSelectMenuOptions, Box<dyn std::error::Error>> {
+    for role in roles {
+        if role.name.starts_with("*") {
+            if role.name.contains("PB") {
+                let split = extract_split_from_pb_role_name(&role.name);
+                if split == split_name {
+                    o.add_option(
+                        CreateSelectMenuOption::default()
+                            .label(format!("PB Pace {}", split_desc))
+                            .value(role.id.to_string())
+                            .to_owned(),
+                    );
+                }
+            } else {
+                let (split, minutes, seconds) = extract_split_from_role_name(&role.name)?;
+                if split == "FS" {
+                    o.add_option(
+                        CreateSelectMenuOption::default()
+                            .label(format!("Sub {}:{:02} {}", minutes, seconds, split_desc))
+                            .value(role.id.to_string())
+                            .to_owned(),
+                    );
+                }
+            }
+        }
+    }
+    Ok(o)
 }

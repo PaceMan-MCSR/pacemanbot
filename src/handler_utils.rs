@@ -69,7 +69,7 @@ pub async fn handle_remove_pmb_roles(
     let mut member = guild_id.member(&ctx, member.user.id).await?;
 
     // Remove all PMB roles
-    remove_roles_starting_with(&ctx, &guild_id, &mut member, "*", false).await;
+    remove_roles_starting_with(&ctx, &guild_id, &mut member, "*", false).await?;
 
     // Respond to the interaction
     message_component
@@ -134,7 +134,7 @@ pub async fn handle_select_role(
             format!("*{}", split).as_str(),
             true,
         )
-        .await;
+        .await?;
     } else {
         let member_roles = match member.roles(&ctx) {
             Some(roles) => roles,

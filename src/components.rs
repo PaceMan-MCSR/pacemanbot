@@ -5,12 +5,9 @@ use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::{GuildId, Role, RoleId};
 use serenity::prelude::Context;
 use serenity::utils::Color;
-use serenity::{
-    builder::{CreateActionRow, CreateSelectMenuOption},
-    model::prelude::component::ButtonStyle::Primary,
-};
+use serenity::{builder::CreateActionRow, model::prelude::component::ButtonStyle::Primary};
 
-use crate::utils::{extract_split_from_pb_role_name, extract_split_from_role_name};
+use crate::utils::{create_select_option, extract_split_from_role_name};
 
 pub async fn send_role_selection_message(
     ctx: &Context,
@@ -25,44 +22,26 @@ pub async fn send_role_selection_message(
     let mut select_blind_role_action_row = CreateActionRow::default();
     let mut select_eye_spy_role_action_row = CreateActionRow::default();
     let mut select_end_enter_role_action_row = CreateActionRow::default();
-    let send_bastion_picker = roles.iter().any(|role| {
+
+    let mut send_bastion_picker = false;
+    for role in roles.iter() {
         if !role.name.starts_with("*") || (role.name.starts_with("*") && role.name.contains("PB")) {
-            return false;
+            continue;
         }
-        let (split, _minutes, _seconds) = extract_split_from_role_name(&role.name);
-        split == "FS"
-    });
+        let (split, _minutes, _seconds) = extract_split_from_role_name(&role.name)?;
+        if split == "FS" {
+            send_bastion_picker = true;
+            break;
+        }
+    }
     select_bastion_role_action_row.create_select_menu(|m| {
         m.custom_id("select_structure1_role")
             .placeholder("Choose a First Structure Role...")
             .options(|o| {
-                for role in &roles {
-                    if role.name.starts_with("*") {
-                        if role.name.contains("PB") {
-                            let split = extract_split_from_pb_role_name(&role.name);
-                            if split == "FS" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label("PB Pace Structure 1")
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        } else {
-                            let (split, minutes, seconds) =
-                                extract_split_from_role_name(&role.name);
-                            if split == "FS" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label(format!(
-                                            "Sub {}:{:02} Structure 1",
-                                            minutes, seconds
-                                        ))
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        }
+                match create_select_option(o, &roles, "FS", "Structure 1") {
+                    Ok(_) => (),
+                    Err(err) => {
+                        eprintln!("Unable to create select option due to: {}", err);
                     }
                 }
                 o
@@ -72,33 +51,10 @@ pub async fn send_role_selection_message(
         m.custom_id("select_structure2_role")
             .placeholder("Choose a Second Structure Role...")
             .options(|o| {
-                for role in &roles {
-                    if role.name.starts_with("*") {
-                        if role.name.contains("PB") {
-                            let split = extract_split_from_pb_role_name(&role.name);
-                            if split == "SS" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label("PB Pace Structure 2")
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        } else {
-                            let (split, minutes, seconds) =
-                                extract_split_from_role_name(&role.name);
-                            if split == "SS" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label(format!(
-                                            "Sub {}:{:02} Structure 2",
-                                            minutes, seconds
-                                        ))
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        }
+                match create_select_option(o, &roles, "SS", "Structure 2") {
+                    Ok(_) => (),
+                    Err(err) => {
+                        eprintln!("Unable to create select option due to: {}", err);
                     }
                 }
                 o
@@ -108,30 +64,10 @@ pub async fn send_role_selection_message(
         m.custom_id("select_blind_role")
             .placeholder("Choose a Blind Role...")
             .options(|o| {
-                for role in &roles {
-                    if role.name.starts_with("*") {
-                        if role.name.contains("PB") {
-                            let split = extract_split_from_pb_role_name(&role.name);
-                            if split == "B" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label("PB Pace Blind")
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        } else {
-                            let (split, minutes, seconds) =
-                                extract_split_from_role_name(&role.name);
-                            if split == "B" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label(format!("Sub {}:{:02} Blind", minutes, seconds))
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        }
+                match create_select_option(o, &roles, "B", "Blind") {
+                    Ok(_) => (),
+                    Err(err) => {
+                        eprintln!("Unable to create select option due to: {}", err);
                     }
                 }
                 o
@@ -141,30 +77,10 @@ pub async fn send_role_selection_message(
         m.custom_id("select_eye_spy_role")
             .placeholder("Choose an Eye Spy Role...")
             .options(|o| {
-                for role in &roles {
-                    if role.name.starts_with("*") {
-                        if role.name.contains("PB") {
-                            let split = extract_split_from_pb_role_name(&role.name);
-                            if split == "E" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label("PB Pace Eye Spy")
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        } else {
-                            let (split, minutes, seconds) =
-                                extract_split_from_role_name(&role.name);
-                            if split == "E" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label(format!("Sub {}:{:02} Eye Spy", minutes, seconds))
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        }
+                match create_select_option(o, &roles, "E", "Eye Spy") {
+                    Ok(_) => (),
+                    Err(err) => {
+                        eprintln!("Unable to create select option due to: {}", err);
                     }
                 }
                 o
@@ -174,30 +90,10 @@ pub async fn send_role_selection_message(
         m.custom_id("select_end_enter_role")
             .placeholder("Choose an End Enter Role...")
             .options(|o| {
-                for role in &roles {
-                    if role.name.starts_with("*") {
-                        if role.name.contains("PB") {
-                            let split = extract_split_from_pb_role_name(&role.name);
-                            if split == "EE" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label("PB Pace End Enter")
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        } else {
-                            let (split, minutes, seconds) =
-                                extract_split_from_role_name(&role.name);
-                            if split == "EE" {
-                                o.add_option(
-                                    CreateSelectMenuOption::default()
-                                        .label(format!("Sub {}:{:02} End Enter", minutes, seconds))
-                                        .value(role.id.to_string())
-                                        .to_owned(),
-                                );
-                            }
-                        }
+                match create_select_option(o, &roles, "EE", "End Enter") {
+                    Ok(_) => (),
+                    Err(err) => {
+                        eprintln!("Unable to create select option due to: {}", err);
                     }
                 }
                 o

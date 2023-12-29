@@ -255,7 +255,13 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                         role_split == *split && pb_minutes > split_minutes
                     } else{
                         let (role_split_name, role_minutes, role_seconds) =
-                            extract_split_from_role_name(role.name.as_str());
+                            match extract_split_from_role_name(role.name.as_str()){
+                                Ok(tup) => tup,
+                                Err(err) => {
+                                    eprintln!("Unable to extract split from role name: '{}' due to: {}", role.name, err);
+                                    return false;
+                                }
+                            };
                         role_split_name == *split
                             && role_minutes >= split_minutes
                             && (role_minutes != split_minutes || role_seconds > split_seconds)
