@@ -23,17 +23,22 @@ pub async fn send_role_selection_message(
     let mut select_eye_spy_role_action_row = CreateActionRow::default();
     let mut select_end_enter_role_action_row = CreateActionRow::default();
 
-    let mut send_bastion_picker = false;
-    for role in roles.iter() {
+    let send_bastion_picker = roles.iter().any(|role| {
         if !role.name.starts_with("*") || (role.name.starts_with("*") && role.name.contains("PB")) {
-            continue;
+            return false;
         }
-        let (split, _minutes, _seconds) = extract_split_from_role_name(&role.name)?;
-        if split == "FS" {
-            send_bastion_picker = true;
-            break;
-        }
-    }
+        let (split, _minutes, _seconds) = match extract_split_from_role_name(&role.name) {
+            Ok(tup) => tup,
+            Err(err) => {
+                eprintln!(
+                    "Unable to get split from role name: '{}' due to: {}",
+                    role.name, err
+                );
+                return false;
+            }
+        };
+        split == "FS"
+    });
     select_bastion_role_action_row.create_select_menu(|m| {
         m.custom_id("select_structure1_role")
             .placeholder("Choose a First Structure Role...")
