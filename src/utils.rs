@@ -265,7 +265,7 @@ pub fn create_select_option<'a>(
                 }
             } else {
                 let (split, minutes, seconds) = extract_split_from_role_name(&role.name)?;
-                if split == "FS" {
+                if split == split_name {
                     o.add_option(
                         CreateSelectMenuOption::default()
                             .label(format!("Sub {}:{:02} {}", minutes, seconds, split_desc))

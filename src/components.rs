@@ -7,7 +7,9 @@ use serenity::prelude::Context;
 use serenity::utils::Color;
 use serenity::{builder::CreateActionRow, model::prelude::component::ButtonStyle::Primary};
 
-use crate::utils::{create_select_option, extract_split_from_role_name};
+use crate::utils::{
+    create_select_option, extract_split_from_pb_role_name, extract_split_from_role_name,
+};
 
 pub async fn send_role_selection_message(
     ctx: &Context,
@@ -24,8 +26,12 @@ pub async fn send_role_selection_message(
     let mut select_end_enter_role_action_row = CreateActionRow::default();
 
     let send_bastion_picker = roles.iter().any(|role| {
-        if !role.name.starts_with("*") || (role.name.starts_with("*") && role.name.contains("PB")) {
+        if !role.name.starts_with("*") {
             return false;
+        }
+        if role.name.contains("PB") {
+            let split = extract_split_from_pb_role_name(&role.name);
+            return split == "FS";
         }
         let (split, _minutes, _seconds) = match extract_split_from_role_name(&role.name) {
             Ok(tup) => tup,
