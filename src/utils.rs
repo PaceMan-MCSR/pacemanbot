@@ -252,27 +252,25 @@ pub fn create_select_option<'a>(
     split_desc: &str,
 ) -> Result<&'a mut CreateSelectMenuOptions, Box<dyn std::error::Error>> {
     for role in roles {
-        if role.name.starts_with("*") {
-            if role.name.contains("PB") {
-                let split = extract_split_from_pb_role_name(&role.name);
-                if split == split_name {
-                    o.add_option(
-                        CreateSelectMenuOption::default()
-                            .label(format!("PB Pace {}", split_desc))
-                            .value(role.id.to_string())
-                            .to_owned(),
-                    );
-                }
-            } else {
-                let (split, minutes, seconds) = extract_split_from_role_name(&role.name)?;
-                if split == split_name {
-                    o.add_option(
-                        CreateSelectMenuOption::default()
-                            .label(format!("Sub {}:{:02} {}", minutes, seconds, split_desc))
-                            .value(role.id.to_string())
-                            .to_owned(),
-                    );
-                }
+        if role.name.contains("PB") {
+            let split = extract_split_from_pb_role_name(&role.name);
+            if split == split_name {
+                o.add_option(
+                    CreateSelectMenuOption::default()
+                        .label(format!("PB Pace {}", split_desc))
+                        .value(role.id.to_string())
+                        .to_owned(),
+                );
+            }
+        } else {
+            let (split, minutes, seconds) = extract_split_from_role_name(&role.name)?;
+            if split == split_name {
+                o.add_option(
+                    CreateSelectMenuOption::default()
+                        .label(format!("Sub {}:{:02} {}", minutes, seconds, split_desc))
+                        .value(role.id.to_string())
+                        .to_owned(),
+                );
             }
         }
     }

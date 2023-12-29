@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use serenity::model::prelude::application_command::ApplicationCommandInteraction;
@@ -18,7 +19,46 @@ pub async fn send_role_selection_message(
 ) -> Result<(), Box<dyn std::error::Error>> {
     command.defer(&ctx).await?;
 
-    let roles = roles.iter().map(|(_, role)| role).collect::<Vec<_>>();
+    let mut roles = roles
+        .iter()
+        .map(|(_, role)| role)
+        .filter(|r| r.name.starts_with("*"))
+        .collect::<Vec<_>>();
+    roles.sort_by(|r1, r2| {
+        let r1_order;
+        let r2_order;
+        if r1.name.contains("PB") {
+            r1_order = 0;
+        } else {
+            let (_, minutes, seconds) = match extract_split_from_role_name(&r1.name) {
+                Ok(tup) => tup,
+                Err(err) => {
+                    eprintln!(
+                        "Unable to get split from role name: '{}' due to: {}",
+                        r1.name, err
+                    );
+                    return Ordering::Equal;
+                }
+            };
+            r1_order = minutes as u64 * 60000 + seconds as u64 * 1000;
+        }
+        if r2.name.contains("PB") {
+            r2_order = 0;
+        } else {
+            let (_, minutes, seconds) = match extract_split_from_role_name(&r2.name) {
+                Ok(tup) => tup,
+                Err(err) => {
+                    eprintln!(
+                        "Unable to get split from role name: '{}' due to: {}",
+                        r2.name, err
+                    );
+                    return Ordering::Equal;
+                }
+            };
+            r2_order = minutes as u64 * 60000 + seconds as u64 * 1000;
+        }
+        r1_order.cmp(&r2_order)
+    });
     let mut select_bastion_role_action_row = CreateActionRow::default();
     let mut select_fortress_role_action_row = CreateActionRow::default();
     let mut select_blind_role_action_row = CreateActionRow::default();
@@ -26,9 +66,6 @@ pub async fn send_role_selection_message(
     let mut select_end_enter_role_action_row = CreateActionRow::default();
 
     let send_bastion_picker = roles.iter().any(|role| {
-        if !role.name.starts_with("*") {
-            return false;
-        }
         if role.name.contains("PB") {
             let split = extract_split_from_pb_role_name(&role.name);
             return split == "FS";
