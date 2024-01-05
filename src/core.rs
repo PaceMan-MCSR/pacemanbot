@@ -11,7 +11,7 @@ use crate::{utils::{
 
 pub async fn start_main_loop(ctx: Arc<Context>, record: Response) {
     let ctx = ctx.clone();
-         for guild_id in &ctx.cache.guilds() {
+         'guild_loop: for guild_id in &ctx.cache.guilds() {
             let guild_name = match guild_id.name(&ctx.cache) {
                 Some(name) => name,
                 None => {
@@ -94,7 +94,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, record: Response) {
                         Ok(tup) => tup,
                         Err(err) => {
                             eprintln!("Unable to parse runner-names in guild, with name {} due to: {}", guild_name, err);
-                            continue;
+                            continue 'guild_loop;
                         }
                     };
                     
