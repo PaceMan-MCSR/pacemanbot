@@ -1,30 +1,17 @@
 use std::{collections::HashMap, sync::Arc};
 
-use serenity::{
-    model::prelude::{GuildId, Message},
-    prelude::{Context, Mentionable},
-};
+use serenity::
+    prelude::{Context, Mentionable};
 
-use crate::utils::{
-    event_id_to_split, extract_split_from_role_name, format_time, get_response_from_api, get_time,
+
+use crate::{utils::{
+    event_id_to_split, extract_split_from_role_name, format_time,  get_time,
     split_to_desc, extract_split_from_pb_role_name, extract_name_and_splits_from_line, update_leaderboard,
-};
+}, types::Response};
 
-pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildId, Vec<Message>>) {
-    let mut response = match get_response_from_api().await {
-        Ok(response) => response,
-        Err(err) => {
-            eprintln!("{}", err);
-            return;
-        }
-    };
-    response.sort_by(|r1, r2|{
-        r1.event_list.len().cmp(&r2.event_list.len())
-    });
-    response.reverse();
+pub async fn start_main_loop(ctx: Arc<Context>, record: Response) {
     let ctx = ctx.clone();
-    for record in response.iter() {
-        'guild_loop: for guild_id in &ctx.cache.guilds() {
+         for guild_id in &ctx.cache.guilds() {
             let guild_name = match guild_id.name(&ctx.cache) {
                 Some(name) => name,
                 None => {
@@ -62,19 +49,6 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                 .map(|(_, role)| role)
                 .collect::<Vec<_>>();
 
-            if guild_cache.get(guild_id).is_none() {
-                let messages = match channel_to_send_to.messages(&ctx, |m| m.limit(100)).await {
-                    Ok(messages) => messages,
-                    Err(err) => {
-                        eprintln!(
-                            "Unable to get messages from #pacemanbot for guild name: {} due to: {}",
-                            guild_name, err
-                        );
-                        continue;
-                    }
-                };
-                guild_cache.insert(guild_id.to_owned(), messages);
-            }
             let mut player_in_runner_names = false;
             let mut player_splits: HashMap<String, u8> = HashMap::new(); 
             if channels.iter().any(|c| c.name == "pacemanbot-runner-names") {
@@ -120,7 +94,7 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                         Ok(tup) => tup,
                         Err(err) => {
                             eprintln!("Unable to parse runner-names in guild, with name {} due to: {}", guild_name, err);
-                            continue 'guild_loop;
+                            continue;
                         }
                     };
                     
@@ -189,7 +163,6 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
 
             let mut split = event_id_to_split(last_event.event_id.as_str()).unwrap();
 
-            let messages = guild_cache.get_mut(guild_id).unwrap();
 
             let split_desc = match split_to_desc(split) {
                 Some(desc) => desc,
@@ -198,26 +171,6 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     continue;
                 }
             };
-
-            if messages.iter().any(|message| {
-                message.content.contains(split_desc)
-                    && message
-                        .content
-                        .contains(&format_time(last_event.igt as u64))
-                    && (message.content.contains(
-                        &record
-                            .user
-                            .live_account
-                            .to_owned()
-                            .unwrap_or("".to_string()),
-                    ))
-            }) {
-                println!(
-                    "Skipping split '{}' because it's already in the channel for guild name: {}.",
-                    split_desc, guild_name,
-                );
-                continue 'guild_loop;
-            }
 
             if split == "Ba" {
                 if !record
@@ -304,17 +257,15 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     .collect::<Vec<_>>()
                     .join(" "),
             );
-            let message_id;
             match channel_to_send_to
                 .send_message(&ctx, |m| m.content(content))
                 .await
             {
-                Ok(message) => {
+                Ok(_) => {
                     println!(
                         "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.", 
                          record.nickname, split_desc, guild_name
                     );
-                    message_id = message.id;
                 }
                 Err(err) => {
                     eprintln!(
@@ -324,23 +275,5 @@ pub async fn start_main_loop(ctx: Arc<Context>, guild_cache: &mut HashMap<GuildI
                     continue;
                 }
             }
-
-            let last_pace_message = match ctx.cache.message(channel_to_send_to.id, message_id) {
-                Some(message) => message,
-                None => {
-                    eprintln!(
-                        "Unable to construct last pace message from message id in guild name: {}.",
-                        guild_name
-                    );
-                    continue;
-                }
-            };
-            messages.reverse();
-            messages.push(last_pace_message.to_owned());
-            if messages.len() > 100 {
-                messages.remove(0);
-            }
-            messages.reverse();
-        }
     }
 }

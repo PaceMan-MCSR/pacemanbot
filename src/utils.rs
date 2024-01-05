@@ -6,8 +6,11 @@ use serenity::{
     model::prelude::{GuildId, Role},
     prelude::Context,
 };
+use std::env;
+use tokio::net::TcpStream;
+use tokio_tungstenite::{tungstenite::http::request, MaybeTlsStream, WebSocketStream};
 
-use crate::types::{Response, ResponseError};
+use crate::types::ResponseError;
 
 pub async fn remove_roles_starting_with(
     ctx: &Context,
@@ -129,24 +132,28 @@ pub fn format_time(milliseconds: u64) -> String {
     format!("{}:{:02}", minutes, seconds)
 }
 
-pub async fn get_response_from_api() -> Result<Vec<Response>, ResponseError> {
-    let url = "https://paceman.gg/api/ars/liveruns";
-    let url = reqwest::Url::parse(&*url).ok().unwrap();
-    let result = match match reqwest::get(url).await {
-        Ok(res) => res,
-        Err(err) => return Err(ResponseError::new(err)),
-    }
-    .text()
-    .await
-    {
-        Ok(text) => text,
+pub async fn get_response_from_api(
+) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, ResponseError> {
+    let url = "wss://paceman.gg/ws";
+    let auth_key: String = match env::var("API_AUTH_KEY") {
+        Ok(key) => key,
         Err(err) => return Err(ResponseError::new(err)),
     };
-    let res: Vec<Response> = match serde_json::from_str(result.as_str()) {
-        Ok(res) => res,
+    let request = request::Request::builder()
+        .uri(url)
+        .header("auth", auth_key.to_owned())
+        .header("sec-websocket-key", auth_key.to_owned())
+        .header("host", "paceman.gg")
+        .header("upgrade", "websocket")
+        .header("connection", "upgrade")
+        .header("sec-websocket-version", 13)
+        .body(())
+        .unwrap();
+    let (response_stream, _) = match tokio_tungstenite::connect_async(request).await {
+        Ok(stream) => stream,
         Err(err) => return Err(ResponseError::new(err)),
     };
-    Ok(res)
+    Ok(response_stream)
 }
 
 pub fn event_id_to_split(event_id: &str) -> Option<&str> {

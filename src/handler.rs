@@ -1,16 +1,12 @@
-use crate::{consts::TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES, handler_utils::*};
+use crate::{handler_utils::*, utils::get_response_from_api};
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
-    model::{
-        application::interaction::Interaction,
-        gateway::Ready,
-        prelude::{Guild, GuildId, Message},
-    },
+    model::{application::interaction::Interaction, gateway::Ready, prelude::Guild},
 };
-use std::time::Duration;
-use std::{collections::HashMap, sync::Arc};
-use tokio::time::sleep;
+use std::sync::Arc;
+use tokio_stream::StreamExt;
+use tokio_tungstenite::tungstenite::Message;
 
 use crate::core::start_main_loop;
 pub struct Handler;
@@ -31,11 +27,28 @@ impl EventHandler for Handler {
         let ctx = Arc::new(ctx);
         ctx.cache.set_max_messages(100);
 
-        let mut guild_cache: HashMap<GuildId, Vec<Message>> = HashMap::new();
         tokio::spawn(async move {
-            loop {
-                start_main_loop(ctx.clone(), &mut guild_cache).await;
-                sleep(Duration::from_secs(TIMEOUT_BETWEEN_CONSECUTIVE_QUERIES)).await;
+            let mut response_stream = match get_response_from_api().await {
+                Ok(stream) => stream,
+                Err(err) => {
+                    eprintln!("{}", err);
+                    return;
+                }
+            };
+            while let Some(msg) = response_stream.next().await {
+                if let Ok(Message::Text(text_response)) = msg {
+                    let response = match serde_json::from_str(text_response.as_str()) {
+                        Ok(response) => response,
+                        Err(err) => {
+                            eprintln!(
+                                "Unable to convert text response: {} to json response due to: {}",
+                                text_response, err
+                            );
+                            continue;
+                        }
+                    };
+                    start_main_loop(ctx.clone(), response).await;
+                }
             }
         });
     }
