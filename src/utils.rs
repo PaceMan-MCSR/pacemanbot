@@ -8,7 +8,10 @@ use serenity::{
 };
 use std::env;
 use tokio::net::TcpStream;
-use tokio_tungstenite::{tungstenite::http::request, MaybeTlsStream, WebSocketStream};
+use tokio_tungstenite::{
+    tungstenite::{handshake::client::generate_key, http::request},
+    MaybeTlsStream, WebSocketStream,
+};
 
 use crate::types::ResponseError;
 
@@ -132,7 +135,7 @@ pub fn format_time(milliseconds: u64) -> String {
     format!("{}:{:02}", minutes, seconds)
 }
 
-pub async fn get_response_from_api(
+pub async fn get_response_stream_from_api(
 ) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, ResponseError> {
     let url = "wss://paceman.gg/ws";
     let auth_key: String = match env::var("API_AUTH_KEY") {
@@ -142,15 +145,15 @@ pub async fn get_response_from_api(
     let request = request::Request::builder()
         .uri(url)
         .header("auth", auth_key.to_owned())
-        .header("sec-websocket-key", auth_key.to_owned())
-        .header("host", "paceman.gg")
+        .header("sec-websocket-key", generate_key())
+        .header("host", "paceman.gg:8081")
         .header("upgrade", "websocket")
         .header("connection", "upgrade")
         .header("sec-websocket-version", 13)
         .body(())
         .unwrap();
     let (response_stream, _) = match tokio_tungstenite::connect_async(request).await {
-        Ok(stream) => stream,
+        Ok(stream_tuple) => stream_tuple,
         Err(err) => return Err(ResponseError::new(err)),
     };
     Ok(response_stream)
