@@ -217,6 +217,9 @@ pub async fn update_leaderboard(
         let mut player_names_with_time: HashMap<String, u64> = HashMap::new();
         for l in leaderboard_lines {
             let splits = l.split("\t\t").collect::<Vec<&str>>();
+            if splits.len() != 2 {
+                return Err("Unable to parse leaderboard message.".into());
+            }
             let player_name = splits[1];
             let time = splits[0].replace("`", "");
             let time_splits = time
