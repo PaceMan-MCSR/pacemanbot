@@ -9,7 +9,7 @@ use tokio::time::sleep;
 use tokio_stream::StreamExt;
 use tokio_tungstenite::tungstenite::Message;
 
-use crate::core::start_main_loop;
+use crate::core::start_guild_loop;
 pub struct Handler;
 
 #[async_trait]
@@ -30,30 +30,35 @@ impl EventHandler for Handler {
         const TIMEOUT_FOR_RETRY: u64 = 5;
 
         tokio::spawn(async move {
-            let mut response_stream = match get_response_stream_from_api().await {
-                Ok(stream) => stream,
-                Err(err) => {
-                    eprintln!("{}", err);
-                    return;
-                }
-            };
-            loop {
+            'main_loop: loop {
+                let mut response_stream = match get_response_stream_from_api().await {
+                    Ok(stream) => stream,
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        println!("Trying again in {} seconds...", TIMEOUT_FOR_RETRY);
+                        sleep(Duration::from_secs(TIMEOUT_FOR_RETRY)).await;
+                        continue 'main_loop;
+                    }
+                };
                 while let Some(msg) = response_stream.next().await {
                     if let Ok(Message::Text(text_response)) = msg {
                         let record = match serde_json::from_str(text_response.as_str()) {
                             Ok(response) => response,
                             Err(err) => {
                                 eprintln!(
-                                "Unable to convert text response: {} to json response due to: {}",
-                                text_response, err
-                            );
+                                    "Unable to convert text response: '{}' to json due to: {}",
+                                    text_response, err
+                                );
                                 continue;
                             }
                         };
-                        start_main_loop(ctx.clone(), record).await;
+                        start_guild_loop(ctx.clone(), record).await;
                     }
                 }
-                println!("Invalid response from response stream. Trying again in 5 seconds...");
+                println!(
+                    "Invalid response from response stream.\nTrying again in {} seconds...",
+                    TIMEOUT_FOR_RETRY
+                );
                 sleep(Duration::from_secs(TIMEOUT_FOR_RETRY)).await;
             }
         });
