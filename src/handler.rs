@@ -30,14 +30,14 @@ impl EventHandler for Handler {
         const TIMEOUT_FOR_RETRY: u64 = 5;
 
         tokio::spawn(async move {
-            'main_loop: loop {
+            loop {
                 let mut response_stream = match get_response_stream_from_api().await {
                     Ok(stream) => stream,
                     Err(err) => {
                         eprintln!("{}", err);
                         println!("Trying again in {} seconds...", TIMEOUT_FOR_RETRY);
                         sleep(Duration::from_secs(TIMEOUT_FOR_RETRY)).await;
-                        continue 'main_loop;
+                        continue;
                     }
                 };
                 while let Some(msg) = response_stream.next().await {
