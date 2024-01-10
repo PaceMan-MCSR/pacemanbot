@@ -141,7 +141,7 @@ pub async fn get_response_stream_from_api(
         Ok(url) => url,
         Err(err) => {
             eprintln!("{}", ResponseError::new(err));
-            "wss://paceman.gg:8081/ws".to_string()
+            "wss://paceman.gg/ws".to_string()
         }
     };
     let host = match env::var("WS_HOST") {
