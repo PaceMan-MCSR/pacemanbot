@@ -9,7 +9,7 @@ use crate::{utils::{
     split_to_desc, extract_split_from_pb_role_name, extract_name_and_splits_from_line, update_leaderboard,
 }, types::Response};
 
-pub async fn start_main_loop(ctx: Arc<Context>, record: Response) {
+pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
     let ctx = ctx.clone();
          'guild_loop: for guild_id in &ctx.cache.guilds() {
             let guild_name = match guild_id.name(&ctx.cache) {
