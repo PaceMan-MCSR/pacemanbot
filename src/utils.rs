@@ -137,7 +137,20 @@ pub fn format_time(milliseconds: u64) -> String {
 
 pub async fn get_response_stream_from_api(
 ) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, ResponseError> {
-    let url = "wss://paceman.gg/ws";
+    let url = match env::var("WS_URL") {
+        Ok(url) => url,
+        Err(err) => {
+            eprintln!("{}", ResponseError::new(err));
+            "wss://paceman.gg:8081/ws".to_string()
+        }
+    };
+    let host = match env::var("WS_HOST") {
+        Ok(host) => host,
+        Err(err) => {
+            eprintln!("{}", ResponseError::new(err));
+            "paceman.gg:8081".to_string()
+        }
+    };
     let auth_key: String = match env::var("API_AUTH_KEY") {
         Ok(key) => key,
         Err(err) => return Err(ResponseError::new(err)),
@@ -146,7 +159,7 @@ pub async fn get_response_stream_from_api(
         .uri(url)
         .header("auth", auth_key.to_owned())
         .header("sec-websocket-key", generate_key())
-        .header("host", "paceman.gg:8081")
+        .header("host", host)
         .header("upgrade", "websocket")
         .header("connection", "upgrade")
         .header("sec-websocket-version", 13)
@@ -201,8 +214,9 @@ pub async fn update_leaderboard(
     let messages = leaderboard_channel.messages(&ctx, |m| m.limit(1)).await?;
     if messages.is_empty() {
         let leaderboard_content = format!(
-            "## Runner Leaderboard\n\n`{}:{}`\t\t{}",
-            time.0, time.1, nickname
+            "## Runner Leaderboard\n\n`{}`\t\t{}",
+            format_time(time.0 as u64 * 60000 + time.1 as u64 * 1000),
+            nickname
         );
         leaderboard_channel
             .send_message(&ctx.http, |m| m.content(leaderboard_content))
