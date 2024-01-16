@@ -162,7 +162,7 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
             }
 
             let mut split = event_id_to_split(last_event.event_id.as_str()).unwrap();
-
+            let mut bastionless_content = "";
 
             let split_desc = match split_to_desc(split) {
                 Some(desc) => desc,
@@ -193,6 +193,17 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
                     split = &"SS";
                 } else if player_in_runner_names {
                     split = &"FS";
+                }
+            }
+
+            if split == "B"{
+                if !record
+                    .event_list
+                    .iter()
+                    .filter(|evt| evt != &last_event)
+                    .any(|evt| evt.event_id == "rsg.enter_bastion")
+                {
+                    bastionless_content = "(Bastionless)"; 
                 }
             }
             let roles_to_ping = guild_roles
@@ -246,9 +257,10 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
             }
 
             let content = format!(
-                "## {} - {}\n{}\t<t:{}:R>\n\n{}",
+                "## {} - {} {}\n{}\t<t:{}:R>\n\n{}",
                 format_time(last_event.igt as u64),
                 split_desc,
+                bastionless_content,
                 live_link,
                 (record.last_updated/1000) as u64,
                 roles_to_ping
