@@ -6,8 +6,14 @@ use serenity::{
     model::prelude::{GuildId, Role},
     prelude::Context,
 };
+use std::env;
+use tokio::net::TcpStream;
+use tokio_tungstenite::{
+    tungstenite::{handshake::client::generate_key, http::request},
+    MaybeTlsStream, WebSocketStream,
+};
 
-use crate::types::{Response, ResponseError};
+use crate::types::ResponseError;
 
 pub async fn remove_roles_starting_with(
     ctx: &Context,
@@ -129,24 +135,41 @@ pub fn format_time(milliseconds: u64) -> String {
     format!("{}:{:02}", minutes, seconds)
 }
 
-pub async fn get_response_from_api() -> Result<Vec<Response>, ResponseError> {
-    let url = "https://paceman.gg/api/ars/liveruns";
-    let url = reqwest::Url::parse(&*url).ok().unwrap();
-    let result = match match reqwest::get(url).await {
-        Ok(res) => res,
-        Err(err) => return Err(ResponseError::new(err)),
-    }
-    .text()
-    .await
-    {
-        Ok(text) => text,
+pub async fn get_response_stream_from_api(
+) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, ResponseError> {
+    let url = match env::var("WS_URL") {
+        Ok(url) => url,
+        Err(err) => {
+            eprintln!("{}", ResponseError::new(err));
+            "wss://paceman.gg/ws".to_string()
+        }
+    };
+    let host = match env::var("WS_HOST") {
+        Ok(host) => host,
+        Err(err) => {
+            eprintln!("{}", ResponseError::new(err));
+            "paceman.gg:8081".to_string()
+        }
+    };
+    let auth_key: String = match env::var("API_AUTH_KEY") {
+        Ok(key) => key,
         Err(err) => return Err(ResponseError::new(err)),
     };
-    let res: Vec<Response> = match serde_json::from_str(result.as_str()) {
-        Ok(res) => res,
+    let request = request::Request::builder()
+        .uri(url)
+        .header("auth", auth_key.to_owned())
+        .header("sec-websocket-key", generate_key())
+        .header("host", host)
+        .header("upgrade", "websocket")
+        .header("connection", "upgrade")
+        .header("sec-websocket-version", 13)
+        .body(())
+        .unwrap();
+    let (response_stream, _) = match tokio_tungstenite::connect_async(request).await {
+        Ok(stream_tuple) => stream_tuple,
         Err(err) => return Err(ResponseError::new(err)),
     };
-    Ok(res)
+    Ok(response_stream)
 }
 
 pub fn event_id_to_split(event_id: &str) -> Option<&str> {
@@ -191,8 +214,9 @@ pub async fn update_leaderboard(
     let messages = leaderboard_channel.messages(&ctx, |m| m.limit(1)).await?;
     if messages.is_empty() {
         let leaderboard_content = format!(
-            "## Runner Leaderboard\n\n`{}:{}`\t\t{}",
-            time.0, time.1, nickname
+            "## Runner Leaderboard\n\n`{}`\t\t{}",
+            format_time(time.0 as u64 * 60000 + time.1 as u64 * 1000),
+            nickname
         );
         leaderboard_channel
             .send_message(&ctx.http, |m| m.content(leaderboard_content))
@@ -207,6 +231,9 @@ pub async fn update_leaderboard(
         let mut player_names_with_time: HashMap<String, u64> = HashMap::new();
         for l in leaderboard_lines {
             let splits = l.split("\t\t").collect::<Vec<&str>>();
+            if splits.len() != 2 {
+                return Err("Unable to parse leaderboard message.".into());
+            }
             let player_name = splits[1];
             let time = splits[0].replace("`", "");
             let time_splits = time
