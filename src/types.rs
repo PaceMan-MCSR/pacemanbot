@@ -29,6 +29,7 @@ pub struct User {
 pub struct Response {
     pub world_id: String,
     pub event_list: Vec<Event>,
+    pub context_event_list: Vec<Event>,
     pub user: User,
     pub is_cheated: bool,
     pub is_hidden: bool,
