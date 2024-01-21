@@ -1,4 +1,4 @@
-use crate::{handler_utils::*, utils::get_response_stream_from_api};
+use crate::{handler_utils::*, types::Response, utils::get_response_stream_from_api};
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
@@ -42,7 +42,7 @@ impl EventHandler for Handler {
                 };
                 while let Some(msg) = response_stream.next().await {
                     if let Ok(Message::Text(text_response)) = msg {
-                        let record = match serde_json::from_str(text_response.as_str()) {
+                        let record: Response = match serde_json::from_str(text_response.as_str()) {
                             Ok(response) => response,
                             Err(err) => {
                                 eprintln!(
@@ -52,7 +52,8 @@ impl EventHandler for Handler {
                                 continue;
                             }
                         };
-                        start_guild_loop(ctx.clone(), record).await;
+                        let ctx = ctx.clone();
+                        tokio::spawn(async move { start_guild_loop(ctx.clone(), record).await });
                     }
                 }
                 println!(

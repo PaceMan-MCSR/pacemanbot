@@ -163,7 +163,9 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
                 "Skipping event id: '{}' as it is unrecognized.",
                 last_event.event_id
             );
-            continue;
+            // Skip checking other guilds as the event id is not gonna be recognized in them as
+            // well.
+            return;
         }
 
         let mut split = event_id_to_split(last_event.event_id.as_str()).unwrap();
