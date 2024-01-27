@@ -159,6 +159,16 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
             };
         }
         if event_id_to_split(last_event.event_id.as_str()).is_none() {
+            if last_event.event_id.as_str() == "rsg.credits" {
+                println!(
+                    "Skipping guild with name '{}' for event id: '{}'.", 
+                    guild_name, 
+                    last_event.event_id
+                );
+                // Check other guilds here because we would want to check all guilds for a
+                // completion.
+                continue;
+            }
             println!(
                 "Skipping event id: '{}' as it is unrecognized.",
                 last_event.event_id
