@@ -207,11 +207,19 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
                 .filter(|evt| evt != &last_event)
                 .any(|evt| evt.event_id == "rsg.enter_bastion");
 
-            let fort_ss_context_check = record.context_event_list.iter().any(|ctx| {
-                ctx.event_id == "rsg.obtain_crying_obsidian"
-                    || ctx.event_id == "rsg.obtain_obsidian"
-                    || ctx.event_id == "rsg.loot_bastion"
-            });
+            let mut fort_ss_context_check = false;
+            let mut context_hits = 0;
+            for ctx in record.context_event_list.iter() {
+                let context_check = ctx.event_id == "rsg.obtain_crying_obsidian" 
+                    || ctx.event_id == "rsg.obtain_obsidian" 
+                    || ctx.event_id == "rsg.loot_bastion";
+                if context_check {
+                    context_hits += 1;
+                } 
+            }
+            if context_hits >= 2 {
+                fort_ss_context_check = true;
+            }
 
             if fort_ss_check && fort_ss_context_check {
                 split = &"SS";
