@@ -291,7 +291,7 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
         }
 
         let content = format!(
-            "## {} - {} {}\n{}\t<t:{}:R>\n\n{}",
+            "## {} - {} {}\n{}\t<t:{}:R>\n{}",
             format_time(last_event.igt as u64),
             split_desc,
             bastionless_content,
