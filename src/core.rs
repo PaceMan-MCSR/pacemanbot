@@ -138,7 +138,7 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
         let split_desc: &str;
         let mut bastionless_content: &str = "";
         match last_event.event_id.as_str() {
-            "common.open_to_lan"| "common.multiplayer" | "common.enable_cheats" | "common.view_seed" | "common.leave_world"=> {
+            "common.open_to_lan"| "common.multiplayer" | "common.enable_cheats" | "common.view_seed" | "common.leave_world" => {
                 let c_last_pace = last_pace.lock().await;
                 let last_guilds = match c_last_pace.get(&record.user.uuid){
                     Some(guilds) => guilds,
