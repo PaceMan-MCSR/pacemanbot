@@ -2,14 +2,19 @@ use crate::{handler_utils::*, types::Response, utils::get_response_stream_from_a
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
-    model::{application::interaction::Interaction, gateway::Ready, prelude::Guild},
+    model::{
+        application::interaction::Interaction,
+        gateway::Ready,
+        id::{GuildId, MessageId},
+        prelude::Guild,
+    },
 };
-use std::{sync::Arc, time::Duration};
-use tokio::time::sleep;
+use std::{collections::HashMap, sync::Arc, time::Duration};
+use tokio::{sync::Mutex, time::sleep};
 use tokio_stream::StreamExt;
 use tokio_tungstenite::tungstenite::Message;
 
-use crate::core::start_guild_loop;
+use crate::core::parse_record;
 pub struct Handler;
 
 #[async_trait]
@@ -28,6 +33,9 @@ impl EventHandler for Handler {
         let ctx = Arc::new(ctx);
 
         const TIMEOUT_FOR_RETRY: u64 = 5;
+
+        let last_pace: Arc<Mutex<HashMap<String, HashMap<GuildId, MessageId>>>> =
+            Arc::new(Mutex::new(HashMap::new()));
 
         tokio::spawn(async move {
             loop {
@@ -53,7 +61,10 @@ impl EventHandler for Handler {
                             }
                         };
                         let ctx = ctx.clone();
-                        tokio::spawn(async move { start_guild_loop(ctx.clone(), record).await });
+                        let c_last_pace = last_pace.clone();
+                        tokio::spawn(async move {
+                            parse_record(ctx.clone(), record, c_last_pace).await
+                        });
                     }
                 }
                 println!(

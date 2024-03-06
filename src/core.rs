@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use serenity::prelude::{Context, Mentionable};
+use serenity::{prelude::{Context, Mentionable}, model::id::{MessageId, GuildId}};
 
 use crate::{
     types::Response,
@@ -9,8 +9,9 @@ use crate::{
         extract_split_from_role_name, format_time, get_time, split_to_desc, update_leaderboard,
     },
 };
+use tokio::sync::Mutex;
 
-pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
+pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mutex<HashMap<String, HashMap<GuildId, MessageId>>>>) {
     let ctx = ctx.clone();
     'guild_loop: for guild_id in &ctx.cache.guilds() {
         let guild_name = match guild_id.name(&ctx.cache) {
@@ -124,6 +125,7 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
                 continue;
             }
         }
+
         let last_event = match record.event_list.last() {
             Some(event) => event.to_owned(),
             None => {
@@ -131,109 +133,179 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
                 continue;
             }
         };
+        
+        let split: &str;
+        let split_desc: &str;
+        let mut bastionless_content: &str = "";
+        match last_event.event_id.as_str() {
+            "common.open_to_lan"| "common.multiplayer" | "common.enable_cheats" | "common.view_seed" | "common.leave_world"=> {
+                let c_last_pace = last_pace.lock().await;
+                let last_guilds = match c_last_pace.get(&record.user.uuid){
+                    Some(guilds) => guilds,
+                    None => {
+                        eprintln!("Unable to find last pace for user: {}", record.nickname);
+                        continue;
+                    }
+                };
+                let message_id = match last_guilds.get(&guild_id) {
+                    Some(id) => id,
+                    None => {
+                        eprintln!("Unable to get last guild for user: {}", record.nickname);
+                        continue;
+                    }
+                };
+                let mut message = match ctx.cache.message(channel_to_send_to.id, message_id) {
+                    Some(message) => message,
+                    None => {
+                        eprintln!("Unable to construct message from message id: {}", message_id);
+                        continue;
+                    }
+                };
+                let prev_content = message.content.split('\n').collect::<Vec<&str>>();
+                let first_line = match prev_content.first() {
+                    Some(line) => line,
+                    None => {
+                        eprintln!("Unable to get first line from message with id: {}", message_id);
+                        continue;
+                    }
+                };
+                let new_first_line = format!("{} (Reset)", first_line);
+                let other_lines = 
+                    prev_content.iter().filter(|l| l.to_owned() != first_line).map(|l| l.to_owned()).collect::<Vec<&str>>().join("\n");
+                let new_content = format!("{}\n{}", new_first_line, other_lines);
+                match message.edit(&ctx.http, |m| m.content(new_content)).await {
+                    Ok(_)=> (),
+                    Err(err) => 
+                        eprintln!("Unable to edit message with id: {} due to: {}", message_id, err),
+                };
+                continue;
+            }
+            "rsg.credits" => {
+                let runner_name = record.nickname.to_owned();
+                let (minutes, seconds) = get_time(last_event.igt as u64);
+                match update_leaderboard(&ctx, guild_id, runner_name.to_owned(), (minutes, seconds))
+                    .await
+                {
+                    Ok(_) => {
+                        println!(
+                            "Updated leaderboard in #pacemanbot-runner-leaderboard for guild name: {}, runner name: {} with time: {}.", 
+                            guild_name, 
+                            runner_name, 
+                            format_time(last_event.igt as u64),
+                        );
+                        continue;
+                    }
+                    Err(err) => {
+                        eprintln!(
+                            "Unable to update leaderboard in guild name: {} for runner name: {} due to: {}",
+                            guild_name, 
+                            record.nickname.to_owned(), 
+                            err
+                        );
+                        continue;
+                    }
+                };
+            }
+            "rsg.enter_bastion" => {
+                split_desc = match split_to_desc("Ba") {
+                    Some(desc) => desc,
+                    None => {
+                        eprintln!("Unable to get description for split code: 'Ba'.");
+                        continue;
+                    }
+                };
+                let bastion_ss_context_check = record
+                    .context_event_list
+                    .iter()
+                    .any(|ctx| ctx.event_id == "rsg.obtain_blaze_rod");
 
-        if last_event.event_id.as_str() == "rsg.credits" && player_in_runner_names {
-            let runner_name = record.nickname.to_owned();
-            let (minutes, seconds) = get_time(last_event.igt as u64);
-            match update_leaderboard(&ctx, guild_id, runner_name.to_owned(), (minutes, seconds))
-                .await
-            {
-                Ok(_) => {
+                if bastion_ss_context_check {
+                    split = &"SS";
+                } else {
+                    split = &"FS";
+                }
+            }
+            "rsg.enter_fortress" => {
+                split_desc = match split_to_desc("F") {
+                    Some(desc) => desc,
+                    None => {
+                        eprintln!("Unable to get description for split code: 'F'");
+                        continue;
+                    }
+                };
+                let fort_ss_check = record
+                    .event_list
+                    .iter()
+                    .filter(|evt| evt != &last_event)
+                    .any(|evt| evt.event_id == "rsg.enter_bastion");
+
+                let mut fort_ss_context_check = false;
+                let mut context_hits = 0;
+                for ctx in record.context_event_list.iter() {
+                    let context_check = ctx.event_id == "rsg.obtain_crying_obsidian" 
+                        || ctx.event_id == "rsg.obtain_obsidian" 
+                        || ctx.event_id == "rsg.loot_bastion";
+                    if context_check {
+                        context_hits += 1;
+                    } 
+                }
+                if context_hits >= 2 {
+                    fort_ss_context_check = true;
+                }
+
+                if fort_ss_check && fort_ss_context_check {
+                    split = &"SS";
+                } else {
+                    // split is made invalid on purpose here to not send a message at all.
+                    split = &"F";
+                }
+            }
+            "rsg.first_portal" => {
+                if !record
+                    .event_list
+                    .iter()
+                    .filter(|evt| evt != &last_event)
+                    .any(|evt| evt.event_id == "rsg.enter_bastion")
+                {
+                    bastionless_content = "(Bastionless)";
+                }
+                split = event_id_to_split(last_event.event_id.as_str()).unwrap();
+                split_desc = match split_to_desc(split) {
+                    Some(desc) => desc,
+                    None => {
+                        eprintln!("Unable to get description for split code: {}.", split);
+                        continue;
+                    }
+                };
+            }
+            _ => {
+                if event_id_to_split(last_event.event_id.as_str()).is_none() {
+                    if last_event.event_id.as_str() == "rsg.credits" {
+                        println!(
+                            "Skipping guild with name '{}' for event id: '{}'.", 
+                            guild_name, 
+                            last_event.event_id
+                        );
+                        // Check other guilds here because we would want to check all guilds for a
+                        // completion.
+                        continue;
+                    }
                     println!(
-                        "Updated leaderboard in #pacemanbot-runner-leaderboard for guild name: {}, runner name: {} with time: {}.", 
-                        guild_name, 
-                        runner_name, 
-                        format_time(last_event.igt as u64),
+                        "Skipping event id: '{}' as it is unrecognized.",
+                        last_event.event_id
                     );
-                    continue;
+                    // Skip checking other guilds as the event id will not be recognized in them as
+                    // well.
+                    return;
                 }
-                Err(err) => {
-                    eprintln!(
-                        "Unable to update leaderboard in guild name: {} for runner name: {} due to: {}",
-                        guild_name, 
-                        record.nickname.to_owned(), 
-                        err
-                    );
-                    continue;
-                }
-            };
-        }
-        if event_id_to_split(last_event.event_id.as_str()).is_none() {
-            if last_event.event_id.as_str() == "rsg.credits" {
-                println!(
-                    "Skipping guild with name '{}' for event id: '{}'.", 
-                    guild_name, 
-                    last_event.event_id
-                );
-                // Check other guilds here because we would want to check all guilds for a
-                // completion.
-                continue;
-            }
-            println!(
-                "Skipping event id: '{}' as it is unrecognized.",
-                last_event.event_id
-            );
-            // Skip checking other guilds as the event id is not gonna be recognized in them as
-            // well.
-            return;
-        }
-
-        let mut split = event_id_to_split(last_event.event_id.as_str()).unwrap();
-        let mut bastionless_content = "";
-
-        let split_desc = match split_to_desc(split) {
-            Some(desc) => desc,
-            None => {
-                eprintln!("Unable to get description for split code: {}.", split);
-                continue;
-            }
-        };
-
-        if split == "Ba" {
-            let bastion_ss_context_check = record
-                .context_event_list
-                .iter()
-                .any(|ctx| ctx.event_id == "rsg.obtain_blaze_rod");
-
-            if bastion_ss_context_check {
-                split = &"SS";
-            } else {
-                split = &"FS";
-            }
-        } else if split == "F" {
-            let fort_ss_check = record
-                .event_list
-                .iter()
-                .filter(|evt| evt != &last_event)
-                .any(|evt| evt.event_id == "rsg.enter_bastion");
-
-            let mut fort_ss_context_check = false;
-            let mut context_hits = 0;
-            for ctx in record.context_event_list.iter() {
-                let context_check = ctx.event_id == "rsg.obtain_crying_obsidian" 
-                    || ctx.event_id == "rsg.obtain_obsidian" 
-                    || ctx.event_id == "rsg.loot_bastion";
-                if context_check {
-                    context_hits += 1;
-                } 
-            }
-            if context_hits >= 2 {
-                fort_ss_context_check = true;
-            }
-
-            if fort_ss_check && fort_ss_context_check {
-                split = &"SS";
-            }
-        }
-
-        if split == "B" {
-            if !record
-                .event_list
-                .iter()
-                .filter(|evt| evt != &last_event)
-                .any(|evt| evt.event_id == "rsg.enter_bastion")
-            {
-                bastionless_content = "(Bastionless)";
+                split = event_id_to_split(last_event.event_id.as_str()).unwrap();
+                split_desc = match split_to_desc(split) {
+                    Some(desc) => desc,
+                    None => {
+                        eprintln!("Unable to get description for split code: {}.", split);
+                        continue;
+                    }
+                };
             }
         }
 
@@ -303,15 +375,16 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
                 .collect::<Vec<_>>()
                 .join(" "),
         );
-        match channel_to_send_to
+        let message_id = match channel_to_send_to
             .send_message(&ctx, |m| m.content(content))
             .await
         {
-            Ok(_) => {
+            Ok(message) => {
                 println!(
                     "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.",
                     record.nickname, split_desc, guild_name
                 );
+                message.id
             }
             Err(err) => {
                 eprintln!(
@@ -320,6 +393,17 @@ pub async fn start_guild_loop(ctx: Arc<Context>, record: Response) {
                 );
                 continue;
             }
-        }
+        };
+        let mut c_last_pace = last_pace.lock().await;
+        match c_last_pace.get_mut(&record.user.uuid) {
+            Some(guilds) => {
+                guilds.insert(guild_id.to_owned(), message_id);
+            }
+            None => {
+                let mut guilds = HashMap::new();
+                guilds.insert(guild_id.to_owned(), message_id);
+                c_last_pace.insert(record.user.uuid.to_owned(), guilds);
+            }
+        };
     }
 }
