@@ -1,25 +1,34 @@
-use crate::{handler_utils::*, types::Response, utils::get_response_stream_from_api};
+use crate::{
+    handler_utils::*,
+    types::{ArcMux, GuildData, Response},
+    utils::get_response_stream_from_api,
+};
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
-    model::{
-        application::interaction::Interaction,
-        gateway::Ready,
-        id::{GuildId, MessageId},
-        prelude::Guild,
-    },
+    model::{application::interaction::Interaction, gateway::Ready, id::GuildId, prelude::Guild},
 };
 use std::{collections::HashMap, sync::Arc, time::Duration};
-use tokio::{sync::Mutex, time::sleep};
+use tokio::time::sleep;
 use tokio_stream::StreamExt;
 use tokio_tungstenite::tungstenite::Message;
 
 use crate::core::parse_record;
-pub struct Handler;
+pub struct Handler {
+    pub guild_cache: ArcMux<HashMap<GuildId, GuildData>>,
+}
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn guild_create(&self, ctx: Context, guild: Guild, _is_new: bool) {
+    async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
+        if is_new {
+            let guild_data = match GuildData::new(&ctx, guild.id).await {
+                Ok(data) => data,
+                Err(err) => return eprintln!("{}", err),
+            };
+            let mut locked_guild_cache = self.guild_cache.lock().await;
+            locked_guild_cache.insert(guild.id, guild_data);
+        }
         handle_guild_create(&ctx, guild.id).await;
     }
 
@@ -34,8 +43,7 @@ impl EventHandler for Handler {
 
         const TIMEOUT_FOR_RETRY: u64 = 5;
 
-        let last_pace: Arc<Mutex<HashMap<String, HashMap<GuildId, MessageId>>>> =
-            Arc::new(Mutex::new(HashMap::new()));
+        let guild_cache = self.guild_cache.clone();
 
         tokio::spawn(async move {
             loop {
@@ -49,6 +57,23 @@ impl EventHandler for Handler {
                     }
                 };
                 while let Some(msg) = response_stream.next().await {
+                    for guild_id in ctx.clone().cache.guilds() {
+                        let mut locked_guild_cache = guild_cache.lock().await;
+                        if let Some(cache) = locked_guild_cache.get(&guild_id) {
+                            let mut guild_data = match GuildData::new(&ctx, guild_id).await {
+                                Ok(data) => data,
+                                Err(err) => {
+                                    eprintln!("{}", err);
+                                    locked_guild_cache.remove(&guild_id);
+                                    continue;
+                                }
+                            };
+                            if !guild_data.is_private {
+                                guild_data.players = cache.players.clone();
+                            }
+                            locked_guild_cache.insert(guild_id, guild_data);
+                        }
+                    }
                     if let Ok(Message::Text(text_response)) = msg {
                         let record: Response = match serde_json::from_str(text_response.as_str()) {
                             Ok(response) => response,
@@ -61,9 +86,9 @@ impl EventHandler for Handler {
                             }
                         };
                         let ctx = ctx.clone();
-                        let c_last_pace = last_pace.clone();
+                        let guild_cache = guild_cache.clone();
                         tokio::spawn(async move {
-                            parse_record(ctx.clone(), record, c_last_pace).await
+                            parse_record(ctx.clone(), record, guild_cache.clone()).await;
                         });
                     }
                 }

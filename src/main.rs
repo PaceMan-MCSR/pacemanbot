@@ -8,10 +8,13 @@ mod types;
 mod utils;
 use dotenv::dotenv;
 use handler::Handler;
-use serenity::client::Client;
 use serenity::framework::standard::StandardFramework;
+use serenity::futures::lock::Mutex;
 use serenity::prelude::GatewayIntents;
-use std::env;
+use serenity::{client::Client, model::id::GuildId};
+use std::sync::Arc;
+use std::{collections::HashMap, env};
+use types::{ArcMux, GuildData};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -20,8 +23,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let framework = StandardFramework::new().configure(|c| c.prefix("!"));
 
+    let guild_cache: ArcMux<HashMap<GuildId, GuildData>> = Arc::new(Mutex::new(HashMap::new()));
+
     let mut client = Client::builder(&token, GatewayIntents::all())
-        .event_handler(Handler)
+        .event_handler(Handler { guild_cache })
         .framework(framework)
         .await
         .expect("Error creating client");

@@ -13,7 +13,7 @@ use tokio_tungstenite::{
     MaybeTlsStream, WebSocketStream,
 };
 
-use crate::types::ResponseError;
+use crate::types::{PlayerSplitsData, ResponseError, Split};
 
 pub async fn remove_roles_starting_with(
     ctx: &Context,
@@ -38,7 +38,7 @@ pub async fn remove_roles_starting_with(
 
 pub fn extract_split_from_role_name(
     role_name: &str,
-) -> Result<(String, u8, u8), Box<dyn std::error::Error>> {
+) -> Result<(Split, u8, u8), Box<dyn std::error::Error>> {
     let role_name = role_name.replace("*", "");
     let role_name = role_name.replace(" ", "");
     let re = Regex::new(r"([a-zA-Z]+)(\d+)\:(\d+)")?;
@@ -85,19 +85,20 @@ pub fn extract_split_from_role_name(
     .as_str()
     .parse::<u8>()?
         * 10;
-    Ok((character, minutes, seconds))
+    let split = Split::from_str(character.as_str()).unwrap();
+    Ok((split, minutes, seconds))
 }
 
-pub fn extract_split_from_pb_role_name(role_name: &str) -> String {
+pub fn extract_split_from_pb_role_name(role_name: &str) -> Option<Split> {
     let role_name = role_name.replace("*", "");
     let role_name = role_name.replace(" ", "");
     let role_name = role_name.replace("PB", "");
-    role_name
+    Split::from_str(role_name.as_str())
 }
 
 pub fn extract_name_and_splits_from_line(
     line: &str,
-) -> Result<(String, Vec<u8>), Box<dyn std::error::Error>> {
+) -> Result<(String, PlayerSplitsData), Box<dyn std::error::Error>> {
     let line = line.trim();
     let line = line.replace(" ", "");
     let line_splits = line.split(':').collect::<Vec<&str>>();
@@ -109,7 +110,8 @@ pub fn extract_name_and_splits_from_line(
     if splits.len() != 5 {
         return Err(format!("Unable to parse line contents: '{}'.", line).into());
     }
-    let mut splits_u8: Vec<u8> = vec![];
+    let mut idx = 0;
+    let mut split_data = PlayerSplitsData::new();
     for split in splits {
         let split_u8 = match split.parse::<u8>() {
             Ok(split) => split,
@@ -117,9 +119,17 @@ pub fn extract_name_and_splits_from_line(
                 return Err(format!("Unable to parse to u8 due to: {}", err).into());
             }
         };
-        splits_u8.push(split_u8);
+        match idx {
+            0 => split_data.first_structure = split_u8,
+            1 => split_data.second_structure = split_u8,
+            2 => split_data.blind = split_u8,
+            3 => split_data.eye_spy = split_u8,
+            4 => split_data.end_enter = split_u8,
+            _ => (),
+        };
+        idx += 1;
     }
-    Ok((player_name.to_string(), splits_u8))
+    Ok((player_name.to_string(), split_data))
 }
 
 pub fn get_time(milliseconds: u64) -> (u8, u8) {
@@ -170,28 +180,6 @@ pub async fn get_response_stream_from_api(
         Err(err) => return Err(ResponseError::new(err)),
     };
     Ok(response_stream)
-}
-
-pub fn event_id_to_split(event_id: &str) -> Option<&str> {
-    match event_id {
-        "rsg.enter_bastion" => Some("Ba"),
-        "rsg.enter_fortress" => Some("F"),
-        "rsg.first_portal" => Some("B"),
-        "rsg.enter_stronghold" => Some("E"),
-        "rsg.enter_end" => Some("EE"),
-        _ => None,
-    }
-}
-
-pub fn split_to_desc(split: &str) -> Option<&str> {
-    match split {
-        "Ba" => Some("Enter Bastion"),
-        "F" => Some("Enter Fortress"),
-        "B" => Some("First Portal"),
-        "E" => Some("Enter Stronghold"),
-        "EE" => Some("Enter End"),
-        _ => None,
-    }
 }
 
 pub async fn update_leaderboard(
@@ -275,26 +263,37 @@ pub async fn update_leaderboard(
 pub fn create_select_option<'a>(
     o: &'a mut CreateSelectMenuOptions,
     roles: &Vec<&Role>,
-    split_name: &str,
-    split_desc: &str,
+    target_split: Split,
 ) -> Result<&'a mut CreateSelectMenuOptions, Box<dyn std::error::Error>> {
     for role in roles {
         if role.name.contains("PB") {
-            let split = extract_split_from_pb_role_name(&role.name);
-            if split == split_name {
+            let split = match extract_split_from_pb_role_name(&role.name) {
+                Some(split) => split,
+                None => {
+                    return Err(
+                        format!("Unable to extract split from pb role name: {}", role.name).into(),
+                    )
+                }
+            };
+            if split == target_split {
                 o.add_option(
                     CreateSelectMenuOption::default()
-                        .label(format!("PB Pace {}", split_desc))
+                        .label(format!("PB Pace {}", target_split.alt_desc()))
                         .value(role.id.to_string())
                         .to_owned(),
                 );
             }
         } else {
             let (split, minutes, seconds) = extract_split_from_role_name(&role.name)?;
-            if split == split_name {
+            if split == target_split {
                 o.add_option(
                     CreateSelectMenuOption::default()
-                        .label(format!("Sub {}:{:02} {}", minutes, seconds, split_desc))
+                        .label(format!(
+                            "Sub {}:{:02} {}",
+                            minutes,
+                            seconds,
+                            target_split.alt_desc()
+                        ))
                         .value(role.id.to_string())
                         .to_owned(),
                 );

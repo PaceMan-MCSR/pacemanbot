@@ -1,130 +1,51 @@
 use std::{collections::HashMap, sync::Arc};
 
-use serenity::{prelude::{Context, Mentionable}, model::id::{MessageId, GuildId}};
+use serenity::{prelude::{Context, Mentionable}, model::id::GuildId};
 
 use crate::{
-    types::Response,
-    utils::{
-        event_id_to_split, extract_name_and_splits_from_line, extract_split_from_pb_role_name,
-        extract_split_from_role_name, format_time, get_time, split_to_desc, update_leaderboard,
-    },
+    types::{Response, ArcMux, GuildData, Split, PlayerData},
+    utils::{format_time, get_time, update_leaderboard},
 };
-use tokio::sync::Mutex;
 
-pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mutex<HashMap<String, HashMap<GuildId, MessageId>>>>) {
-    let ctx = ctx.clone();
-    'guild_loop: for guild_id in &ctx.cache.guilds() {
-        let guild_name = match guild_id.name(&ctx.cache) {
-            Some(name) => name,
+
+pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcMux<HashMap<GuildId, GuildData>>) {
+    for guild_id in ctx.cache.guilds() {
+        let mut locked_guild_cache = guild_cache.lock().await;
+        let locked_guild_cache = match locked_guild_cache.get_mut(&guild_id) {
+            Some(cache) => cache,
             None => {
-                eprintln!("Error getting name for guild id: {}.", guild_id);
-                continue;
-            }
-        };
-        let channels = match ctx.cache.guild_channels(guild_id) {
-            Some(channels) => channels.to_owned(),
-            None => {
-                eprintln!("Unable to get channels for guild with name: {}", guild_name);
-                continue;
-            }
-        };
-        let channel_to_send_to = match channels.iter().find(|c| c.name == "pacemanbot") {
-            Some(channel) => channel,
-            None => {
-                eprintln!(
-                    "Error finding #pacemanbot channel in guild name: {}.",
-                    guild_name
-                );
-                continue;
-            }
-        };
-        let guild_roles = match ctx.cache.guild_roles(guild_id) {
-            Some(roles) => roles,
-            None => {
-                eprintln!("Unable to get roles in guild name: {}.", guild_name);
-                continue;
-            }
-        };
-        let guild_roles = guild_roles
-            .iter()
-            .filter(|(_, role)| role.name.starts_with("*"))
-            .map(|(_, role)| role)
-            .collect::<Vec<_>>();
-
-        let mut player_in_runner_names = false;
-        let mut player_splits: HashMap<String, u8> = HashMap::new();
-        if channels.iter().any(|c| c.name == "pacemanbot-runner-names") {
-            let channel_containing_player_names = channels
-                .iter()
-                .find(|c| c.name == "pacemanbot-runner-names")
-                .unwrap();
-
-            let messages = match channel_containing_player_names
-                .messages(&ctx, |m| m.limit(1))
-                .await
-            {
-                Ok(messages) => messages,
-                Err(err) => {
-                    eprintln!(
-                        "Error getting messages from #pacemanbot-runner-names for guild name: {} due to: {}",
-                        guild_name, err
-                    );
-                    continue;
-                }
-            };
-
-            let player_names = 
-                    match messages.last() {
-                        Some(message) => message,
-                        None => {
-                            eprintln!(
-                                "Error getting first message from #pacemanbot-runner-names for guild name: {}",
-                                guild_name
-                            );
-                            continue;
-                        }
-                    }
-                    .content
-                    .split("\n")
-                    .map(|s| s.to_string())
-                    .collect::<Vec<String>>();
-
-            let split_codes = vec!["FS", "SS", "B", "E", "EE"];
-
-            for line in player_names.iter() {
-                let (player_name, splits) = match extract_name_and_splits_from_line(line.as_str()) {
-                    Ok(tup) => tup,
+                let guild_data = match GuildData::new(&ctx, guild_id.to_owned()).await {
+                    Ok(data) => data,
                     Err(err) => {
-                        eprintln!(
-                            "Unable to parse runner-names in guild, with name {} due to: {}",
-                            guild_name, err
-                        );
-                        continue 'guild_loop;
+                        eprintln!("{}", err);
+                        continue;
                     }
                 };
+                locked_guild_cache.insert(guild_id.to_owned(), guild_data);
+                locked_guild_cache.get_mut(&guild_id).unwrap()
+            }
+        };
+        let guild_name = locked_guild_cache.name.to_owned();
+        let channel_to_send_to = locked_guild_cache.pace_channel;
+        let guild_roles = &locked_guild_cache.roles;
 
-                // Nish did this :PagMan:
-                if player_name.to_lowercase() == record.nickname.to_owned().to_lowercase() {
-                    let mut split_no = 0;
-                    for split_minutes in splits {
-                        let split = split_codes[split_no];
-                        player_splits.insert(split.to_string(), split_minutes);
-                        split_no += 1;
-                    }
-                    player_in_runner_names = true;
-                    break;
+        let player_data = match locked_guild_cache.players.get_mut(&record.nickname.to_lowercase()) {
+            Some(data) => data,
+            None => {
+                if locked_guild_cache.is_private {
+                     println!(
+                         "Skipping because player, with name '{}', is not in the runners channel for guild name: '{}'.", 
+                          record.nickname.to_owned(),
+                          guild_name
+                      );
+                     continue;
                 }
+                let player_data = PlayerData::new();
+                locked_guild_cache.players.insert(record.nickname.to_owned(), player_data);
+                locked_guild_cache.players.get_mut(&record.nickname.to_owned()).unwrap()
             }
-
-            if !player_in_runner_names {
-                println!(
-                    "Skipping because player, with name '{}' is not in this guild, with guild name: '{}', or is not in the runners channel.", 
-                     record.nickname.to_owned(),
-                     guild_name
-                 );
-                continue;
-            }
-        }
+        };
+        let player_splits = &player_data.splits;
 
         let last_event = match record.event_list.last() {
             Some(event) => event.to_owned(),
@@ -134,27 +55,19 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
             }
         };
         
-        let split: &str;
-        let split_desc: &str;
+        let split: Split;
+        let split_desc: String;
         let mut bastionless_content: &str = "";
         match last_event.event_id.as_str() {
             "common.open_to_lan"| "common.multiplayer" | "common.enable_cheats" | "common.view_seed" | "common.leave_world" => {
-                let c_last_pace = last_pace.lock().await;
-                let last_guilds = match c_last_pace.get(&record.user.uuid){
-                    Some(guilds) => guilds,
-                    None => {
-                        eprintln!("Unable to find last pace for user: {}", record.nickname);
-                        continue;
-                    }
-                };
-                let message_id = match last_guilds.get(&guild_id) {
+                let message_id = match player_data.last_pace_message {
                     Some(id) => id,
                     None => {
-                        eprintln!("Unable to get last guild for user: {}", record.nickname);
+                        eprintln!("No last pace message to edit for reset.");
                         continue;
                     }
                 };
-                let mut message = match ctx.cache.message(channel_to_send_to.id, message_id) {
+                let mut message = match ctx.cache.message(channel_to_send_to, message_id) {
                     Some(message) => message,
                     None => {
                         eprintln!("Unable to construct message from message id: {}", message_id);
@@ -183,7 +96,7 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
             "rsg.credits" => {
                 let runner_name = record.nickname.to_owned();
                 let (minutes, seconds) = get_time(last_event.igt as u64);
-                match update_leaderboard(&ctx, guild_id, runner_name.to_owned(), (minutes, seconds))
+                match update_leaderboard(&ctx, &guild_id, runner_name.to_owned(), (minutes, seconds))
                     .await
                 {
                     Ok(_) => {
@@ -207,32 +120,16 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
                 };
             }
             "rsg.enter_bastion" => {
-                split_desc = match split_to_desc("Ba") {
-                    Some(desc) => desc,
-                    None => {
-                        eprintln!("Unable to get description for split code: 'Ba'.");
-                        continue;
-                    }
-                };
-                let bastion_ss_context_check = record
-                    .context_event_list
+                if record.context_event_list
                     .iter()
-                    .any(|ctx| ctx.event_id == "rsg.obtain_blaze_rod");
-
-                if bastion_ss_context_check {
-                    split = &"SS";
+                    .any(|ctx| ctx.event_id == "rsg.obtain_blaze_rod") {
+                    split = Split::SecondStructure;
                 } else {
-                    split = &"FS";
+                    split = Split::FirstStructure;
                 }
+                split_desc = split.desc(Some("Bastion"));
             }
             "rsg.enter_fortress" => {
-                split_desc = match split_to_desc("F") {
-                    Some(desc) => desc,
-                    None => {
-                        eprintln!("Unable to get description for split code: 'F'");
-                        continue;
-                    }
-                };
                 let fort_ss_check = record
                     .event_list
                     .iter()
@@ -254,11 +151,11 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
                 }
 
                 if fort_ss_check && fort_ss_context_check {
-                    split = &"SS";
+                    split = Split::SecondStructure
                 } else {
-                    // split is made invalid on purpose here to not send a message at all.
-                    split = &"F";
+                    split = Split::FirstStructure
                 }
+                split_desc = split.desc(Some("Fortress"));
             }
             "rsg.first_portal" => {
                 if !record
@@ -269,17 +166,17 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
                 {
                     bastionless_content = "(Bastionless)";
                 }
-                split = event_id_to_split(last_event.event_id.as_str()).unwrap();
-                split_desc = match split_to_desc(split) {
-                    Some(desc) => desc,
+                split = match Split::from_event_id(last_event.event_id.as_str()) {
+                    Some(split) => split,
                     None => {
-                        eprintln!("Unable to get description for split code: {}.", split);
+                        eprintln!("Unable to convert event id: 'rsg.first_portal' to split.");
                         continue;
                     }
                 };
+                split_desc = split.desc(None);
             }
             _ => {
-                if event_id_to_split(last_event.event_id.as_str()).is_none() {
+                if Split::from_event_id(last_event.event_id.as_str()).is_none() {
                     if last_event.event_id.as_str() == "rsg.credits" {
                         println!(
                             "Skipping guild with name '{}' for event id: '{}'.", 
@@ -298,14 +195,14 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
                     // well.
                     return;
                 }
-                split = event_id_to_split(last_event.event_id.as_str()).unwrap();
-                split_desc = match split_to_desc(split) {
-                    Some(desc) => desc,
+                split = match Split::from_event_id(last_event.event_id.as_str()) {
+                    Some(split) => split,
                     None => {
-                        eprintln!("Unable to get description for split code: {}.", split);
+                        eprintln!("Unable to convert event id: '{}' to split.", last_event.event_id);
                         continue;
                     }
                 };
+                split_desc = split.desc(None);
             }
         }
 
@@ -313,28 +210,16 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
             .iter()
             .filter(|role| {
                 let (split_minutes, split_seconds) = get_time(last_event.igt as u64);
-                if role.name.contains("PB") {
-                    if !player_in_runner_names {
+                if role.guild_role.name.contains("PB") {
+                    if !locked_guild_cache.is_private {
                         return false;
                     }
-                    let role_split = extract_split_from_pb_role_name(role.name.as_str());
-                    let pb_minutes = player_splits.get(&role_split).unwrap().to_owned();
-                    role_split == *split && pb_minutes > split_minutes
+                    let pb_minutes = player_splits.get(&role.split).unwrap().to_owned();
+                    role.split == split && pb_minutes > split_minutes
                 } else {
-                    let (role_split_name, role_minutes, role_seconds) =
-                        match extract_split_from_role_name(role.name.as_str()) {
-                            Ok(tup) => tup,
-                            Err(err) => {
-                                eprintln!(
-                                    "Unable to extract split from role name: '{}' due to: {}",
-                                    role.name, err
-                                );
-                                return false;
-                            }
-                        };
-                    role_split_name == *split
-                        && role_minutes >= split_minutes
-                        && (role_minutes != split_minutes || role_seconds > split_seconds)
+                    role.split == split
+                        && role.minutes >= split_minutes
+                        && (role.minutes != split_minutes || role.seconds > split_seconds)
                 }
             })
             .collect::<Vec<_>>();
@@ -342,7 +227,7 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
         let live_link = match record.user.live_account.to_owned() {
             Some(acc) => format!("[{}](<https://twitch.tv/{}>)", record.nickname, acc),
             None => {
-                if !player_in_runner_names {
+                if !locked_guild_cache.is_private {
                     println!(
                         "Skipping split: '{}' because user with name: '{}' is not live.",
                         split_desc, record.nickname,
@@ -371,11 +256,12 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
             (record.last_updated / 1000) as u64,
             roles_to_ping
                 .iter()
-                .map(|role| role.mention().to_string())
+                .map(|role| role.guild_role.mention().to_string())
                 .collect::<Vec<_>>()
                 .join(" "),
         );
-        let message_id = match channel_to_send_to
+
+        player_data.last_pace_message = match channel_to_send_to
             .send_message(&ctx, |m| m.content(content))
             .await
         {
@@ -384,7 +270,8 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
                     "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.",
                     record.nickname, split_desc, guild_name
                 );
-                message.id
+                player_data.last_split = Some(split);
+                Some(message.id)
             }
             Err(err) => {
                 eprintln!(
@@ -392,17 +279,6 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, last_pace: Arc<Mu
                     split_desc, roles_to_ping, err
                 );
                 continue;
-            }
-        };
-        let mut c_last_pace = last_pace.lock().await;
-        match c_last_pace.get_mut(&record.user.uuid) {
-            Some(guilds) => {
-                guilds.insert(guild_id.to_owned(), message_id);
-            }
-            None => {
-                let mut guilds = HashMap::new();
-                guilds.insert(guild_id.to_owned(), message_id);
-                c_last_pace.insert(record.user.uuid.to_owned(), guilds);
             }
         };
     }

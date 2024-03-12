@@ -8,6 +8,7 @@ use serenity::prelude::Context;
 use serenity::utils::Color;
 use serenity::{builder::CreateActionRow, model::prelude::component::ButtonStyle::Primary};
 
+use crate::types::Split;
 use crate::utils::{
     create_select_option, extract_split_from_pb_role_name, extract_split_from_role_name,
 };
@@ -67,8 +68,14 @@ pub async fn send_role_selection_message(
 
     let send_bastion_picker = roles.iter().any(|role| {
         if role.name.contains("PB") {
-            let split = extract_split_from_pb_role_name(&role.name);
-            return split == "FS";
+            let split = match extract_split_from_pb_role_name(&role.name) {
+                Some(split) => split,
+                None => {
+                    eprintln!("Unable to get pb split from role name: '{}'.", role.name);
+                    return false;
+                }
+            };
+            return split == Split::FirstStructure;
         }
         let (split, _minutes, _seconds) = match extract_split_from_role_name(&role.name) {
             Ok(tup) => tup,
@@ -80,13 +87,14 @@ pub async fn send_role_selection_message(
                 return false;
             }
         };
-        split == "FS"
+        split == Split::FirstStructure
     });
+
     select_bastion_role_action_row.create_select_menu(|m| {
         m.custom_id("select_structure1_role")
             .placeholder("Choose a First Structure Role...")
             .options(|o| {
-                match create_select_option(o, &roles, "FS", "Structure 1") {
+                match create_select_option(o, &roles, Split::FirstStructure) {
                     Ok(_) => (),
                     Err(err) => {
                         eprintln!("Unable to create select option due to: {}", err);
@@ -99,7 +107,7 @@ pub async fn send_role_selection_message(
         m.custom_id("select_structure2_role")
             .placeholder("Choose a Second Structure Role...")
             .options(|o| {
-                match create_select_option(o, &roles, "SS", "Structure 2") {
+                match create_select_option(o, &roles, Split::SecondStructure) {
                     Ok(_) => (),
                     Err(err) => {
                         eprintln!("Unable to create select option due to: {}", err);
@@ -112,7 +120,7 @@ pub async fn send_role_selection_message(
         m.custom_id("select_blind_role")
             .placeholder("Choose a Blind Role...")
             .options(|o| {
-                match create_select_option(o, &roles, "B", "Blind") {
+                match create_select_option(o, &roles, Split::Blind) {
                     Ok(_) => (),
                     Err(err) => {
                         eprintln!("Unable to create select option due to: {}", err);
@@ -125,7 +133,7 @@ pub async fn send_role_selection_message(
         m.custom_id("select_eye_spy_role")
             .placeholder("Choose an Eye Spy Role...")
             .options(|o| {
-                match create_select_option(o, &roles, "E", "Eye Spy") {
+                match create_select_option(o, &roles, Split::EyeSpy) {
                     Ok(_) => (),
                     Err(err) => {
                         eprintln!("Unable to create select option due to: {}", err);
@@ -138,7 +146,7 @@ pub async fn send_role_selection_message(
         m.custom_id("select_end_enter_role")
             .placeholder("Choose an End Enter Role...")
             .options(|o| {
-                match create_select_option(o, &roles, "EE", "End Enter") {
+                match create_select_option(o, &roles, Split::EndEnter) {
                     Ok(_) => (),
                     Err(err) => {
                         eprintln!("Unable to create select option due to: {}", err);
@@ -265,20 +273,15 @@ pub async fn setup_roles(
         };
     }
 
-    let role_prefix;
-    match split_name.as_str() {
-        "first_structure" => role_prefix = "FS",
-        "second_structure" => role_prefix = "SS",
-        "blind" => role_prefix = "B",
-        "eye_spy" => role_prefix = "E",
-        "end_enter" => role_prefix = "EE",
-        _ => return Err(format!("Unrecognized split name: '{}'.", split_name).into()),
-    }
+    let role_split = match Split::from_command_param(split_name.as_str()) {
+        Some(split) => split,
+        None => return Err(format!("Unrecognized split name: '{}'.", split_name).into()),
+    };
 
     let roles = guild.roles(&ctx).await?;
     for minutes in split_start..split_end {
         let seconds = 0;
-        let role = format!("*{}{}:{}", role_prefix, minutes, seconds);
+        let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
         if !roles.iter().any(|(_, r)| r.name == role) {
             guild
                 .create_role(ctx, |r| {
@@ -287,7 +290,7 @@ pub async fn setup_roles(
                 .await?;
         }
         let seconds = 3;
-        let role = format!("*{}{}:{}", role_prefix, minutes, seconds);
+        let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
         if !roles.iter().any(|(_, r)| r.name == role) {
             guild
                 .create_role(ctx, |r| {
@@ -297,7 +300,7 @@ pub async fn setup_roles(
         }
     }
     let seconds = 0;
-    let role = format!("*{}{}:{}", role_prefix, split_end, seconds);
+    let role = format!("*{}{}:{}", role_split.to_str(), split_end, seconds);
     if !roles.iter().any(|(_, r)| r.name == role) {
         guild
             .create_role(ctx, |r| {
@@ -323,10 +326,16 @@ pub async fn setup_pb_roles(
     command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
     command.defer_ephemeral(&ctx).await?;
-    let splits: Vec<&str> = vec!["FS", "SS", "B", "E", "EE"];
+    let splits: Vec<Split> = vec![
+        Split::FirstStructure,
+        Split::SecondStructure,
+        Split::Blind,
+        Split::EyeSpy,
+        Split::EndEnter,
+    ];
     let roles = guild.roles(&ctx).await?;
     for split in splits {
-        let role_name = format!("*{}PB", split);
+        let role_name = format!("*{}PB", split.to_str());
         if !roles.iter().any(|(_, role)| role.name == role_name) {
             guild
                 .create_role(ctx, |r| {
