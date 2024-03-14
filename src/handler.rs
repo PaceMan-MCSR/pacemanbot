@@ -1,21 +1,23 @@
 use crate::{
+    guild_types::{CachedGuilds, GuildData},
     handler_utils::*,
-    types::{ArcMux, GuildData, Response},
+    response_types::Response,
     utils::get_response_stream_from_api,
+    ArcMux,
 };
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
-    model::{application::interaction::Interaction, gateway::Ready, id::GuildId, prelude::Guild},
+    futures::StreamExt,
+    model::{application::interaction::Interaction, gateway::Ready, prelude::Guild},
 };
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 use tokio::time::sleep;
-use tokio_stream::StreamExt;
 use tokio_tungstenite::tungstenite::Message;
 
 use crate::core::parse_record;
 pub struct Handler {
-    pub guild_cache: ArcMux<HashMap<GuildId, GuildData>>,
+    pub guild_cache: ArcMux<CachedGuilds>,
 }
 
 #[async_trait]

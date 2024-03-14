@@ -1,14 +1,17 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
-use serenity::{prelude::{Context, Mentionable}, model::id::GuildId};
+use serenity::prelude::{Context, Mentionable};
 
 use crate::{
-    types::{Response, ArcMux, GuildData, Split, PlayerData},
+    response_types::Response,
+    guild_types:: {GuildData, Split, PlayerData, CachedGuilds},
     utils::{format_time, get_time, update_leaderboard},
+    ArcMux,
 };
 
+const SPECIAL_UNDERSCORE: &'static str = "ˍ";
 
-pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcMux<HashMap<GuildId, GuildData>>) {
+pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcMux<CachedGuilds>) {
     for guild_id in ctx.cache.guilds() {
         let mut locked_guild_cache = guild_cache.lock().await;
         let locked_guild_cache = match locked_guild_cache.get_mut(&guild_id) {
@@ -40,7 +43,7 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
                       );
                      continue;
                 }
-                let player_data = PlayerData::new();
+                let player_data = PlayerData::default();
                 locked_guild_cache.players.insert(record.nickname.to_owned(), player_data);
                 locked_guild_cache.players.get_mut(&record.nickname.to_owned()).unwrap()
             }
@@ -225,7 +228,7 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
             .collect::<Vec<_>>();
 
         let live_link = match record.user.live_account.to_owned() {
-            Some(acc) => format!("[{}](<https://twitch.tv/{}>)", record.nickname, acc),
+            Some(acc) => format!("[{}](<https://twitch.tv/{}>)", record.nickname.replace("_", SPECIAL_UNDERSCORE), acc),
             None => {
                 if !locked_guild_cache.is_private {
                     println!(
@@ -234,7 +237,7 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
                     );
                     continue;
                 } else {
-                    format!("Offline - {}", record.nickname.to_owned())
+                    format!("Offline - {}", record.nickname.replace("_", SPECIAL_UNDERSCORE))
                 }
             }
         };

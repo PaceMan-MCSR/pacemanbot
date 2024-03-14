@@ -13,7 +13,7 @@ use tokio_tungstenite::{
     MaybeTlsStream, WebSocketStream,
 };
 
-use crate::types::{PlayerSplitsData, ResponseError, Split};
+use crate::guild_types::{PlayerSplitsData, Split};
 
 pub async fn remove_roles_starting_with(
     ctx: &Context,
@@ -111,7 +111,7 @@ pub fn extract_name_and_splits_from_line(
         return Err(format!("Unable to parse line contents: '{}'.", line).into());
     }
     let mut idx = 0;
-    let mut split_data = PlayerSplitsData::new();
+    let mut split_data = PlayerSplitsData::default();
     for split in splits {
         let split_u8 = match split.parse::<u8>() {
             Ok(split) => split,
@@ -146,24 +146,24 @@ pub fn format_time(milliseconds: u64) -> String {
 }
 
 pub async fn get_response_stream_from_api(
-) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, ResponseError> {
+) -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, String> {
     let url = match env::var("WS_URL") {
         Ok(url) => url,
         Err(err) => {
-            eprintln!("{}", ResponseError::new(err));
+            eprintln!("{}", err);
             "wss://paceman.gg/ws".to_string()
         }
     };
     let host = match env::var("WS_HOST") {
         Ok(host) => host,
         Err(err) => {
-            eprintln!("{}", ResponseError::new(err));
+            eprintln!("{}", err);
             "paceman.gg:8081".to_string()
         }
     };
     let auth_key: String = match env::var("API_AUTH_KEY") {
         Ok(key) => key,
-        Err(err) => return Err(ResponseError::new(err)),
+        Err(err) => return Err(format!("Env var not found: {}", err)),
     };
     let request = request::Request::builder()
         .uri(url)
@@ -177,7 +177,7 @@ pub async fn get_response_stream_from_api(
         .unwrap();
     let (response_stream, _) = match tokio_tungstenite::connect_async(request).await {
         Ok(stream_tuple) => stream_tuple,
-        Err(err) => return Err(ResponseError::new(err)),
+        Err(err) => return Err(format!("WS Connection error: {}", err)),
     };
     Ok(response_stream)
 }

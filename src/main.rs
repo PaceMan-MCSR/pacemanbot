@@ -1,20 +1,23 @@
 mod components;
 mod core;
+mod guild_types;
 mod handler;
 mod handler_utils;
+mod response_types;
 #[cfg(test)]
 mod tests;
-mod types;
 mod utils;
 use dotenv::dotenv;
+use guild_types::CachedGuilds;
 use handler::Handler;
+use serenity::client::Client;
 use serenity::framework::standard::StandardFramework;
 use serenity::futures::lock::Mutex;
 use serenity::prelude::GatewayIntents;
-use serenity::{client::Client, model::id::GuildId};
 use std::sync::Arc;
 use std::{collections::HashMap, env};
-use types::{ArcMux, GuildData};
+
+pub type ArcMux<T> = Arc<Mutex<T>>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let framework = StandardFramework::new().configure(|c| c.prefix("!"));
 
-    let guild_cache: ArcMux<HashMap<GuildId, GuildData>> = Arc::new(Mutex::new(HashMap::new()));
+    let guild_cache: ArcMux<CachedGuilds> = Arc::new(Mutex::new(HashMap::new()));
 
     let mut client = Client::builder(&token, GatewayIntents::all())
         .event_handler(Handler { guild_cache })

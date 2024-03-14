@@ -14,6 +14,7 @@ use crate::{
         send_role_selection_message, setup_default_commands, setup_default_roles, setup_pb_roles,
         setup_roles,
     },
+    guild_types::Split,
     utils::remove_roles_starting_with,
 };
 
@@ -81,8 +82,9 @@ pub async fn handle_remove_pmb_roles(
 pub async fn handle_select_role(
     ctx: &Context,
     message_component: &MessageComponentInteraction,
-    split: &str,
+    split: Split,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let split_str = split.to_str();
     let guild_id = match message_component.guild_id {
         Some(guild_id) => guild_id,
         None => {
@@ -131,7 +133,7 @@ pub async fn handle_select_role(
             &ctx,
             &guild_id,
             &mut member,
-            format!("*{}", split).as_str(),
+            format!("*{}", split_str).as_str(),
             true,
         )
         .await?;
@@ -147,7 +149,7 @@ pub async fn handle_select_role(
             }
         };
         for role in member_roles {
-            if role.name.starts_with(&format!("*{}", split)) && role.name.contains("PB") {
+            if role.name.starts_with(&format!("*{}", split_str)) && role.name.contains("PB") {
                 member.remove_role(&ctx, role.id).await?;
             }
         }
@@ -211,11 +213,17 @@ pub async fn handle_message_component_interaction(
 ) {
     let custom_id = match message_component.data.custom_id.as_str() {
         "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
-        "select_structure1_role" => handle_select_role(&ctx, &message_component, "FS").await,
-        "select_structure2_role" => handle_select_role(&ctx, &message_component, "SS").await,
-        "select_blind_role" => handle_select_role(&ctx, &message_component, "B").await,
-        "select_eye_spy_role" => handle_select_role(&ctx, &message_component, "E").await,
-        "select_end_enter_role" => handle_select_role(&ctx, &message_component, "EE").await,
+        "select_structure1_role" => {
+            handle_select_role(&ctx, &message_component, Split::FirstStructure).await
+        }
+        "select_structure2_role" => {
+            handle_select_role(&ctx, &message_component, Split::SecondStructure).await
+        }
+        "select_blind_role" => handle_select_role(&ctx, &message_component, Split::Blind).await,
+        "select_eye_spy_role" => handle_select_role(&ctx, &message_component, Split::EyeSpy).await,
+        "select_end_enter_role" => {
+            handle_select_role(&ctx, &message_component, Split::EndEnter).await
+        }
         _ => Err(format!("Unknown custom id: {}.", message_component.data.custom_id).into()),
     };
     match custom_id {

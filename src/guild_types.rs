@@ -1,9 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
 use serenity::{
     client::Context,
-    futures::lock::Mutex,
     model::{
         guild::Role,
         id::{ChannelId, GuildId, MessageId},
@@ -15,62 +13,8 @@ use crate::utils::{
     extract_split_from_role_name,
 };
 
-pub type ArcMux<T> = Arc<Mutex<T>>;
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Event {
-    pub event_id: String,
-    pub rta: i64,
-    pub igt: i64,
-}
-
-impl PartialEq for Event {
-    fn eq(&self, other: &Self) -> bool {
-        let event_id_check = self.event_id == other.event_id;
-        let rta_check = self.rta == other.rta;
-        let igt_check = self.igt == other.rta;
-        event_id_check && rta_check && igt_check
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct User {
-    pub uuid: String,
-    pub live_account: Option<String>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Response {
-    pub world_id: String,
-    pub event_list: Vec<Event>,
-    pub context_event_list: Vec<Event>,
-    pub user: User,
-    pub is_cheated: bool,
-    pub is_hidden: bool,
-    pub last_updated: i64,
-    pub nickname: String,
-}
-
-pub struct ResponseError {
-    reason: String,
-}
-
-impl ResponseError {
-    pub fn new<T: std::fmt::Display>(err: T) -> Self {
-        Self {
-            reason: format!("ResponseError: {}", err),
-        }
-    }
-}
-
-impl std::fmt::Display for ResponseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}", self.reason))
-    }
-}
+pub type CachedGuilds = HashMap<GuildId, GuildData>;
+pub type Players = HashMap<String, PlayerData>;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Split {
@@ -223,7 +167,7 @@ pub struct PlayerSplitsData {
 }
 
 impl PlayerSplitsData {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         Self {
             first_structure: 0,
             second_structure: 0,
@@ -252,9 +196,9 @@ pub struct PlayerData {
 }
 
 impl PlayerData {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         Self {
-            splits: PlayerSplitsData::new(),
+            splits: PlayerSplitsData::default(),
             last_split: None,
             last_pace_message: None,
         }
@@ -264,7 +208,7 @@ impl PlayerData {
 pub struct GuildData {
     pub name: String,
     pub pace_channel: ChannelId,
-    pub players: HashMap<String, PlayerData>,
+    pub players: Players,
     pub is_private: bool,
     pub roles: Vec<RoleData>,
 }
@@ -293,7 +237,7 @@ impl GuildData {
         };
 
         let is_private = channels.iter().any(|c| c.name == "pacemanbot-runner-names");
-        let mut players: HashMap<String, PlayerData> = HashMap::new();
+        let mut players: Players = HashMap::new();
         if is_private {
             let players_channel = channels
                 .iter()
@@ -312,7 +256,7 @@ impl GuildData {
             };
             for line in first_message.content.split("\n") {
                 let (name, splits) = extract_name_and_splits_from_line(line)?;
-                let mut player_data = PlayerData::new();
+                let mut player_data = PlayerData::default();
                 player_data.splits = splits;
                 players.insert(name.to_lowercase(), player_data);
             }

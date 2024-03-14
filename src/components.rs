@@ -8,7 +8,7 @@ use serenity::prelude::Context;
 use serenity::utils::Color;
 use serenity::{builder::CreateActionRow, model::prelude::component::ButtonStyle::Primary};
 
-use crate::types::Split;
+use crate::guild_types::Split;
 use crate::utils::{
     create_select_option, extract_split_from_pb_role_name, extract_split_from_role_name,
 };
