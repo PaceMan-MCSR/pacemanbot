@@ -13,12 +13,16 @@ pub enum EventId {
     #[serde(rename = "common.leave_world")]
     CommonLeaveWorld,
 
+    #[serde(rename = "rsg.enter_nether")]
+    RsgEnterNether,
     #[serde(rename = "rsg.enter_bastion")]
     RsgEnterBastion,
     #[serde(rename = "rsg.enter_fortress")]
     RsgEnterFortress,
     #[serde(rename = "rsg.first_portal")]
     RsgFirstPortal,
+    #[serde(rename = "rsg.second_portal")]
+    RsgSecondPortal,
     #[serde(rename = "rsg.enter_stronghold")]
     RsgEnterStronghold,
     #[serde(rename = "rsg.enter_end")]

@@ -211,7 +211,7 @@ impl PlayerData {
 pub struct GuildData {
     pub name: String,
     pub pace_channel: ChannelId,
-    pub lb_channel: ChannelId,
+    pub lb_channel: Option<ChannelId>,
     pub players: Players,
     pub is_private: bool,
     pub roles: Vec<RoleData>,
@@ -239,22 +239,24 @@ impl GuildData {
                 return Err(format!("Unable to find #pacemanbot in guild name: {}", name,).into());
             }
         };
-
+        let is_private = channels.iter().any(|c| c.name == "pacemanbot-runner-names");
         let lb_channel = match channels
             .iter()
             .find(|c| c.name == "pacemanbot-runner-leaderboard")
         {
-            Some(channel) => channel.id,
+            Some(channel) => Some(channel.id),
             None => {
-                return Err(format!(
-                    "Unable to find #pacemanbot-runner-leaderboard in guild name: {}",
-                    name
-                )
-                .into());
+                if is_private {
+                    return Err(format!(
+                        "Unable to find #pacemanbot-runner-leaderboard in guild name: {}",
+                        name
+                    )
+                    .into());
+                }
+                None
             }
         };
 
-        let is_private = channels.iter().any(|c| c.name == "pacemanbot-runner-names");
         let mut players: Players = HashMap::new();
         if is_private {
             let players_channel = channels

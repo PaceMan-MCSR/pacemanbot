@@ -103,7 +103,10 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
             EventId::RsgCredits => {
                 let runner_name = record.nickname.to_owned();
                 let (minutes, seconds) = get_time(last_event.igt as u64);
-                match update_leaderboard(&ctx, guild_data.lb_channel, runner_name.to_owned(), (minutes, seconds))
+                if !guild_data.is_private {
+                    continue;
+                }
+                match update_leaderboard(&ctx, guild_data.lb_channel.unwrap(), runner_name.to_owned(), (minutes, seconds))
                     .await
                 {
                     Ok(_) => {
