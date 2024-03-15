@@ -8,9 +8,12 @@ use serenity::{
     },
 };
 
-use crate::utils::{
-    extract_name_and_splits_from_line, extract_split_from_pb_role_name,
-    extract_split_from_role_name,
+use crate::{
+    response_types::EventId,
+    utils::{
+        extract_name_and_splits_from_line, extract_split_from_pb_role_name,
+        extract_split_from_role_name,
+    },
 };
 
 pub type CachedGuilds = HashMap<GuildId, GuildData>;
@@ -37,11 +40,11 @@ impl Split {
         }
     }
 
-    pub fn from_event_id(event_id: &str) -> Option<Split> {
+    pub fn from_event_id(event_id: &EventId) -> Option<Split> {
         match event_id {
-            "rsg.first_portal" => Some(Split::Blind),
-            "rsg.enter_stronghold" => Some(Split::EyeSpy),
-            "rsg.enter_end" => Some(Split::EndEnter),
+            EventId::RsgFirstPortal => Some(Split::Blind),
+            EventId::RsgEnterStronghold => Some(Split::EyeSpy),
+            EventId::RsgEnterEnd => Some(Split::EndEnter),
             _ => None,
         }
     }
@@ -208,6 +211,7 @@ impl PlayerData {
 pub struct GuildData {
     pub name: String,
     pub pace_channel: ChannelId,
+    pub lb_channel: ChannelId,
     pub players: Players,
     pub is_private: bool,
     pub roles: Vec<RoleData>,
@@ -233,6 +237,20 @@ impl GuildData {
             Some(channel) => channel.id,
             None => {
                 return Err(format!("Unable to find #pacemanbot in guild name: {}", name,).into());
+            }
+        };
+
+        let lb_channel = match channels
+            .iter()
+            .find(|c| c.name == "pacemanbot-runner-leaderboard")
+        {
+            Some(channel) => channel.id,
+            None => {
+                return Err(format!(
+                    "Unable to find #pacemanbot-runner-leaderboard in guild name: {}",
+                    name
+                )
+                .into());
             }
         };
 
@@ -287,6 +305,7 @@ impl GuildData {
             name,
             is_private,
             pace_channel,
+            lb_channel,
             players,
             roles,
         })

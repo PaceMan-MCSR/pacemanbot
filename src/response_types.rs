@@ -1,30 +1,58 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
+pub enum EventId {
+    #[serde(rename = "common.open_to_lan")]
+    CommonOpenToLan,
+    #[serde(rename = "common.multiplayer")]
+    CommonMultiplayer,
+    #[serde(rename = "common.enable_cheats")]
+    CommonEnableCheats,
+    #[serde(rename = "common.view_seed")]
+    CommonViewSeed,
+    #[serde(rename = "common.leave_world")]
+    CommonLeaveWorld,
+
+    #[serde(rename = "rsg.enter_bastion")]
+    RsgEnterBastion,
+    #[serde(rename = "rsg.enter_fortress")]
+    RsgEnterFortress,
+    #[serde(rename = "rsg.first_portal")]
+    RsgFirstPortal,
+    #[serde(rename = "rsg.enter_stronghold")]
+    RsgEnterStronghold,
+    #[serde(rename = "rsg.enter_end")]
+    RsgEnterEnd,
+    #[serde(rename = "rsg.credits")]
+    RsgCredits,
+
+    #[serde(rename = "rsg.obtain_crying_obsidian")]
+    RsgObtainCryingObsidian,
+    #[serde(rename = "rsg.obtain_obsidian")]
+    RsgObtainObsidian,
+    #[serde(rename = "rsg.loot_bastion")]
+    RsgLootBastion,
+
+    #[serde(rename = "rsg.obtain_blaze_rod")]
+    RsgObtainBlazeRod,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Event {
-    pub event_id: String,
+    pub event_id: EventId,
     pub rta: i64,
     pub igt: i64,
 }
 
-impl PartialEq for Event {
-    fn eq(&self, other: &Self) -> bool {
-        let event_id_check = self.event_id == other.event_id;
-        let rta_check = self.rta == other.rta;
-        let igt_check = self.igt == other.rta;
-        event_id_check && rta_check && igt_check
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     pub uuid: String,
     pub live_account: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
     pub world_id: String,

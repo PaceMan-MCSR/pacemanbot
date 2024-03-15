@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use regex::Regex;
 use serenity::{
     builder::{CreateSelectMenuOption, CreateSelectMenuOptions},
-    model::prelude::{GuildId, Role},
+    model::{id::ChannelId, prelude::Role},
     prelude::Context,
 };
 use std::env;
@@ -184,21 +184,10 @@ pub async fn get_response_stream_from_api(
 
 pub async fn update_leaderboard(
     ctx: &Context,
-    guild_id: &GuildId,
+    leaderboard_channel: ChannelId,
     nickname: String,
     time: (u8, u8),
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let channels = match ctx.cache.guild_channels(guild_id) {
-        Some(channels) => channels,
-        None => return Err("Unable to get channels.".into()),
-    };
-    let leaderboard_channel = match channels
-        .iter()
-        .find(|c| c.name == "pacemanbot-runner-leaderboard")
-    {
-        Some(channel) => channel,
-        None => return Err("No channel with name: 'pacemanbot-runner-leaderboard'.".into()),
-    };
     let messages = leaderboard_channel.messages(&ctx, |m| m.limit(1)).await?;
     if messages.is_empty() {
         let leaderboard_content = format!(

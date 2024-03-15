@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serenity::prelude::{Context, Mentionable};
 
 use crate::{
-    response_types::Response,
+    response_types::{Response, EventId},
     guild_types:: {GuildData, Split, PlayerData, CachedGuilds},
     utils::{format_time, get_time, update_leaderboard},
     ArcMux,
@@ -14,7 +14,7 @@ const SPECIAL_UNDERSCORE: &'static str = "ˍ";
 pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcMux<CachedGuilds>) {
     for guild_id in ctx.cache.guilds() {
         let mut locked_guild_cache = guild_cache.lock().await;
-        let locked_guild_cache = match locked_guild_cache.get_mut(&guild_id) {
+        let guild_data = match locked_guild_cache.get_mut(&guild_id) {
             Some(cache) => cache,
             None => {
                 let guild_data = match GuildData::new(&ctx, guild_id.to_owned()).await {
@@ -28,14 +28,14 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
                 locked_guild_cache.get_mut(&guild_id).unwrap()
             }
         };
-        let guild_name = locked_guild_cache.name.to_owned();
-        let channel_to_send_to = locked_guild_cache.pace_channel;
-        let guild_roles = &locked_guild_cache.roles;
+        let guild_name = guild_data.name.to_owned();
+        let channel_to_send_to = guild_data.pace_channel;
+        let guild_roles = &guild_data.roles;
 
-        let player_data = match locked_guild_cache.players.get_mut(&record.nickname.to_lowercase()) {
+        let player_data = match guild_data.players.get_mut(&record.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
-                if locked_guild_cache.is_private {
+                if guild_data.is_private {
                      println!(
                          "Skipping because player, with name '{}', is not in the runners channel for guild name: '{}'.", 
                           record.nickname.to_owned(),
@@ -44,8 +44,8 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
                      continue;
                 }
                 let player_data = PlayerData::default();
-                locked_guild_cache.players.insert(record.nickname.to_owned(), player_data);
-                locked_guild_cache.players.get_mut(&record.nickname.to_owned()).unwrap()
+                guild_data.players.insert(record.nickname.to_owned(), player_data);
+                guild_data.players.get_mut(&record.nickname.to_owned()).unwrap()
             }
         };
         let player_splits = &player_data.splits;
@@ -61,8 +61,12 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
         let split: Split;
         let split_desc: String;
         let mut bastionless_content: &str = "";
-        match last_event.event_id.as_str() {
-            "common.open_to_lan"| "common.multiplayer" | "common.enable_cheats" | "common.view_seed" | "common.leave_world" => {
+        match last_event.event_id {
+            EventId::CommonViewSeed | 
+            EventId::CommonOpenToLan | 
+            EventId::CommonLeaveWorld | 
+            EventId::CommonMultiplayer | 
+            EventId::CommonEnableCheats => {
                 let message_id = match player_data.last_pace_message {
                     Some(id) => id,
                     None => {
@@ -96,10 +100,10 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
                 };
                 continue;
             }
-            "rsg.credits" => {
+            EventId::RsgCredits => {
                 let runner_name = record.nickname.to_owned();
                 let (minutes, seconds) = get_time(last_event.igt as u64);
-                match update_leaderboard(&ctx, &guild_id, runner_name.to_owned(), (minutes, seconds))
+                match update_leaderboard(&ctx, guild_data.lb_channel, runner_name.to_owned(), (minutes, seconds))
                     .await
                 {
                     Ok(_) => {
@@ -122,29 +126,29 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
                     }
                 };
             }
-            "rsg.enter_bastion" => {
+            EventId::RsgEnterBastion => {
                 if record.context_event_list
                     .iter()
-                    .any(|ctx| ctx.event_id == "rsg.obtain_blaze_rod") {
+                    .any(|ctx| ctx.event_id == EventId::RsgObtainBlazeRod) {
                     split = Split::SecondStructure;
                 } else {
                     split = Split::FirstStructure;
                 }
                 split_desc = split.desc(Some("Bastion"));
             }
-            "rsg.enter_fortress" => {
+            EventId::RsgEnterFortress => {
                 let fort_ss_check = record
                     .event_list
                     .iter()
                     .filter(|evt| evt != &last_event)
-                    .any(|evt| evt.event_id == "rsg.enter_bastion");
+                    .any(|evt| evt.event_id == EventId::RsgEnterBastion);
 
                 let mut fort_ss_context_check = false;
                 let mut context_hits = 0;
                 for ctx in record.context_event_list.iter() {
-                    let context_check = ctx.event_id == "rsg.obtain_crying_obsidian" 
-                        || ctx.event_id == "rsg.obtain_obsidian" 
-                        || ctx.event_id == "rsg.loot_bastion";
+                    let context_check = ctx.event_id == EventId::RsgObtainCryingObsidian
+                        || ctx.event_id == EventId::RsgObtainObsidian 
+                        || ctx.event_id == EventId::RsgLootBastion;
                     if context_check {
                         context_hits += 1;
                     } 
@@ -160,16 +164,16 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
                 }
                 split_desc = split.desc(Some("Fortress"));
             }
-            "rsg.first_portal" => {
+            EventId::RsgFirstPortal => {
                 if !record
                     .event_list
                     .iter()
                     .filter(|evt| evt != &last_event)
-                    .any(|evt| evt.event_id == "rsg.enter_bastion")
+                    .any(|evt| evt.event_id == EventId::RsgEnterBastion)
                 {
                     bastionless_content = "(Bastionless)";
                 }
-                split = match Split::from_event_id(last_event.event_id.as_str()) {
+                split = match Split::from_event_id(&last_event.event_id) {
                     Some(split) => split,
                     None => {
                         eprintln!("Unable to convert event id: 'rsg.first_portal' to split.");
@@ -179,30 +183,16 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
                 split_desc = split.desc(None);
             }
             _ => {
-                if Split::from_event_id(last_event.event_id.as_str()).is_none() {
-                    if last_event.event_id.as_str() == "rsg.credits" {
-                        println!(
-                            "Skipping guild with name '{}' for event id: '{}'.", 
-                            guild_name, 
-                            last_event.event_id
-                        );
-                        // Check other guilds here because we would want to check all guilds for a
-                        // completion.
-                        continue;
-                    }
-                    println!(
-                        "Skipping event id: '{}' as it is unrecognized.",
-                        last_event.event_id
-                    );
-                    // Skip checking other guilds as the event id will not be recognized in them as
-                    // well.
-                    return;
-                }
-                split = match Split::from_event_id(last_event.event_id.as_str()) {
+                split = match Split::from_event_id(&last_event.event_id) {
                     Some(split) => split,
                     None => {
-                        eprintln!("Unable to convert event id: '{}' to split.", last_event.event_id);
-                        continue;
+                        println!(
+                            "Skipping event id: '{:#?}' as it is unrecognized.",
+                            last_event.event_id
+                        );
+                        // Skip checking other guilds as the event id will not be recognized in them as
+                        // well.
+                        return;
                     }
                 };
                 split_desc = split.desc(None);
@@ -214,7 +204,7 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
             .filter(|role| {
                 let (split_minutes, split_seconds) = get_time(last_event.igt as u64);
                 if role.guild_role.name.contains("PB") {
-                    if !locked_guild_cache.is_private {
+                    if !guild_data.is_private {
                         return false;
                     }
                     let pb_minutes = player_splits.get(&role.split).unwrap().to_owned();
@@ -230,7 +220,7 @@ pub async fn parse_record(ctx: Arc<Context>, record: Response, guild_cache: ArcM
         let live_link = match record.user.live_account.to_owned() {
             Some(acc) => format!("[{}](<https://twitch.tv/{}>)", record.nickname.replace("_", SPECIAL_UNDERSCORE), acc),
             None => {
-                if !locked_guild_cache.is_private {
+                if !guild_data.is_private {
                     println!(
                         "Skipping split: '{}' because user with name: '{}' is not live.",
                         split_desc, record.nickname,
