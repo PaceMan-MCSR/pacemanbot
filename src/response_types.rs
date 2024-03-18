@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use crate::guild_types::Split;
+
 #[derive(Deserialize, Debug, PartialEq)]
 pub enum EventId {
     #[serde(rename = "common.open_to_lan")]
@@ -41,6 +43,13 @@ pub enum EventId {
     RsgObtainBlazeRod,
 }
 
+#[derive(Debug)]
+pub enum EventType {
+    CommonEvent,
+    NonPaceEvent,
+    PaceEvent,
+}
+
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Event {
@@ -67,4 +76,20 @@ pub struct Response {
     pub is_hidden: bool,
     pub last_updated: i64,
     pub nickname: String,
+}
+
+pub enum Structure {
+    Bastion,
+    Fortress,
+}
+
+pub enum RunType {
+    Bastionless,
+    Modern,
+}
+
+pub struct RunInfo {
+    pub split: Split,
+    pub structure: Option<Structure>,
+    pub run_type: RunType,
 }

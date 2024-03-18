@@ -9,7 +9,7 @@ use serenity::{
 };
 
 use crate::{
-    response_types::EventId,
+    response_types::{EventId, Structure},
     utils::{
         extract_name_and_splits_from_line, extract_split_from_pb_role_name,
         extract_split_from_role_name,
@@ -60,35 +60,35 @@ impl Split {
         }
     }
 
-    pub fn desc(&self, structure: Option<&str>) -> String {
-        match self {
-            Split::FirstStructure => {
-                if let Some(structure) = structure {
-                    match structure {
-                        "Bastion" => "Enter Bastion",
-                        "Fortress" => "Enter Fortress",
-                        _ => "",
+    pub fn desc(&self, structure: Option<Structure>) -> Option<String> {
+        Some(
+            match self {
+                Split::FirstStructure => {
+                    if let None = structure {
+                        return None;
                     }
-                } else {
-                    ""
-                }
-            }
-            Split::SecondStructure => {
-                if let Some(structure) = structure {
+                    let structure = structure.unwrap();
                     match structure {
-                        "Bastion" => "Enter Bastion",
-                        "Fortress" => "Enter Fortress",
-                        _ => "",
+                        Structure::Bastion => "Enter Bastion",
+                        Structure::Fortress => "Enter Fortress",
                     }
-                } else {
-                    ""
                 }
+                Split::SecondStructure => {
+                    if let None = structure {
+                        return None;
+                    }
+                    let structure = structure.unwrap();
+                    match structure {
+                        Structure::Bastion => "Enter Bastion",
+                        Structure::Fortress => "Enter Fortress",
+                    }
+                }
+                Split::Blind => "First Portal",
+                Split::EyeSpy => "Enter Stronghold",
+                Split::EndEnter => "Enter End",
             }
-            Split::Blind => "First Portal",
-            Split::EyeSpy => "Enter Stronghold",
-            Split::EndEnter => "Enter End",
-        }
-        .to_string()
+            .to_string(),
+        )
     }
 
     pub fn alt_desc(&self) -> String {
@@ -191,7 +191,7 @@ impl PlayerSplitsData {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PlayerData {
     pub splits: PlayerSplitsData,
     pub last_split: Option<Split>,
@@ -208,6 +208,7 @@ impl PlayerData {
     }
 }
 
+#[derive(Debug)]
 pub struct GuildData {
     pub name: String,
     pub pace_channel: ChannelId,
