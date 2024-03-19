@@ -222,7 +222,6 @@ impl Controller {
     }
 
     async fn handle_pace_event(&self, last_event: &Event, guild_data: &mut GuildData) {
-
         let run_info = 
             match self.get_run_info(last_event) {
                 Some(info) => info,
@@ -299,7 +298,6 @@ impl Controller {
                 }
             }
         };
-
 
         let content = format!(
             "## {} - {} {}\n{}\t<t:{}:R>\n{}",
