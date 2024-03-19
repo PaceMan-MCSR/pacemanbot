@@ -13,7 +13,10 @@ use tokio_tungstenite::{
     MaybeTlsStream, WebSocketStream,
 };
 
-use crate::guild_types::{PlayerSplitsData, Split};
+use crate::{
+    guild_types::{PlayerSplitsData, Split},
+    response_types::{Event, EventId, EventType},
+};
 
 pub async fn remove_roles_starting_with(
     ctx: &Context,
@@ -290,4 +293,21 @@ pub fn create_select_option<'a>(
         }
     }
     Ok(o)
+}
+
+pub fn get_event_type(last_event: &Event) -> Option<EventType> {
+    match last_event.event_id {
+        EventId::CommonEnableCheats
+        | EventId::CommonMultiplayer
+        | EventId::CommonLeaveWorld
+        | EventId::CommonOpenToLan
+        | EventId::CommonViewSeed => Some(EventType::CommonEvent),
+        EventId::RsgEnterBastion
+        | EventId::RsgEnterFortress
+        | EventId::RsgFirstPortal
+        | EventId::RsgEnterStronghold
+        | EventId::RsgEnterEnd => Some(EventType::PaceEvent),
+        EventId::RsgCredits => Some(EventType::NonPaceEvent),
+        _ => None,
+    }
 }

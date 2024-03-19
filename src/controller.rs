@@ -5,7 +5,7 @@ use serenity::{client::Context, model::mention::Mentionable};
 use crate::{
     guild_types::{CachedGuilds, GuildData, Split, PlayerData},
     response_types::{Event, EventId, EventType, Response, RunInfo, Structure, RunType},
-    ArcMux, utils::{get_time, update_leaderboard, format_time},
+    ArcMux, utils::{get_time, update_leaderboard, format_time, get_event_type},
 };
 
 const SPECIAL_UNDERSCORE: &'static str = "ˍ";
@@ -102,23 +102,6 @@ impl Controller {
         }
     }
 
-    fn get_event_type(&self, last_event: &Event) -> Option<EventType> {
-        match last_event.event_id {
-            EventId::CommonEnableCheats
-            | EventId::CommonMultiplayer
-            | EventId::CommonLeaveWorld
-            | EventId::CommonOpenToLan
-            | EventId::CommonViewSeed => Some(EventType::CommonEvent),
-            EventId::RsgEnterBastion
-            | EventId::RsgEnterFortress
-            | EventId::RsgFirstPortal
-            | EventId::RsgEnterStronghold
-            | EventId::RsgEnterEnd => Some(EventType::PaceEvent),
-            EventId::RsgCredits => Some(EventType::NonPaceEvent),
-            _ => None,
-        }
-    }
-
     async fn update_cache(&self) {
         for guild_id in self.ctx.clone().cache.guilds() {
             let mut locked_guild_cache = self.guild_cache.lock().await;
@@ -147,7 +130,6 @@ impl Controller {
             }
         }
     }
-
 
     async fn handle_common_event(&self, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&self.record.nickname) {
@@ -215,7 +197,7 @@ impl Controller {
         let runner_name = self.record.nickname.to_owned();
         let (minutes, seconds) = get_time(last_event.igt as u64);
         if !guild_data.is_private {
-            return;
+            return println!("Can't handle non pace event for guild name: {} because it is a public server.", guild_data.name);
         }
         match update_leaderboard(&self.ctx, guild_data.lb_channel.unwrap(), runner_name.to_owned(), (minutes, seconds))
             .await
@@ -240,12 +222,14 @@ impl Controller {
     }
 
     async fn handle_pace_event(&self, last_event: &Event, guild_data: &mut GuildData) {
-        let run_info = match self.get_run_info(last_event) {
-                        Some(info) => info,
-                        None => {
-                            return eprintln!("Unrecognized event id: {:#?}, skipping all guilds.", last_event.event_id);
-                        }
-                    };
+
+        let run_info = 
+            match self.get_run_info(last_event) {
+                Some(info) => info,
+                None => {
+                    return eprintln!("Unrecognized event id: {:#?}.", last_event.event_id);
+                }
+            };
 
         let player_data = match guild_data.players.get_mut(&self.record.nickname) {
             Some(data) => data,
@@ -365,14 +349,14 @@ impl Controller {
         };
         let mut locked_guild_cache = self.guild_cache.lock().await;
         for (_, guild_data) in locked_guild_cache.iter_mut() {
-            let event_type = match self.get_event_type(&last_event) {
+            let event_type = match get_event_type(&last_event) {
                 Some(etype) => etype,
                 None => {
                     eprintln!(
-                        "Unable to get event type for event: {:#?}",
-                        last_event.event_id
+                        "Unable to get event type for event: {:#?}. Skipping all guilds.",
+                        last_event.event_id,
                     );
-                    continue;
+                    return;
                 }
             };
             match event_type {
