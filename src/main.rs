@@ -1,4 +1,5 @@
 mod components;
+mod consts;
 mod controller;
 mod guild_types;
 mod handler;
@@ -28,8 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = Client::builder(&token, GatewayIntents::all())
         .event_handler(Handler)
         .framework(framework)
-        .await
-        .expect("Error creating client");
+        .await?;
     client.start().await?;
     Ok(())
 }

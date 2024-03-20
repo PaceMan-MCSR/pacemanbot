@@ -5,10 +5,9 @@ use serenity::{client::Context, model::mention::Mentionable};
 use crate::{
     guild_types::{CachedGuilds, GuildData, Split, PlayerData},
     response_types::{Event, EventId, EventType, Response, RunInfo, Structure, RunType},
-    ArcMux, utils::{get_time, update_leaderboard, format_time, get_event_type},
+    ArcMux, utils::{millis_to_mins_secs, update_leaderboard, format_time, get_event_type}, consts::SPECIAL_UNDERSCORE,
 };
 
-const SPECIAL_UNDERSCORE: &'static str = "ˍ";
 
 pub struct Controller {
     pub ctx: Arc<Context>,
@@ -195,7 +194,7 @@ impl Controller {
 
     async fn handle_non_pace_event(&self, last_event: &Event, guild_data: &mut GuildData) {
         let runner_name = self.record.nickname.to_owned();
-        let (minutes, seconds) = get_time(last_event.igt as u64);
+        let (minutes, seconds) = millis_to_mins_secs(last_event.igt as u64);
         if !guild_data.is_private {
             return println!("Can't handle non pace event for guild name: {} because it is a public server.", guild_data.name);
         }
@@ -263,7 +262,7 @@ impl Controller {
         let roles_to_ping = guild_data.roles
             .iter()
             .filter(|role| {
-                let (split_minutes, split_seconds) = get_time(last_event.igt as u64);
+                let (split_minutes, split_seconds) = millis_to_mins_secs(last_event.igt as u64);
                 if role.guild_role.name.contains("PB") {
                     if !guild_data.is_private {
                         return false;
@@ -293,9 +292,8 @@ impl Controller {
                         "Skipping split: '{}' because user with name: '{}' is not live.",
                         split_desc, self.record.nickname,
                     );
-                } else {
-                    format!("Offline - {}", self.record.nickname.replace("_", SPECIAL_UNDERSCORE))
-                }
+                } 
+                format!("Offline - {}", self.record.nickname.replace("_", SPECIAL_UNDERSCORE))
             }
         };
 

@@ -18,14 +18,13 @@ use crate::{
         send_role_selection_message, setup_default_commands, setup_default_roles, setup_pb_roles,
         setup_roles,
     },
+    consts::WS_TIMEOUT_FOR_RETRY,
     controller::Controller,
     guild_types::{CachedGuilds, Split},
     response_types::Response,
     utils::{get_response_stream_from_api, remove_roles_starting_with},
     ArcMux,
 };
-
-const TIMEOUT_FOR_RETRY: u64 = 5;
 
 pub async fn handle_guild_create(ctx: &Context, guild_id: GuildId) {
     setup_default_commands(&ctx, guild_id).await;
@@ -241,14 +240,13 @@ pub async fn handle_message_component_interaction(
 
 pub async fn handle_ready(ctx: Arc<Context>) {
     let guild_cache: ArcMux<CachedGuilds> = Arc::new(Mutex::new(HashMap::new()));
-
     loop {
         let mut response_stream = match get_response_stream_from_api().await {
             Ok(stream) => stream,
             Err(err) => {
                 eprintln!("{}", err);
-                println!("Trying again in {} seconds...", TIMEOUT_FOR_RETRY);
-                sleep(Duration::from_secs(TIMEOUT_FOR_RETRY)).await;
+                println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
+                sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
                 continue;
             }
         };
@@ -258,17 +256,17 @@ pub async fn handle_ready(ctx: Arc<Context>) {
                 None => {
                     println!(
                         "Invalid response from response stream.\nTrying again in {} seconds...",
-                        TIMEOUT_FOR_RETRY
+                        WS_TIMEOUT_FOR_RETRY
                     );
-                    sleep(Duration::from_secs(TIMEOUT_FOR_RETRY)).await;
+                    sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
                     break;
                 }
             } {
                 Ok(msg) => msg,
                 Err(err) => {
                     eprintln!("Unable to get message from response stream due to: {}", err);
-                    println!("Trying again in {} seconds...", TIMEOUT_FOR_RETRY);
-                    sleep(Duration::from_secs(TIMEOUT_FOR_RETRY)).await;
+                    println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
+                    sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
                     break;
                 }
             };
@@ -279,8 +277,8 @@ pub async fn handle_ready(ctx: Arc<Context>) {
                         "Unable to get text response from response stream due to: {}",
                         err
                     );
-                    println!("Trying again in {} seconds...", TIMEOUT_FOR_RETRY);
-                    sleep(Duration::from_secs(TIMEOUT_FOR_RETRY)).await;
+                    println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
+                    sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
                     break;
                 }
             };

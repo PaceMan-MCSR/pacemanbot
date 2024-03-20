@@ -14,6 +14,10 @@ pub enum EventId {
     CommonViewSeed,
     #[serde(rename = "common.leave_world")]
     CommonLeaveWorld,
+    #[serde(rename = "common.rejoin_world")]
+    CommonRejoinWorld,
+    #[serde(rename = "common.old_world")]
+    CommondOldWorld,
 
     #[serde(rename = "rsg.enter_nether")]
     RsgEnterNether,
@@ -32,15 +36,24 @@ pub enum EventId {
     #[serde(rename = "rsg.credits")]
     RsgCredits,
 
+    #[serde(rename = "rsg.obtain_iron_ingot")]
+    RsgObtainIronIngot,
+    #[serde(rename = "rsg.obtain_iron_pickaxe")]
+    RsgObtainIronPickaxe,
+    #[serde(rename = "rsg.obtain_lava_bucket")]
+    RsgObtainLavaBucket,
+    #[serde(rename = "rsg.distract_piglin")]
+    RsgDistractPiglin,
+    #[serde(rename = "rsg.loot_bastion")]
+    RsgLootBastion,
     #[serde(rename = "rsg.obtain_crying_obsidian")]
     RsgObtainCryingObsidian,
     #[serde(rename = "rsg.obtain_obsidian")]
     RsgObtainObsidian,
-    #[serde(rename = "rsg.loot_bastion")]
-    RsgLootBastion,
-
     #[serde(rename = "rsg.obtain_blaze_rod")]
     RsgObtainBlazeRod,
+    #[serde(rename = "rsg.kill_dragon")]
+    RsgKillDragon,
 }
 
 #[derive(Debug)]
