@@ -60,29 +60,23 @@ impl Split {
         }
     }
 
-    pub fn desc(&self, structure: Option<Structure>) -> Option<String> {
+    pub fn desc(&self, structure: &Option<Structure>) -> Option<String> {
         Some(
             match self {
-                Split::FirstStructure => {
-                    if let None = structure {
-                        return None;
-                    }
-                    let structure = structure.unwrap();
-                    match structure {
+                Split::FirstStructure => match structure {
+                    Some(structure) => match structure {
                         Structure::Bastion => "Enter Bastion",
                         Structure::Fortress => "Enter Fortress",
-                    }
-                }
-                Split::SecondStructure => {
-                    if let None = structure {
-                        return None;
-                    }
-                    let structure = structure.unwrap();
-                    match structure {
+                    },
+                    None => return None,
+                },
+                Split::SecondStructure => match structure {
+                    Some(structure) => match structure {
                         Structure::Bastion => "Enter Bastion",
                         Structure::Fortress => "Enter Fortress",
-                    }
-                }
+                    },
+                    None => return None,
+                },
                 Split::Blind => "First Portal",
                 Split::EyeSpy => "Enter Stronghold",
                 Split::EndEnter => "Enter End",
@@ -194,7 +188,6 @@ impl PlayerSplitsData {
 #[derive(Clone, Debug)]
 pub struct PlayerData {
     pub splits: PlayerSplitsData,
-    pub last_split: Option<Split>,
     pub last_pace_message: Option<MessageId>,
 }
 
@@ -202,7 +195,6 @@ impl PlayerData {
     pub fn default() -> Self {
         Self {
             splits: PlayerSplitsData::default(),
-            last_split: None,
             last_pace_message: None,
         }
     }

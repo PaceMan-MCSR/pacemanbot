@@ -20,6 +20,7 @@ impl EventHandler for Handler {
 
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
+        ctx.cache.set_max_messages(100);
         let ctx = Arc::new(ctx);
         tokio::spawn(async move { handle_ready(ctx.clone()).await });
     }

@@ -115,7 +115,7 @@ impl Controller {
                 };
                 if !guild_data.is_private {
                     guild_data.players = cache.players.clone();
-                }
+                }                 
                 locked_guild_cache.insert(guild_id, guild_data);
             } else {
                 let guild_data = match GuildData::new(&self.ctx, guild_id).await {
@@ -184,7 +184,9 @@ impl Controller {
             .edit(&self.ctx.http, |m| m.content(new_content))
             .await
         {
-            Ok(_) => (),
+            Ok(_) => {
+                player_data.last_pace_message = None;
+            },
             Err(err) => eprintln!(
                 "Unable to edit message with id: {} due to: {}",
                 message_id, err
@@ -192,12 +194,52 @@ impl Controller {
         };
     }
 
-    async fn handle_non_pace_event(&self, last_event: &Event, guild_data: &mut GuildData) {
+    async fn handle_non_pace_event(&self, live_link: String, last_event: &Event, guild_data: &mut GuildData) {
+        let player_data = match guild_data.players.get_mut(&self.record.nickname) {
+            Some(data) => data,
+            None => {
+                if guild_data.is_private {
+                    return println!(
+                        "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
+                        self.record.nickname, 
+                        guild_data.name
+                    );
+                }
+                let player_data = PlayerData::default();
+                guild_data.players.insert(self.record.nickname.to_owned(), player_data);
+                guild_data.players.get_mut(&self.record.nickname).unwrap()
+            }
+        };
         let runner_name = self.record.nickname.to_owned();
         let (minutes, seconds) = millis_to_mins_secs(last_event.igt as u64);
+
+        let content = format!(
+            "## {} - Finish\n{}\t<t:{}:R>",
+            format_time(last_event.igt as u64),
+            live_link,
+            (self.record.last_updated / 1000) as u64,
+        );
+
+        match guild_data.pace_channel.send_message(&self.ctx, |m| m.content(content)).await {
+            Ok(_) => {
+                println!(
+                    "Sent pace-ping for user with name: '{}' for split: 'Finish' in guild name: {}.",
+                    self.record.nickname, guild_data.name 
+                );
+                player_data.last_pace_message = None;
+            }
+            Err(err) => {
+                return eprintln!(
+                    "Unable to send split: 'Finish' due to: {}",
+                    err
+                );
+            }
+        };
+
         if !guild_data.is_private {
             return println!("Can't handle non pace event for guild name: {} because it is a public server.", guild_data.name);
         }
+
         match update_leaderboard(&self.ctx, guild_data.lb_channel.unwrap(), runner_name.to_owned(), (minutes, seconds))
             .await
         {
@@ -220,7 +262,7 @@ impl Controller {
         };
     }
 
-    async fn handle_pace_event(&self, last_event: &Event, guild_data: &mut GuildData) {
+    async fn handle_pace_event(&self, live_link: String, last_event: &Event, guild_data: &mut GuildData) {
         let run_info = 
             match self.get_run_info(last_event) {
                 Some(info) => info,
@@ -244,7 +286,7 @@ impl Controller {
                 guild_data.players.get_mut(&self.record.nickname).unwrap()
             }
         };
-        let split_desc = match run_info.split.desc(run_info.structure) {
+        let split_desc = match run_info.split.desc(&run_info.structure) {
             Some(desc) => desc,
             None => {
                 return eprintln!("Unable to get split desc for split: {:#?}", run_info.split);
@@ -284,19 +326,6 @@ impl Controller {
             );
         }
 
-        let live_link = match self.record.user.live_account.to_owned() {
-            Some(acc) => format!("[{}](<https://twitch.tv/{}>)", self.record.nickname.replace("_", SPECIAL_UNDERSCORE), acc),
-            None => {
-                if !guild_data.is_private {
-                    return println!(
-                        "Skipping split: '{}' because user with name: '{}' is not live.",
-                        split_desc, self.record.nickname,
-                    );
-                } 
-                format!("Offline - {}", self.record.nickname.replace("_", SPECIAL_UNDERSCORE))
-            }
-        };
-
         let content = format!(
             "## {} - {} {}\n{}\t<t:{}:R>\n{}",
             format_time(last_event.igt as u64),
@@ -310,17 +339,12 @@ impl Controller {
                 .collect::<Vec<_>>()
                 .join(" "),
         );
-
-        player_data.last_pace_message = match guild_data.pace_channel
-            .send_message(&self.ctx, |m| m.content(content))
-            .await
-        {
+        player_data.last_pace_message = match guild_data.pace_channel.send_message(&self.ctx, |m| m.content(content)).await {
             Ok(message) => {
                 println!(
                     "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.",
                     self.record.nickname, split_desc, guild_data.name 
                 );
-                player_data.last_split = Some(run_info.split);
                 Some(message.id)
             }
             Err(err) => {
@@ -345,14 +369,26 @@ impl Controller {
         };
         let mut locked_guild_cache = self.guild_cache.lock().await;
         for (_, guild_data) in locked_guild_cache.iter_mut() {
+            let live_link = match self.record.user.live_account.to_owned() {
+                Some(acc) => format!("[{}](<https://twitch.tv/{}>)", self.record.nickname.replace("_", SPECIAL_UNDERSCORE), acc),
+                None => {
+                    if !guild_data.is_private {
+                        println!(
+                            "Skipping guild: '{}' because user with name: '{}' is not live.",
+                            guild_data.name, self.record.nickname,
+                        );
+                        continue;
+                    } 
+                    format!("Offline - {}", self.record.nickname.replace("_", SPECIAL_UNDERSCORE))
+                }
+            };
             let event_type = match get_event_type(&last_event) {
                 Some(etype) => etype,
                 None => {
-                    eprintln!(
+                    return eprintln!(
                         "Unable to get event type for event: {:#?}. Skipping all guilds.",
                         last_event.event_id,
                     );
-                    return;
                 }
             };
             match event_type {
@@ -360,10 +396,10 @@ impl Controller {
                     self.handle_common_event(guild_data).await;
                 }
                 EventType::NonPaceEvent => {
-                    self.handle_non_pace_event(last_event, guild_data).await;
+                    self.handle_non_pace_event(live_link, last_event, guild_data).await;
                 }
                 EventType::PaceEvent => {
-                    self.handle_pace_event(last_event, guild_data).await;
+                    self.handle_pace_event(live_link, last_event, guild_data).await;
                 }
             }
         }
