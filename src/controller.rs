@@ -198,20 +198,23 @@ impl Controller {
         let player_data = match guild_data.players.get_mut(&self.record.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
-                if guild_data.is_private {
-                    return println!(
-                        "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
-                        self.record.nickname, 
-                        guild_data.name
-                    );
-                }
-                let player_data = PlayerData::default();
-                guild_data.players.insert(self.record.nickname.to_owned().to_lowercase(), player_data);
-                guild_data.players.get_mut(&self.record.nickname.to_lowercase()).unwrap()
+                return println!(
+                    "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
+                    self.record.nickname, 
+                    guild_data.name
+                );
             }
         };
+
         let runner_name = self.record.nickname.to_owned();
         let (minutes, seconds) = millis_to_mins_secs(last_event.igt as u64);
+    
+        if minutes >= 10 && !guild_data.is_private {
+            return println!(
+                "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
+                guild_data.name
+            );
+        }
 
         let content = format!(
             "## {} - Finish\n{}\t<t:{}:R>",
