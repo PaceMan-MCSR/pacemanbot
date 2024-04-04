@@ -238,16 +238,7 @@ impl GuildData {
             .find(|c| c.name == "pacemanbot-runner-leaderboard")
         {
             Some(channel) => Some(channel.id),
-            None => {
-                if is_private {
-                    return Err(format!(
-                        "Unable to find #pacemanbot-runner-leaderboard in guild name: {}",
-                        name
-                    )
-                    .into());
-                }
-                None
-            }
+            None => None,
         };
 
         let mut players: Players = HashMap::new();
