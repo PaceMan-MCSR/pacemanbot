@@ -131,7 +131,7 @@ impl Controller {
     }
 
     async fn handle_common_event(&self, guild_data: &mut GuildData) {
-        let player_data = match guild_data.players.get_mut(&self.record.nickname) {
+        let player_data = match guild_data.players.get_mut(&self.record.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
                 if guild_data.is_private {
@@ -142,8 +142,8 @@ impl Controller {
                     );
                 }
                 let player_data = PlayerData::default();
-                guild_data.players.insert(self.record.nickname.to_owned(), player_data);
-                guild_data.players.get_mut(&self.record.nickname).unwrap()
+                guild_data.players.insert(self.record.nickname.to_owned().to_lowercase(), player_data);
+                guild_data.players.get_mut(&self.record.nickname.to_owned()).unwrap()
             }
         };
         let message_id = match player_data.last_pace_message {
@@ -195,7 +195,7 @@ impl Controller {
     }
 
     async fn handle_non_pace_event(&self, live_link: String, last_event: &Event, guild_data: &mut GuildData) {
-        let player_data = match guild_data.players.get_mut(&self.record.nickname) {
+        let player_data = match guild_data.players.get_mut(&self.record.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
                 if guild_data.is_private {
@@ -206,8 +206,8 @@ impl Controller {
                     );
                 }
                 let player_data = PlayerData::default();
-                guild_data.players.insert(self.record.nickname.to_owned(), player_data);
-                guild_data.players.get_mut(&self.record.nickname).unwrap()
+                guild_data.players.insert(self.record.nickname.to_owned().to_lowercase(), player_data);
+                guild_data.players.get_mut(&self.record.nickname.to_lowercase()).unwrap()
             }
         };
         let runner_name = self.record.nickname.to_owned();
@@ -271,7 +271,7 @@ impl Controller {
                 }
             };
 
-        let player_data = match guild_data.players.get_mut(&self.record.nickname) {
+        let player_data = match guild_data.players.get_mut(&self.record.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
                 if guild_data.is_private {
@@ -282,8 +282,8 @@ impl Controller {
                     );
                 }
                 let player_data = PlayerData::default();
-                guild_data.players.insert(self.record.nickname.to_owned(), player_data);
-                guild_data.players.get_mut(&self.record.nickname).unwrap()
+                guild_data.players.insert(self.record.nickname.to_owned().to_lowercase(), player_data);
+                guild_data.players.get_mut(&self.record.nickname.to_lowercase()).unwrap()
             }
         };
         let split_desc = match run_info.split.desc(&run_info.structure) {
