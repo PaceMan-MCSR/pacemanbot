@@ -239,8 +239,11 @@ impl Controller {
             }
         };
 
-        if !guild_data.is_private {
-            return println!("Can't handle non pace event for guild name: {} because it is a public server.", guild_data.name);
+        if !guild_data.is_private || guild_data.lb_channel.is_none() {
+            return println!(
+                "Can't handle non pace event for guild name: {} because it is a public server or does not have a leaderboard channel.", 
+                guild_data.name
+            );
         }
 
         match update_leaderboard(&self.ctx, guild_data.lb_channel.unwrap(), runner_name.to_owned(), (minutes, seconds))
