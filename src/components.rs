@@ -5,12 +5,12 @@ use serenity::model::prelude::application_command::ApplicationCommandInteraction
 use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::{GuildId, Role, RoleId};
 use serenity::prelude::Context;
-use serenity::utils::Color;
 use serenity::{builder::CreateActionRow, model::prelude::component::ButtonStyle::Primary};
 
-use crate::types::Split;
+use crate::guild_types::Split;
 use crate::utils::{
-    create_select_option, extract_split_from_pb_role_name, extract_split_from_role_name,
+    create_guild_role, create_select_option, extract_split_from_pb_role_name,
+    extract_split_from_role_name, mins_secs_to_millis,
 };
 
 pub async fn send_role_selection_message(
@@ -41,7 +41,7 @@ pub async fn send_role_selection_message(
                     return Ordering::Equal;
                 }
             };
-            r1_order = minutes as u64 * 60000 + seconds as u64 * 1000;
+            r1_order = mins_secs_to_millis((minutes, seconds));
         }
         if r2.name.contains("PB") {
             r2_order = 0;
@@ -56,7 +56,7 @@ pub async fn send_role_selection_message(
                     return Ordering::Equal;
                 }
             };
-            r2_order = minutes as u64 * 60000 + seconds as u64 * 1000;
+            r2_order = mins_secs_to_millis((minutes, seconds));
         }
         r1_order.cmp(&r2_order)
     });
@@ -211,14 +211,7 @@ pub async fn setup_default_roles(
 
     let roles = guild.roles(&ctx.http).await?;
     for role in default_roles.iter() {
-        if (&roles).iter().any(|(_, r)| r.name == &role[..]) {
-            continue;
-        }
-        guild
-            .create_role(&ctx.http, |r| {
-                r.name(role).colour(Color::from_rgb(54, 57, 63).0.into())
-            })
-            .await?;
+        create_guild_role(&ctx, &guild, &roles, &role.to_string()).await?
     }
     command
         .edit_original_interaction_response(&ctx.http, |data| {
@@ -282,32 +275,15 @@ pub async fn setup_roles(
     for minutes in split_start..split_end {
         let seconds = 0;
         let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
-        if !roles.iter().any(|(_, r)| r.name == role) {
-            guild
-                .create_role(ctx, |r| {
-                    r.name(role).colour(Color::from_rgb(54, 57, 63).0.into())
-                })
-                .await?;
-        }
+        create_guild_role(&ctx, &guild, &roles, &role).await?;
+
         let seconds = 3;
         let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
-        if !roles.iter().any(|(_, r)| r.name == role) {
-            guild
-                .create_role(ctx, |r| {
-                    r.name(role).colour(Color::from_rgb(54, 57, 63).0.into())
-                })
-                .await?;
-        }
+        create_guild_role(&ctx, &guild, &roles, &role).await?;
     }
     let seconds = 0;
     let role = format!("*{}{}:{}", role_split.to_str(), split_end, seconds);
-    if !roles.iter().any(|(_, r)| r.name == role) {
-        guild
-            .create_role(ctx, |r| {
-                r.name(role).colour(Color::from_rgb(54, 57, 63).0.into())
-            })
-            .await?;
-    }
+    create_guild_role(&ctx, &guild, &roles, &role).await?;
 
     let response_content = format!(
         "Pace-roles for split name: {} with lower bound: {} minutes and upper bound: {} minutes have been setup!",
@@ -336,14 +312,7 @@ pub async fn setup_pb_roles(
     let roles = guild.roles(&ctx).await?;
     for split in splits {
         let role_name = format!("*{}PB", split.to_str());
-        if !roles.iter().any(|(_, role)| role.name == role_name) {
-            guild
-                .create_role(ctx, |r| {
-                    r.name(role_name)
-                        .colour(Color::from_rgb(54, 57, 63).0.into())
-                })
-                .await?;
-        }
+        create_guild_role(&ctx, &guild, &roles, &role_name).await?;
     }
     command
         .edit_original_interaction_response(&ctx.http, |data| {

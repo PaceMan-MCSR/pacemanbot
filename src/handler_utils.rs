@@ -1,5 +1,8 @@
+use std::{collections::HashMap, sync::Arc, time::Duration};
+
 use serenity::{
     client::Context,
+    futures::{lock::Mutex, StreamExt},
     model::{
         prelude::{
             application_command::ApplicationCommandInteraction,
@@ -8,13 +11,19 @@ use serenity::{
         user::OnlineStatus,
     },
 };
+use tokio::time::sleep;
 
 use crate::{
     components::{
         send_role_selection_message, setup_default_commands, setup_default_roles, setup_pb_roles,
         setup_roles,
     },
-    utils::remove_roles_starting_with,
+    consts::WS_TIMEOUT_FOR_RETRY,
+    controller::Controller,
+    guild_types::{CachedGuilds, Split},
+    response_types::Response,
+    utils::{get_response_stream_from_api, remove_roles_starting_with},
+    ArcMux,
 };
 
 pub async fn handle_guild_create(ctx: &Context, guild_id: GuildId) {
@@ -68,10 +77,8 @@ pub async fn handle_remove_pmb_roles(
     };
     let mut member = guild_id.member(&ctx, member.user.id).await?;
 
-    // Remove all PMB roles
     remove_roles_starting_with(&ctx, &guild_id, &mut member, "*", false).await?;
 
-    // Respond to the interaction
     message_component
         .edit_original_interaction_response(&ctx.http, |r| r.content("PaceManBot roles removed"))
         .await?;
@@ -81,8 +88,9 @@ pub async fn handle_remove_pmb_roles(
 pub async fn handle_select_role(
     ctx: &Context,
     message_component: &MessageComponentInteraction,
-    split: &str,
+    split: Split,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let split_str = split.to_str();
     let guild_id = match message_component.guild_id {
         Some(guild_id) => guild_id,
         None => {
@@ -105,7 +113,6 @@ pub async fn handle_select_role(
     };
     let mut member = guild_id.member(&ctx, member.user.id).await?;
 
-    // Add the new roles
     let mut remove_roles = true;
     let mut roles_to_add = Vec::new();
     for value in &message_component.data.values {
@@ -125,13 +132,13 @@ pub async fn handle_select_role(
         }
         roles_to_add.push(role_id);
     }
-    // Remove all PMB roles
+
     if remove_roles {
         remove_roles_starting_with(
             &ctx,
             &guild_id,
             &mut member,
-            format!("*{}", split).as_str(),
+            format!("*{}", split_str).as_str(),
             true,
         )
         .await?;
@@ -147,7 +154,7 @@ pub async fn handle_select_role(
             }
         };
         for role in member_roles {
-            if role.name.starts_with(&format!("*{}", split)) && role.name.contains("PB") {
+            if role.name.starts_with(&format!("*{}", split_str)) && role.name.contains("PB") {
                 member.remove_role(&ctx, role.id).await?;
             }
         }
@@ -155,7 +162,6 @@ pub async fn handle_select_role(
 
     member.add_roles(&ctx, &roles_to_add).await?;
 
-    // Respond to the interaction
     message_component
         .edit_original_interaction_response(&ctx.http, |r| r.content("Roles updated"))
         .await?;
@@ -211,11 +217,17 @@ pub async fn handle_message_component_interaction(
 ) {
     let custom_id = match message_component.data.custom_id.as_str() {
         "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
-        "select_structure1_role" => handle_select_role(&ctx, &message_component, "FS").await,
-        "select_structure2_role" => handle_select_role(&ctx, &message_component, "SS").await,
-        "select_blind_role" => handle_select_role(&ctx, &message_component, "B").await,
-        "select_eye_spy_role" => handle_select_role(&ctx, &message_component, "E").await,
-        "select_end_enter_role" => handle_select_role(&ctx, &message_component, "EE").await,
+        "select_structure1_role" => {
+            handle_select_role(&ctx, &message_component, Split::FirstStructure).await
+        }
+        "select_structure2_role" => {
+            handle_select_role(&ctx, &message_component, Split::SecondStructure).await
+        }
+        "select_blind_role" => handle_select_role(&ctx, &message_component, Split::Blind).await,
+        "select_eye_spy_role" => handle_select_role(&ctx, &message_component, Split::EyeSpy).await,
+        "select_end_enter_role" => {
+            handle_select_role(&ctx, &message_component, Split::EndEnter).await
+        }
         _ => Err(format!("Unknown custom id: {}.", message_component.data.custom_id).into()),
     };
     match custom_id {
@@ -224,4 +236,67 @@ pub async fn handle_message_component_interaction(
             eprintln!("Error while handling interaction: {}", err);
         }
     };
+}
+
+pub async fn handle_ready(ctx: Arc<Context>) {
+    let guild_cache: ArcMux<CachedGuilds> = Arc::new(Mutex::new(HashMap::new()));
+    loop {
+        let mut response_stream = match get_response_stream_from_api().await {
+            Ok(stream) => stream,
+            Err(err) => {
+                eprintln!("{}", err);
+                println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
+                sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
+                continue;
+            }
+        };
+        loop {
+            let msg = match match response_stream.next().await {
+                Some(msg_result) => msg_result,
+                None => {
+                    println!(
+                        "Invalid response from response stream.\nTrying again in {} seconds...",
+                        WS_TIMEOUT_FOR_RETRY
+                    );
+                    sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
+                    break;
+                }
+            } {
+                Ok(msg) => msg,
+                Err(err) => {
+                    eprintln!("Unable to get message from response stream due to: {}", err);
+                    println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
+                    sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
+                    break;
+                }
+            };
+            let text_response = match msg.to_text() {
+                Ok(text) => text,
+                Err(err) => {
+                    eprintln!(
+                        "Unable to get text response from response stream due to: {}",
+                        err
+                    );
+                    println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
+                    sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
+                    break;
+                }
+            };
+            let record: Response = match serde_json::from_str(text_response) {
+                Ok(response) => response,
+                Err(err) => {
+                    eprintln!(
+                        "Unable to convert text response: '{}' to json due to: {}",
+                        text_response, err
+                    );
+                    continue;
+                }
+            };
+            let ctx = ctx.clone();
+            let guild_cache = guild_cache.clone();
+            tokio::spawn(async move {
+                Controller::new(ctx, record, guild_cache).start().await;
+            });
+        }
+    }
 }

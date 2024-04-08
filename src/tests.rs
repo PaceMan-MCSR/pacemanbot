@@ -1,5 +1,5 @@
 use crate::{
-    types::{PlayerSplitsData, Split},
+    guild_types::{PlayerSplitsData, Split},
     utils::{
         extract_name_and_splits_from_line, extract_split_from_pb_role_name,
         extract_split_from_role_name,
