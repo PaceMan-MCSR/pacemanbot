@@ -161,6 +161,7 @@ pub struct PlayerSplitsData {
     pub blind: u8,
     pub eye_spy: u8,
     pub end_enter: u8,
+    pub finish: Option<u8>,
 }
 
 impl PlayerSplitsData {
@@ -171,6 +172,7 @@ impl PlayerSplitsData {
             blind: 0,
             eye_spy: 0,
             end_enter: 0,
+            finish: None,
         }
     }
 

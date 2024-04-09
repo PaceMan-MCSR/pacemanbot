@@ -116,7 +116,7 @@ pub fn extract_name_and_splits_from_line(
     }
     let (player_name, splits_string) = (line_splits[0], line_splits[1]);
     let splits = splits_string.split('/').collect::<Vec<&str>>();
-    if splits.len() != 5 {
+    if splits.len() != 5 && splits.len() != 6 {
         return Err(format!("Unable to parse line contents: '{}'.", line).into());
     }
     let mut idx = 0;
@@ -134,6 +134,7 @@ pub fn extract_name_and_splits_from_line(
             2 => split_data.blind = split_u8,
             3 => split_data.eye_spy = split_u8,
             4 => split_data.end_enter = split_u8,
+            5 => split_data.finish = Some(split_u8),
             _ => (),
         };
         idx += 1;

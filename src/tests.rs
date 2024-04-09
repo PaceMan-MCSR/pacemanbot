@@ -47,12 +47,13 @@ pub fn test_extract_split_from_pb_role_name() {
 
 #[test]
 pub fn test_extract_name_and_splits_from_line() -> Result<(), Box<dyn std::error::Error>> {
-    let split_data = PlayerSplitsData {
+    let mut split_data = PlayerSplitsData {
         first_structure: 10,
         second_structure: 20,
         blind: 30,
         eye_spy: 40,
         end_enter: 50,
+        finish: None,
     };
     assert_eq!(
         extract_name_and_splits_from_line("SathyaPramodh: 10/20/30/40/50")?,
@@ -60,6 +61,16 @@ pub fn test_extract_name_and_splits_from_line() -> Result<(), Box<dyn std::error
     );
     assert_eq!(
         extract_name_and_splits_from_line("name_name_: 10/20/30/40/50")?,
+        ("name_name_".to_string(), split_data)
+    );
+
+    split_data.finish = Some(60);
+    assert_eq!(
+        extract_name_and_splits_from_line("SathyaPramodh: 10/20/30/40/50/60")?,
+        ("SathyaPramodh".to_string(), split_data)
+    );
+    assert_eq!(
+        extract_name_and_splits_from_line("name_name_: 10/20/30/40/50/60")?,
         ("name_name_".to_string(), split_data)
     );
     Ok(())

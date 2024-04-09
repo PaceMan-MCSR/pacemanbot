@@ -209,11 +209,25 @@ impl Controller {
         let runner_name = self.record.nickname.to_owned();
         let (minutes, seconds) = millis_to_mins_secs(last_event.igt as u64);
     
-        if minutes >= 10 && !guild_data.is_private {
+        let finish_minutes = match player_data.splits.finish {
+            Some(mins) => mins,
+            None => {
+                if !guild_data.is_private && minutes >= 10 {
+                    return println!(
+                        "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
+                        guild_data.name
+                    );
+                }
+                // minutes + 1 will always be greater than minutes. 
+                // This is done to send finish message always if finish time is not defined.
+                minutes + 1
+            }, 
+        };
+        if minutes >= finish_minutes {
             return println!(
-                "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
-                guild_data.name
-            );
+                "Skipping guild name: {} because finish time is above the defined amount.",
+                guild_data.name,
+            )
         }
 
         let content = format!(
