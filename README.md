@@ -11,7 +11,10 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 ```
 <in-game name> : <first structure>/<second structure>/<blind>/<eye spy>/<end enter>
 ```
-- Eg: `SathyaPramodh : 10/20/30/40/50` would be a valid runner name entry.
+- Eg: `SathyaPramodh : 10/20/30/40/50` would be a valid runner name entry, i.e. all sub `10m` first structure, sub `20m` second structure, sub `30m` blind, sub `40m` eye spy and sub `50m` end enters would show up for that runner.
+- You can even setup a configuration for the finish times of each runner if you want like so: `SathyaPramodh: 10/20/30/40/50/60` i.e. all sub `60m` completions would be the only ones showing up for that runner.
+- For public servers (without `#pacemanbot-runner-names`), the finish time is capped at `10m`.
+- If the finish time is not present for a runner, all finishes would show up.
 - Now run `/setup_pb_roles` in any channel to setup the valid PB roles to ping for these runners.
 - This method of pinging only works rounded to the minute at the moment. So getting pinged for say a Sub 3:30 bastion enter would not be possible with this config.
 - This method is useful also when you have a huge number of runners with varied PBs in your server.
