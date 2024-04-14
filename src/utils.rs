@@ -204,7 +204,7 @@ pub async fn update_leaderboard(
     nickname: String,
     time: (u8, u8),
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let messages = leaderboard_channel.messages(&ctx, |m| m.limit(1)).await?;
+    let messages = leaderboard_channel.messages(&ctx, |m| m.limit(100)).await?;
     if messages.is_empty() {
         let leaderboard_content = format!(
             "## Runner Leaderboard\n\n`{}`\t\t{}",
