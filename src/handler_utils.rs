@@ -294,9 +294,7 @@ pub async fn handle_ready(ctx: Arc<Context>) {
             };
             let ctx = ctx.clone();
             let guild_cache = guild_cache.clone();
-            tokio::spawn(async move {
-                Controller::new(ctx, record, guild_cache).start().await;
-            });
+            Controller::new(ctx, record, guild_cache).start().await;
         }
     }
 }
