@@ -1,9 +1,12 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use serenity::{
     client::Context,
-    futures::{lock::Mutex, StreamExt},
+    futures::StreamExt,
     model::{
+        channel::GuildChannel,
+        guild::Role,
+        id::ChannelId,
         prelude::{
             application_command::ApplicationCommandInteraction,
             message_component::MessageComponentInteraction, Activity, GuildId, Interaction, RoleId,
@@ -20,16 +23,31 @@ use crate::{
     },
     consts::WS_TIMEOUT_FOR_RETRY,
     controller::Controller,
-    guild_types::{CachedGuilds, Split},
+    guild_types::{CachedGuilds, GuildData, Split},
     response_types::Response,
     utils::{get_response_stream_from_api, remove_roles_starting_with},
     ArcMux,
 };
 
-pub async fn handle_guild_create(ctx: &Context, guild_id: GuildId) {
+pub async fn handle_guild_create(
+    ctx: &Context,
+    guild_id: GuildId,
+    guild_cache: ArcMux<CachedGuilds>,
+) {
     setup_default_commands(&ctx, guild_id).await;
     ctx.set_presence(Some(Activity::watching("paceman.gg")), OnlineStatus::Online)
         .await;
+    let mut locked_guild_cache = guild_cache.lock().await;
+    let guild_data = match GuildData::new(ctx, guild_id).await {
+        Ok(data) => data,
+        Err(err) => {
+            return eprintln!(
+                "Unable to fetch guild data for guild id: {} due to: {}",
+                guild_id, err
+            );
+        }
+    };
+    locked_guild_cache.insert(guild_id, guild_data);
 }
 
 pub async fn handle_interaction_create(ctx: &Context, interaction: Interaction) {
@@ -49,6 +67,81 @@ pub async fn handle_interaction_create(ctx: &Context, interaction: Interaction) 
         };
         handle_message_component_interaction(ctx, message_component).await;
     }
+}
+
+pub async fn handle_update_cache(
+    ctx: &Context,
+    guild_id: GuildId,
+    guild_cache: ArcMux<CachedGuilds>,
+) {
+    let mut locked_guild_cache = guild_cache.lock().await;
+    let guild_data = match locked_guild_cache.get_mut(&guild_id) {
+        Some(data) => data,
+        None => {
+            return eprintln!("Unable to get guild data for guild id: {}", guild_id);
+        }
+    };
+    match guild_data.refetch(&ctx, guild_id).await {
+        Ok(_) => (),
+        Err(err) => {
+            eprintln!(
+                "Unable to refetch guild data for guild id: {} due to: {}",
+                guild_id, err
+            )
+        }
+    }
+}
+
+pub async fn handle_message_events(
+    ctx: &Context,
+    channel_id: ChannelId,
+    guild_id: GuildId,
+    guild_cache: ArcMux<CachedGuilds>,
+) {
+    let name = match channel_id.name(&ctx.cache).await {
+        Some(name) => name,
+        None => {
+            return eprintln!("Unable to get guild name for channel id: {}.", channel_id);
+        }
+    };
+    if name != "pacemanbot-runner-names" {
+        return println!(
+            "Skipping message delete because it was not sent in #pacemanbot-runner-names.",
+        );
+    }
+    handle_update_cache(ctx, guild_id, guild_cache).await;
+}
+
+pub async fn handle_channel_events(
+    ctx: &Context,
+    channel: &GuildChannel,
+    guild_id: GuildId,
+    guild_cache: ArcMux<CachedGuilds>,
+) {
+    match channel.name.as_str() {
+        "pacemanbot-runner-names" | "pacemanbot" | "pacemanbot-runner-leaderboard" => {
+            handle_update_cache(ctx, guild_id, guild_cache).await;
+        }
+        _ => {
+            return println!(
+                "Skipping channel event because it is not something that concerns the bot."
+            )
+        }
+    }
+}
+
+pub async fn handle_guild_role_events(
+    ctx: &Context,
+    new: Role,
+    guild_id: GuildId,
+    guild_cache: ArcMux<CachedGuilds>,
+) {
+    if !new.name.starts_with("*") {
+        return println!(
+            "Skipping role create event because it is not something that concerns the bot."
+        );
+    }
+    handle_update_cache(ctx, guild_id, guild_cache).await
 }
 
 pub async fn handle_remove_pmb_roles(
@@ -238,8 +331,7 @@ pub async fn handle_message_component_interaction(
     };
 }
 
-pub async fn handle_ready(ctx: Arc<Context>) {
-    let guild_cache: ArcMux<CachedGuilds> = Arc::new(Mutex::new(HashMap::new()));
+pub async fn handle_ready(ctx: Arc<Context>, guild_cache: ArcMux<CachedGuilds>) {
     loop {
         let mut response_stream = match get_response_stream_from_api().await {
             Ok(stream) => stream,

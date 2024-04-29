@@ -298,4 +298,14 @@ impl GuildData {
             roles,
         })
     }
+
+    pub async fn refetch(
+        &mut self,
+        ctx: &Context,
+        guild_id: GuildId,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let guild_data = GuildData::new(ctx, guild_id).await?;
+        *self = guild_data;
+        Ok(())
+    }
 }

@@ -101,35 +101,6 @@ impl Controller {
         }
     }
 
-    async fn update_cache(&self) {
-        for guild_id in self.ctx.clone().cache.guilds() {
-            let mut locked_guild_cache = self.guild_cache.lock().await;
-            if let Some(cache) = locked_guild_cache.get(&guild_id) {
-                let mut guild_data = match GuildData::new(&self.ctx, guild_id).await {
-                    Ok(data) => data,
-                    Err(err) => {
-                        eprintln!("{}", err);
-                        locked_guild_cache.remove(&guild_id);
-                        continue;
-                    }
-                };
-                if !guild_data.is_private {
-                    guild_data.players = cache.players.clone();
-                }                 
-                locked_guild_cache.insert(guild_id, guild_data);
-            } else {
-                let guild_data = match GuildData::new(&self.ctx, guild_id).await {
-                    Ok(data) => data,
-                    Err(err) => {
-                        eprintln!("{}", err);
-                        continue;
-                    }
-                };
-                locked_guild_cache.insert(guild_id, guild_data);
-            }
-        }
-    }
-
     async fn handle_common_event(&self, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&self.record.nickname.to_lowercase()) {
             Some(data) => data,
@@ -377,7 +348,6 @@ impl Controller {
     }
 
     pub async fn start(&self) {
-        self.update_cache().await;
         let last_event = match self.record.event_list.last() {
             Some(evt) => evt,
             None => {
