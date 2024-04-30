@@ -28,12 +28,18 @@ impl Controller {
         match last_event.event_id {
             EventId::RsgEnterBastion => {
                 let mut split = Split::FirstStructure;
-                if self
+                let bastion_ss_check = self
+                    .record
+                    .event_list
+                    .iter()
+                    .any(|ctx| ctx.event_id == EventId::RsgEnterFortress);
+                let bastion_ss_context_check = self
                     .record
                     .context_event_list
                     .iter()
-                    .any(|ctx| ctx.event_id == EventId::RsgObtainBlazeRod)
-                {
+                    .any(|ctx| ctx.event_id == EventId::RsgObtainBlazeRod);
+
+                if bastion_ss_check && bastion_ss_context_check {
                     split = Split::SecondStructure;
                 }
                 Some(RunInfo {
