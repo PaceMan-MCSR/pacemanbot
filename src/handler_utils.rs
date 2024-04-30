@@ -19,7 +19,7 @@ use tokio::time::sleep;
 use crate::{
     components::{
         send_role_selection_message, setup_default_commands, setup_default_roles, setup_pb_roles,
-        setup_roles,
+        setup_roles, validate_config,
     },
     consts::WS_TIMEOUT_FOR_RETRY,
     controller::Controller,
@@ -291,6 +291,7 @@ pub async fn handle_application_command_interaction(
         "setup_default_roles" => setup_default_roles(&ctx, guild_id, command).await,
         "setup_roles" => setup_roles(&ctx, guild_id, command).await,
         "setup_pb_roles" => setup_pb_roles(&ctx, guild_id, command).await,
+        "validate_config" => validate_config(&ctx, guild_id, command).await,
         _ => {
             eprintln!("Unrecognized command: {}.", command.data.name);
             return;

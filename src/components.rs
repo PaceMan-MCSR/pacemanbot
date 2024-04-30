@@ -7,7 +7,7 @@ use serenity::model::prelude::{GuildId, Role, RoleId};
 use serenity::prelude::Context;
 use serenity::{builder::CreateActionRow, model::prelude::component::ButtonStyle::Primary};
 
-use crate::guild_types::Split;
+use crate::guild_types::{GuildData, Split};
 use crate::utils::{
     create_guild_role, create_select_option, extract_split_from_pb_role_name,
     extract_split_from_role_name, mins_secs_to_millis,
@@ -322,6 +322,26 @@ pub async fn setup_pb_roles(
     Ok(())
 }
 
+pub async fn validate_config(
+    ctx: &Context,
+    guild_id: GuildId,
+    command: &ApplicationCommandInteraction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    command.defer_ephemeral(&ctx).await?;
+    let reply_content;
+    match GuildData::new(&ctx, guild_id).await {
+        Ok(_) => {
+            reply_content =
+                "Config validation successful! Bot will send paces in #pacemanbot.".to_string()
+        }
+        Err(err) => reply_content = format!("Error: {}", err),
+    };
+    command
+        .edit_original_interaction_response(&ctx, |m| m.content(reply_content))
+        .await?;
+    Ok(())
+}
+
 pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
     match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
         commands.create_application_command(|command| {
@@ -337,6 +357,11 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
         commands.create_application_command(|command| {
             command.name("setup_pb_roles").description(
                 "Setup split PB pace-roles(as specified per runner in #pacemanbot-runner-names).",
+            )
+        });
+        commands.create_application_command(|command| {
+            command.name("validate_config").description(
+                "Check if the current server configuration is valid and if the bot will work properly or not.",
             )
         });
         commands.create_application_command(|command| {
