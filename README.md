@@ -37,6 +37,7 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 - You can even setup all pace-roles for a typical sub 10 pace using the `/setup_default_roles` command in any channel.
 - And now in your server's `#roles` channel type in `/send_message` to send a message in that channel with drop down boxes that members can choose from the roles that you setup earlier. **NOTE:** If you setup roles again at a later point, you will have to re-send this message.
 - And make sure that the bot has the `Send Messages` permission in this channel.
+- You can also do `/validate_config` to test if all your configuration is setup correctly (very basic checks implemented at the moment). It is recommended to run it each time you change something with the configuration of the server that might affect the bot.
 - **NOTE:** The pace-roles for first structure entry is optional. If you don't have any roles setup for first structure, the bot will not send a drop-down for the same when you issue `/send_message`.
 - That's it! You should be getting all pace-pings from paceman.gg on your community discord server while running the tracker! Enjoyy!!
 
