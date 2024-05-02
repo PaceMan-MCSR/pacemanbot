@@ -33,21 +33,24 @@ pub async fn handle_guild_create(
     ctx: &Context,
     guild_id: GuildId,
     guild_cache: ArcMux<CachedGuilds>,
+    is_new: bool,
 ) {
     setup_default_commands(&ctx, guild_id).await;
     ctx.set_presence(Some(Activity::watching("paceman.gg")), OnlineStatus::Online)
         .await;
-    let mut locked_guild_cache = guild_cache.lock().await;
-    let guild_data = match GuildData::new(ctx, guild_id).await {
-        Ok(data) => data,
-        Err(err) => {
-            return eprintln!(
-                "Unable to fetch guild data for guild id: {} due to: {}",
-                guild_id, err
-            );
-        }
-    };
-    locked_guild_cache.insert(guild_id, guild_data);
+    if is_new {
+        let mut locked_guild_cache = guild_cache.lock().await;
+        let guild_data = match GuildData::new(ctx, guild_id).await {
+            Ok(data) => data,
+            Err(err) => {
+                return eprintln!(
+                    "Unable to fetch guild data for guild id: {} due to: {}",
+                    guild_id, err
+                );
+            }
+        };
+        locked_guild_cache.insert(guild_id, guild_data);
+    }
 }
 
 pub async fn handle_interaction_create(ctx: &Context, interaction: Interaction) {
@@ -333,6 +336,21 @@ pub async fn handle_message_component_interaction(
 }
 
 pub async fn handle_ready(ctx: Arc<Context>, guild_cache: ArcMux<CachedGuilds>) {
+    let mut locked_guild_cache = guild_cache.lock().await;
+    for guild_id in ctx.cache.guilds() {
+        let guild_data = match GuildData::new(&ctx, guild_id).await {
+            Ok(data) => data,
+            Err(err) => {
+                eprintln!(
+                    "Unable to generate cache for guild id: {} due to: {}",
+                    guild_id, err
+                );
+                continue;
+            }
+        };
+        locked_guild_cache.insert(guild_id, guild_data);
+    }
+    drop(locked_guild_cache);
     loop {
         let mut response_stream = match get_response_stream_from_api().await {
             Ok(stream) => stream,
