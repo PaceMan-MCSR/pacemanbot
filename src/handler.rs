@@ -20,8 +20,8 @@ pub struct Handler {
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
-        handle_guild_create(&ctx, guild.id, self.guild_cache.clone(), is_new).await;
+    async fn guild_create(&self, ctx: Context, guild: Guild, _is_new: bool) {
+        handle_guild_create(&ctx, guild.id, self.guild_cache.clone()).await;
     }
 
     async fn guild_delete(
