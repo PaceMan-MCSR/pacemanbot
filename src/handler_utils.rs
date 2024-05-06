@@ -75,19 +75,28 @@ pub async fn handle_update_cache(
     guild_cache: ArcMux<CachedGuilds>,
 ) {
     let mut locked_guild_cache = guild_cache.lock().await;
-    let guild_data = match locked_guild_cache.get_mut(&guild_id) {
-        Some(data) => data,
+    let guild_data = locked_guild_cache.get_mut(&guild_id);
+    match guild_data {
+        Some(guild_data) => match guild_data.refetch(&ctx, guild_id).await {
+            Ok(_) => (),
+            Err(err) => {
+                eprintln!(
+                    "Unable to refetch guild data for guild id: {} due to: {}",
+                    guild_id, err
+                )
+            }
+        },
         None => {
-            return eprintln!("Unable to get guild data for guild id: {}", guild_id);
-        }
-    };
-    match guild_data.refetch(&ctx, guild_id).await {
-        Ok(_) => (),
-        Err(err) => {
-            eprintln!(
-                "Unable to refetch guild data for guild id: {} due to: {}",
-                guild_id, err
-            )
+            let guild_data = match GuildData::new(ctx, guild_id).await {
+                Ok(data) => data,
+                Err(err) => {
+                    return eprintln!(
+                        "Unable to fetch guild data for guild id: {} due to: {}",
+                        guild_id, err
+                    )
+                }
+            };
+            locked_guild_cache.insert(guild_id, guild_data);
         }
     }
 }
