@@ -30,7 +30,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let guild_cache: ArcMux<CachedGuilds> = Arc::new(Mutex::new(HashMap::new()));
 
-    let mut client = Client::builder(&token, GatewayIntents::all())
+    let mut intents = GatewayIntents::all();
+    intents.remove(GatewayIntents::GUILD_MEMBERS);
+
+    let mut client = Client::builder(&token, intents)
         .event_handler(Handler { guild_cache })
         .framework(framework)
         .await?;
