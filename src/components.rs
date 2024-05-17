@@ -7,10 +7,9 @@ use serenity::model::prelude::{GuildId, Role, RoleId};
 use serenity::prelude::Context;
 use serenity::{builder::CreateActionRow, model::prelude::component::ButtonStyle::Primary};
 
-use crate::guild_types::{GuildData, Split};
+use crate::guild_types::{GuildData, PlayerSplitsData, Players, Split};
 use crate::utils::{
-    create_guild_role, create_select_option, extract_split_from_pb_role_name,
-    extract_split_from_role_name, mins_secs_to_millis,
+    create_guild_role, create_select_option, extract_name_and_splits_from_line, extract_split_from_pb_role_name, extract_split_from_role_name, get_new_config_contents, mins_secs_to_millis
 };
 
 pub async fn send_role_selection_message(
@@ -322,6 +321,265 @@ pub async fn setup_pb_roles(
     Ok(())
 }
 
+pub async fn whitelist(
+    ctx: &Context,
+    guild_id: GuildId,
+    command: &ApplicationCommandInteraction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    command.defer_ephemeral(&ctx).await?;
+    let channels = match ctx.cache.guild_channels(guild_id) {
+        Some(channels) => channels,
+        None => {
+            return Err(format!("Unable to get channels for guild id: {}", guild_id).into());
+        }
+    };
+    let mut action = String::new();
+    let mut ign = String::new();
+    let mut splits_data = PlayerSplitsData::default();
+
+    for option in command.data.options.iter() {
+        match option.name.as_str() {
+            "action" => {
+                action = match option.value.to_owned() {
+                    Some(value) => match value.as_str() {
+                        Some(str) => str.to_owned(),
+                        None => {
+                            return Err(String::from("Unable to parse string for action option.").into())
+                        }
+                    },
+                    None => return Err(String::from("Unable to get value for action option.").into()),
+                }
+            }
+            "ign" => match option.value.to_owned() {
+                Some(value) => {
+                    ign = match value.as_str() {
+                        Some(str) => str.to_owned(),
+                        None => {
+                            return Err(String::from("Unable to parse string for ign option.").into())
+                        }
+                    }
+                }
+                None => return Err(String::from("Unable to get value for ign option.").into()),
+            },
+            "first_structure" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.first_structure = match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => {
+                            return Err(
+                                String::from("Unable to parse u64 for first structure option.").into()
+                            )
+                        }
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(
+                            String::from("Unable to get value for first structure option.").into()
+                        );
+                    }
+                }
+            },
+            "second_structure" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.second_structure = match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => {
+                            return Err(
+                                String::from("Unable to parse u64 for second structure option.").into()
+                            )
+                        }
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(
+                            String::from("Unable to get value for second structure option.").into()
+                        );
+                    }
+                }
+            },
+            "blind" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.blind = match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => return Err(String::from("Unable to parse u64 for blind option.").into()),
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from("Unable to get value for blind option.").into());
+                    }
+                }
+            },
+            "eye_spy" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.eye_spy = match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => {
+                            return Err(String::from("Unable to parse u64 for eye spy option.").into())
+                        }
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from("Unable to get value for eye spy option.").into());
+                    }
+                }
+            },
+            "end_enter" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.end_enter = match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => {
+                            return Err(String::from("Unable to parse u64 for end enter option.").into())
+                        }
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from("Unable to get value for end enter option.").into());
+                    }
+                }
+            },
+            "finish" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.finish = match value.as_u64() {
+                        Some(int) => Some(int as u8),
+                        None => {
+                            return Err(String::from("Unable to parse u64 for end enter option.").into())
+                        }
+                    }
+                }
+                None => splits_data.finish = None,
+            },
+            _ => return Err(format!("Unrecognized command option: '{}'", option.name).into()),
+        };
+    }
+
+    let channel = channels
+        .iter()
+        .filter(|c| c.name == "pacemanbot-runner-names")
+        .collect::<Vec<_>>();
+    let channel = match channel.first() {
+        Some(channel) => channel,
+        None => {
+            return Err(format!(
+                "Unable to find #pacemanbot-runner-names in guild id: {}",
+                guild_id
+            )
+            .into())
+        }
+    };
+    let message = channel.messages(&ctx.http, |m| m.limit(1)).await?;
+    let mut players: Players = HashMap::new();
+    match message.last() {
+        Some(message) => {
+            if !message.author.bot {
+                let response_content = 
+                    String::from(
+                        "The first message in #pacemanbot-runner-names is not from the bot. \
+                        Please rename #pacemanbot-runner-names to something else and provide that name as an argument in `/migrate` \
+                        to completely migrate your existing config into a new #pacemanbot-runner-names \
+                        (which you should create after renaming the old one).",
+                    );
+                command.edit_original_interaction_response(&ctx.http, |m| m.content(response_content)).await?;
+                return Err(
+                    format!(
+                        "Guild id: {} is not updated to the latest configuration yet or has not attempted to yet.", 
+                        guild_id
+                    ).into()
+                );
+            }
+            for line in message.content.split("\n") {
+                let (name, split_data) = extract_name_and_splits_from_line(line)?;
+                players.insert(name, split_data);
+            }
+            if action == "remove" {
+                players.remove(&ign);
+            } else {
+                players.insert(ign, splits_data);
+            }
+            let new_config = get_new_config_contents(players);
+            message
+                .to_owned()
+                .edit(&ctx.http, |m| m.content(new_config))
+                .await?;
+        }
+        None => {
+            if action == "remove" {
+                let response_content = format!("No names to remove from in guild id: {}", guild_id);
+                command
+                    .edit_original_interaction_response(&ctx.http, |m| {
+                        m.content(response_content.to_owned())
+                    })
+                    .await?;
+                return Err(response_content.into());
+            }
+            players.insert(ign, splits_data);
+            let new_config = get_new_config_contents(players);
+            channel
+                .send_message(&ctx.http, |m| m.content(new_config))
+                .await?;
+        }
+    };
+    command
+        .edit_original_interaction_response(&ctx.http, |m| m.content("Updated config!"))
+        .await?;
+    Ok(())
+}
+
+pub async fn migrate(
+    ctx: &Context, 
+    guild: GuildId, 
+    command: &ApplicationCommandInteraction
+) -> Result<(), Box<dyn std::error::Error>> {
+    command.defer_ephemeral(&ctx).await?;
+    let channels = match ctx.cache.guild_channels(guild) {
+        Some(channels) => channels,
+        None => {
+            return Err(format!("Unable to get channels for guild id: {}", guild).into())
+        }
+    };
+    let runner_names_channel = match channels.iter().find(|c| c.name == "pacemanbot-runner-names") {
+        Some(channel) => channel,
+        None => {
+            let response_content = format!("Unable to find channel name: pacemanbot-runner-name in guild id: {}", guild);
+            command
+                .edit_original_interaction_response(
+                    &ctx.http, 
+                    |m| m.content(response_content.to_owned()
+                )
+            ).await?;
+            return Err(response_content.into());
+        }
+    };
+    let old_config_messages = match runner_names_channel.messages(&ctx.http, |m| m.limit(1)).await {
+        Ok(messages) => messages,
+        Err(err) => {
+            return Err(format!("Unable to get messages in #pacemanbot-runner-names in guild id: {} due to: {}", guild, err).into())
+        },
+    };
+    let old_config_message = match old_config_messages.last() {
+        Some(message) => message,
+        None => {
+            return Err(format!("Unable to get first message in #pacemanbot-runner-names in guild id: {}", guild).into())
+        },
+    };
+    runner_names_channel.send_message(&ctx.http, |m| m.content(old_config_message.content.to_string())).await?;
+    command
+        .edit_original_interaction_response(&ctx.http, |m| {
+            m.content(
+                String::from(
+                    "Migrated old config from first message in #pacemanbot-runner-names! \
+                    You can now delete the original first message.", 
+                )
+            )
+        })
+        .await?;
+    Ok(())
+}
+
 pub async fn validate_config(
     ctx: &Context,
     guild_id: GuildId,
@@ -362,6 +620,72 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
         commands.create_application_command(|command| {
             command.name("validate_config").description(
                 "Check if the current server configuration is valid and if the bot will work properly or not.",
+            )
+        });
+        commands.create_application_command(|command| {
+            command
+            .name("whitelist")
+            .description(
+                "Whitelist new players or edit old players' configurations in the server based on ign.",
+            )
+            .create_option(|option| {
+                option
+                    .name("action")
+                    .description("Action to perform out of 'add_or_update' or 'remove'.")
+                    .required(true)
+                    .kind(CommandOptionType::String)
+                    .add_string_choice("Add or Update", "add_or_update")
+                    .add_string_choice("Remove", "remove")
+            })
+            .create_option(|option| {
+                option
+                    .name("ign")
+                    .description("In-game name of the runner that you want to add.")
+                    .required(true)
+                    .kind(CommandOptionType::String)
+            })
+            .create_option(|option| {
+                option
+                    .name("first_structure")
+                    .description("The time for first structure that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("second_structure")
+                    .description("The time for second structure that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("blind")
+                    .description("The time for blind that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("eye_spy")
+                    .description("The time for eye spy that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("end_enter")
+                    .description("The time for end enter that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("finish")
+                    .description("The time for completion that you want to setup for the runner(optional).")
+                    .kind(CommandOptionType::Integer)
+            })
+        });
+        commands.create_application_command(|command| {
+            command
+            .name("migrate")
+            .description(
+                "Migrate the old configuration from first message in #pacemanbot-runner-names."
             )
         });
         commands.create_application_command(|command| {

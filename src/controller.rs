@@ -3,9 +3,7 @@ use std::sync::Arc;
 use serenity::{client::Context, model::mention::Mentionable};
 
 use crate::{
-    guild_types::{CachedGuilds, GuildData, Split, PlayerData},
-    response_types::{Event, EventId, EventType, Response, RunInfo, Structure, RunType},
-    ArcMux, utils::{millis_to_mins_secs, update_leaderboard, format_time, get_event_type}, consts::SPECIAL_UNDERSCORE,
+    consts::SPECIAL_UNDERSCORE, guild_types::{CachedGuilds, GuildData, PlayerSplitsData, Split}, response_types::{Event, EventId, EventType, Response, RunInfo, RunType, Structure}, utils::{format_time, get_event_type, millis_to_mins_secs, update_leaderboard}, ArcMux
 };
 
 
@@ -107,70 +105,6 @@ impl Controller {
         }
     }
 
-    async fn handle_common_event(&self, guild_data: &mut GuildData) {
-        let player_data = match guild_data.players.get_mut(&self.record.nickname.to_lowercase()) {
-            Some(data) => data,
-            None => {
-                if guild_data.is_private {
-                    return println!(
-                        "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
-                        self.record.nickname, 
-                        guild_data.name
-                    );
-                }
-                let player_data = PlayerData::default();
-                guild_data.players.insert(self.record.nickname.to_owned().to_lowercase(), player_data);
-                guild_data.players.get_mut(&self.record.nickname.to_owned()).unwrap()
-            }
-        };
-        let message_id = match player_data.last_pace_message {
-            Some(id) => id,
-            None => {
-                return eprintln!("No last pace message to edit for reset.");
-            }
-        };
-        let mut message = match self.ctx.cache.message(guild_data.pace_channel, message_id)
-        {
-            Some(message) => message,
-            None => {
-                return eprintln!(
-                    "Unable to construct message from message id: {}",
-                    message_id
-                );
-            }
-        };
-        let prev_content = message.content.split('\n').collect::<Vec<&str>>();
-        let first_line = match prev_content.first() {
-            Some(line) => line,
-            None => {
-                return eprintln!(
-                    "Unable to get first line from message with id: {}",
-                    message_id
-                );
-            }
-        };
-        let new_first_line = format!("{} (Reset)", first_line);
-        let other_lines = prev_content
-            .iter()
-            .filter(|l| l.to_owned() != first_line)
-            .map(|l| l.to_owned())
-            .collect::<Vec<&str>>()
-            .join("\n");
-        let new_content = format!("{}\n{}", new_first_line, other_lines);
-        match message
-            .edit(&self.ctx.http, |m| m.content(new_content))
-            .await
-        {
-            Ok(_) => {
-                player_data.last_pace_message = None;
-            },
-            Err(err) => eprintln!(
-                "Unable to edit message with id: {} due to: {}",
-                message_id, err
-            ),
-        };
-    }
-
     async fn handle_non_pace_event(&self, live_link: String, last_event: &Event, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&self.record.nickname.to_lowercase()) {
             Some(data) => data,
@@ -186,7 +120,7 @@ impl Controller {
         let runner_name = self.record.nickname.to_owned();
         let (minutes, seconds) = millis_to_mins_secs(last_event.igt as u64);
     
-        let finish_minutes = match player_data.splits.finish {
+        let finish_minutes = match player_data.finish {
             Some(mins) => mins,
             None => {
                 if !guild_data.is_private && minutes >= 10 {
@@ -220,7 +154,6 @@ impl Controller {
                     "Sent pace-ping for user with name: '{}' for split: 'Finish' in guild name: {}.",
                     self.record.nickname, guild_data.name 
                 );
-                player_data.last_pace_message = None;
             }
             Err(err) => {
                 return eprintln!(
@@ -278,7 +211,7 @@ impl Controller {
                         guild_data.name
                     );
                 }
-                let player_data = PlayerData::default();
+                let player_data = PlayerSplitsData::default();
                 guild_data.players.insert(self.record.nickname.to_owned().to_lowercase(), player_data);
                 guild_data.players.get_mut(&self.record.nickname.to_lowercase()).unwrap()
             }
@@ -289,8 +222,6 @@ impl Controller {
                 return eprintln!("Unable to get split desc for split: {:#?}", run_info.split);
             }
         };
-
-        let player_splits = player_data.splits;
 
         let bastionless = if let RunType::Bastionless = run_info.run_type {
             "(Bastionless)"
@@ -306,7 +237,7 @@ impl Controller {
                     if !guild_data.is_private {
                         return false;
                     }
-                    let pb_minutes = player_splits.get(&role.split).unwrap().to_owned();
+                    let pb_minutes = player_data.get(&role.split).unwrap().to_owned();
                     role.split == run_info.split && pb_minutes > split_minutes
                 } else {
                     role.split == run_info.split
@@ -336,7 +267,7 @@ impl Controller {
                 .collect::<Vec<_>>()
                 .join(" "),
         );
-        player_data.last_pace_message = match guild_data.pace_channel.send_message(&self.ctx, |m| m.content(content)).await {
+        match guild_data.pace_channel.send_message(&self.ctx, |m| m.content(content)).await {
             Ok(message) => {
                 println!(
                     "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.",
@@ -388,9 +319,6 @@ impl Controller {
                 }
             };
             match event_type {
-                EventType::CommonEvent  => {
-                    self.handle_common_event(guild_data).await;
-                }
                 EventType::NonPaceEvent => {
                     self.handle_non_pace_event(live_link, last_event, guild_data).await;
                 }

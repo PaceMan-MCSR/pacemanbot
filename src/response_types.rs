@@ -58,7 +58,6 @@ pub enum EventId {
 
 #[derive(Debug)]
 pub enum EventType {
-    CommonEvent,
     NonPaceEvent,
     PaceEvent,
 }

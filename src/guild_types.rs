@@ -4,7 +4,7 @@ use serenity::{
     client::Context,
     model::{
         guild::Role,
-        id::{ChannelId, GuildId, MessageId},
+        id::{ChannelId, GuildId},
     },
 };
 
@@ -17,7 +17,7 @@ use crate::{
 };
 
 pub type CachedGuilds = HashMap<GuildId, GuildData>;
-pub type Players = HashMap<String, PlayerData>;
+pub type Players = HashMap<String, PlayerSplitsData>;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Split {
@@ -187,21 +187,6 @@ impl PlayerSplitsData {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct PlayerData {
-    pub splits: PlayerSplitsData,
-    pub last_pace_message: Option<MessageId>,
-}
-
-impl PlayerData {
-    pub fn default() -> Self {
-        Self {
-            splits: PlayerSplitsData::default(),
-            last_pace_message: None,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct GuildData {
     pub name: String,
@@ -262,9 +247,7 @@ impl GuildData {
             };
             for line in first_message.content.split("\n") {
                 let (name, splits) = extract_name_and_splits_from_line(line)?;
-                let mut player_data = PlayerData::default();
-                player_data.splits = splits;
-                players.insert(name.to_lowercase(), player_data);
+                players.insert(name.to_lowercase(), splits);
             }
         }
 

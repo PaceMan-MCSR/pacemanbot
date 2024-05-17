@@ -21,7 +21,7 @@ use crate::{
         ROLE_COLOR, WS_CONNECTION_HEADER, WS_FALLBACK_HOST, WS_FALLBACK_URL, WS_SEC_VERSION_HEADER,
         WS_UPGRADE_HEADER,
     },
-    guild_types::{PlayerSplitsData, Split},
+    guild_types::{PlayerSplitsData, Players, Split},
     response_types::{Event, EventId, EventType},
 };
 
@@ -265,6 +265,29 @@ pub async fn update_leaderboard(
     Ok(())
 }
 
+pub fn get_new_config_contents(players: Players) -> String {
+    let mut new_config = String::new();
+    for (name, splits) in players {
+        let finish_config = if splits.finish.is_some() {
+            format!("/{}", splits.finish.unwrap())
+        } else {
+            "".to_string()
+        };
+        let line = format!(
+            "{}:{}/{}/{}/{}/{}{}",
+            name,
+            splits.first_structure,
+            splits.second_structure,
+            splits.blind,
+            splits.eye_spy,
+            splits.end_enter,
+            finish_config
+        );
+        new_config = format!("{}\n{}", new_config, line);
+    }
+    new_config
+}
+
 pub fn create_select_option<'a>(
     o: &'a mut CreateSelectMenuOptions,
     roles: &Vec<&Role>,
@@ -310,11 +333,6 @@ pub fn create_select_option<'a>(
 
 pub fn get_event_type(last_event: &Event) -> Option<EventType> {
     match last_event.event_id {
-        EventId::CommonEnableCheats
-        | EventId::CommonMultiplayer
-        | EventId::CommonLeaveWorld
-        | EventId::CommonOpenToLan
-        | EventId::CommonViewSeed => Some(EventType::CommonEvent),
         EventId::RsgEnterBastion
         | EventId::RsgEnterFortress
         | EventId::RsgFirstPortal
