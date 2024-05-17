@@ -7,16 +7,17 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 - Go to your server settings and go into the `Integrations` tab. Under there, select `PaceManBot` and just disable the option that says `@everyone` under `Role & Members`. You can add in like an `admin` role and enable that role to be able to use this role in this same tab.
 - Now in your discord server, create a new channel named `#pacemanbot`.
 - This is where your pace pings will go. So make sure to give the role `PaceManBot` all the necessary perms for sending, reading and mentioning roles in that channel.
-- And then, create a new channel named `#pacemanbot-runner-names` and send a message in that channel with your in-game name along with the splits that you are going for along with it in the following format
+- And then, create a new channel named `#pacemanbot-runner-names`.
+- Then do
 ```
-<in-game name> : <first structure>/<second structure>/<blind>/<eye spy>/<end enter>
+/whitelist <action> <ign> [<first_structure> <second_structure> <blind> <eye_spy> <end_enter> <finish>]
 ```
-- Eg: `SathyaPramodh : 10/20/30/40/50` would be a valid runner name entry, i.e. all sub `10m` first structure, sub `20m` second structure, sub `30m` blind, sub `40m` eye spy and sub `50m` end enters would show up for that runner.
-- You can even setup a configuration for the finish times of each runner if you want like so:
-```
-<in-game name> : <first structure>/<second structure>/<blind>/<eye spy>/<end enter>/<finish time>
-```
-- Eg: `SathyaPramodh: 10/20/30/40/50/60` i.e. all sub `60m` completions would be the only ones showing up for that runner.
+- `<action>` takes the values: `add_or_update` or `remove`
+- `add_or_update` either adds a new runner (if they aren't already in the config) or updates an existing runner's splits to the new splits that will be specified.
+- `remove` removes a runner (if they exist already in the config).
+- Note here that all structure/split times to be specified for the command are optional (because when removing names you don't have to specify it at all). This means that if any split (other than `finish`) is not specified, they will be defaulted to `0`, i.e it will never ping that split for that runner. If `finish` split is skipped, it will never be written in the splits (as it is optional).
+- Eg: `/whitelist add_or_update SathyaPramodh 10 20 30 40 50` would be a valid runner name entry, i.e. all sub `10m` first structure, sub `20m` second structure, sub `30m` blind, sub `40m` eye spy and sub `50m` end enters would show up for that runner.
+- `/whitelist add_or_update SathyaPramodh 10 20 30 40 50 60` is also a valid runner name entry, i.e all sub `10m` first structure, sub `20m` second structure, sub `30m` blind, sub `40m` eye spy, sub `50m` end enters and sub `60m` finishes would show up for that runner.
 - For public servers (without `#pacemanbot-runner-names`), the finish time is capped at `10m`.
 - If the finish time is not present for a runner, all finishes would show up.
 - Now run `/setup_pb_roles` in any channel to setup the valid PB roles to ping for these runners.
@@ -40,6 +41,9 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 - You can also do `/validate_config` to test if all your configuration is setup correctly (very basic checks implemented at the moment). It is recommended to run it each time you change something with the configuration of the server that might affect the bot.
 - **NOTE:** The pace-roles for first structure entry is optional. If you don't have any roles setup for first structure, the bot will not send a drop-down for the same when you issue `/send_message`.
 - That's it! You should be getting all pace-pings from paceman.gg on your community discord server while running the tracker! Enjoyy!!
+
+# Migration
+Since PaceManBot is now a verified Discord Bot, I have to now also think about how I do things related to user data. Since contents of messages are also sensitive information, I have decided to re-implement how server whitelisting works. This means the old configuration will **STOP** working after we hit 100 servers added. If you added the bot to the server on or before `17th May 2024 11:00 PM IST`, please make sure to run `/migrate` in your server and delete the old configuration message to ensure that the bot works even after we hit 100 servers :)
 
 # Issues
 You can report any issues related to the bot [here](https://github.com/paceman-mcsr/pacemanbot/issues).
