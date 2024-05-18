@@ -9,7 +9,9 @@ use serenity::{builder::CreateActionRow, model::prelude::component::ButtonStyle:
 
 use crate::guild_types::{GuildData, PlayerSplitsData, Players, Split};
 use crate::utils::{
-    create_guild_role, create_select_option, extract_name_and_splits_from_line, extract_split_from_pb_role_name, extract_split_from_role_name, get_new_config_contents, mins_secs_to_millis
+    create_guild_role, create_select_option, extract_name_and_splits_from_line,
+    extract_split_from_pb_role_name, extract_split_from_role_name, get_new_config_contents,
+    mins_secs_to_millis,
 };
 
 pub async fn send_role_selection_message(
@@ -344,10 +346,14 @@ pub async fn whitelist(
                     Some(value) => match value.as_str() {
                         Some(str) => str.to_owned(),
                         None => {
-                            return Err(String::from("Unable to parse string for action option.").into())
+                            return Err(
+                                String::from("Unable to parse string for action option.").into()
+                            )
                         }
                     },
-                    None => return Err(String::from("Unable to get value for action option.").into()),
+                    None => {
+                        return Err(String::from("Unable to get value for action option.").into())
+                    }
                 }
             }
             "ign" => match option.value.to_owned() {
@@ -355,7 +361,9 @@ pub async fn whitelist(
                     ign = match value.as_str() {
                         Some(str) => str.to_owned(),
                         None => {
-                            return Err(String::from("Unable to parse string for ign option.").into())
+                            return Err(
+                                String::from("Unable to parse string for ign option.").into()
+                            )
                         }
                     }
                 }
@@ -366,17 +374,19 @@ pub async fn whitelist(
                     splits_data.first_structure = match value.as_u64() {
                         Some(int) => int as u8,
                         None => {
-                            return Err(
-                                String::from("Unable to parse u64 for first structure option.").into()
+                            return Err(String::from(
+                                "Unable to parse u64 for first structure option.",
                             )
+                            .into())
                         }
                     }
                 }
                 None => {
                     if action != "remove" {
-                        return Err(
-                            String::from("Unable to get value for first structure option.").into()
-                        );
+                        return Err(String::from(
+                            "Unable to get value for first structure option.",
+                        )
+                        .into());
                     }
                 }
             },
@@ -385,17 +395,19 @@ pub async fn whitelist(
                     splits_data.second_structure = match value.as_u64() {
                         Some(int) => int as u8,
                         None => {
-                            return Err(
-                                String::from("Unable to parse u64 for second structure option.").into()
+                            return Err(String::from(
+                                "Unable to parse u64 for second structure option.",
                             )
+                            .into())
                         }
                     }
                 }
                 None => {
                     if action != "remove" {
-                        return Err(
-                            String::from("Unable to get value for second structure option.").into()
-                        );
+                        return Err(String::from(
+                            "Unable to get value for second structure option.",
+                        )
+                        .into());
                     }
                 }
             },
@@ -403,7 +415,9 @@ pub async fn whitelist(
                 Some(value) => {
                     splits_data.blind = match value.as_u64() {
                         Some(int) => int as u8,
-                        None => return Err(String::from("Unable to parse u64 for blind option.").into()),
+                        None => {
+                            return Err(String::from("Unable to parse u64 for blind option.").into())
+                        }
                     }
                 }
                 None => {
@@ -417,7 +431,9 @@ pub async fn whitelist(
                     splits_data.eye_spy = match value.as_u64() {
                         Some(int) => int as u8,
                         None => {
-                            return Err(String::from("Unable to parse u64 for eye spy option.").into())
+                            return Err(
+                                String::from("Unable to parse u64 for eye spy option.").into()
+                            )
                         }
                     }
                 }
@@ -432,13 +448,17 @@ pub async fn whitelist(
                     splits_data.end_enter = match value.as_u64() {
                         Some(int) => int as u8,
                         None => {
-                            return Err(String::from("Unable to parse u64 for end enter option.").into())
+                            return Err(
+                                String::from("Unable to parse u64 for end enter option.").into()
+                            )
                         }
                     }
                 }
                 None => {
                     if action != "remove" {
-                        return Err(String::from("Unable to get value for end enter option.").into());
+                        return Err(
+                            String::from("Unable to get value for end enter option.").into()
+                        );
                     }
                 }
             },
@@ -447,7 +467,9 @@ pub async fn whitelist(
                     splits_data.finish = match value.as_u64() {
                         Some(int) => Some(int as u8),
                         None => {
-                            return Err(String::from("Unable to parse u64 for end enter option.").into())
+                            return Err(
+                                String::from("Unable to parse u64 for end enter option.").into()
+                            )
                         }
                     }
                 }
@@ -476,14 +498,13 @@ pub async fn whitelist(
     match message.last() {
         Some(message) => {
             if !message.author.bot {
-                let response_content = 
-                    String::from(
-                        "The first message in #pacemanbot-runner-names is not from the bot. \
-                        Please rename #pacemanbot-runner-names to something else and provide that name as an argument in `/migrate` \
-                        to completely migrate your existing config into a new #pacemanbot-runner-names \
-                        (which you should create after renaming the old one).",
-                    );
-                command.edit_original_interaction_response(&ctx.http, |m| m.content(response_content)).await?;
+                let response_content = String::from(
+                    "The first message in #pacemanbot-runner-names is not from the bot. \
+                        Please do `/migrate` in order to migrate your config to the newer version.",
+                );
+                command
+                    .edit_original_interaction_response(&ctx.http, |m| m.content(response_content))
+                    .await?;
                 return Err(
                     format!(
                         "Guild id: {} is not updated to the latest configuration yet or has not attempted to yet.", 
@@ -492,6 +513,9 @@ pub async fn whitelist(
                 );
             }
             for line in message.content.split("\n") {
+                if line == "```" || line == "" {
+                    continue;
+                }
                 let (name, split_data) = extract_name_and_splits_from_line(line)?;
                 players.insert(name, split_data);
             }
@@ -503,7 +527,9 @@ pub async fn whitelist(
             let new_config = get_new_config_contents(players);
             message
                 .to_owned()
-                .edit(&ctx.http, |m| m.content(new_config))
+                .edit(&ctx.http, |m| {
+                    m.content(format!("```\n{}\n```", new_config))
+                })
                 .await?;
         }
         None => {
@@ -519,7 +545,9 @@ pub async fn whitelist(
             players.insert(ign, splits_data);
             let new_config = get_new_config_contents(players);
             channel
-                .send_message(&ctx.http, |m| m.content(new_config))
+                .send_message(&ctx.http, |m| {
+                    m.content(format!("```\n{}\n```", new_config))
+                })
                 .await?;
         }
     };
@@ -530,51 +558,84 @@ pub async fn whitelist(
 }
 
 pub async fn migrate(
-    ctx: &Context, 
-    guild: GuildId, 
-    command: &ApplicationCommandInteraction
+    ctx: &Context,
+    guild: GuildId,
+    command: &ApplicationCommandInteraction,
 ) -> Result<(), Box<dyn std::error::Error>> {
     command.defer_ephemeral(&ctx).await?;
     let channels = match ctx.cache.guild_channels(guild) {
         Some(channels) => channels,
-        None => {
-            return Err(format!("Unable to get channels for guild id: {}", guild).into())
-        }
+        None => return Err(format!("Unable to get channels for guild id: {}", guild).into()),
     };
-    let runner_names_channel = match channels.iter().find(|c| c.name == "pacemanbot-runner-names") {
+    let runner_names_channel = match channels
+        .iter()
+        .find(|c| c.name == "pacemanbot-runner-names")
+    {
         Some(channel) => channel,
         None => {
-            let response_content = format!("Unable to find channel name: pacemanbot-runner-name in guild id: {}", guild);
+            let response_content = format!(
+                "Unable to find channel name: pacemanbot-runner-name in guild id: {}",
+                guild
+            );
             command
-                .edit_original_interaction_response(
-                    &ctx.http, 
-                    |m| m.content(response_content.to_owned()
-                )
-            ).await?;
+                .edit_original_interaction_response(&ctx.http, |m| {
+                    m.content(response_content.to_owned())
+                })
+                .await?;
             return Err(response_content.into());
         }
     };
-    let old_config_messages = match runner_names_channel.messages(&ctx.http, |m| m.limit(1)).await {
+    let old_config_messages = match runner_names_channel
+        .messages(&ctx.http, |m| m.limit(1))
+        .await
+    {
         Ok(messages) => messages,
         Err(err) => {
-            return Err(format!("Unable to get messages in #pacemanbot-runner-names in guild id: {} due to: {}", guild, err).into())
-        },
+            return Err(format!(
+                "Unable to get messages in #pacemanbot-runner-names in guild id: {} due to: {}",
+                guild, err
+            )
+            .into())
+        }
     };
     let old_config_message = match old_config_messages.last() {
         Some(message) => message,
         None => {
-            return Err(format!("Unable to get first message in #pacemanbot-runner-names in guild id: {}", guild).into())
-        },
+            return Err(format!(
+                "Unable to get first message in #pacemanbot-runner-names in guild id: {}",
+                guild
+            )
+            .into())
+        }
     };
-    runner_names_channel.send_message(&ctx.http, |m| m.content(old_config_message.content.to_string())).await?;
+    let is_code_block = old_config_message.content.starts_with("```")
+        && old_config_message.content.ends_with("```");
+    if old_config_message.author.bot && is_code_block {
+        let response_content = format!(
+            "Migration has already been performed for guild id: {}.",
+            guild
+        );
+        command
+            .edit_original_interaction_response(&ctx.http, |m| {
+                m.content(response_content.to_string())
+            })
+            .await?;
+        return Err(response_content.into());
+    }
+    runner_names_channel
+        .send_message(&ctx.http, |m| {
+            m.content(format!(
+                "```\n{}\n```",
+                old_config_message.content.to_string()
+            ))
+        })
+        .await?;
     command
         .edit_original_interaction_response(&ctx.http, |m| {
-            m.content(
-                String::from(
-                    "Migrated old config from first message in #pacemanbot-runner-names! \
-                    You can now delete the original first message.", 
-                )
-            )
+            m.content(String::from(
+                "Migrated old config from first message in #pacemanbot-runner-names! \
+                    You can now delete the original first message.",
+            ))
         })
         .await?;
     Ok(())

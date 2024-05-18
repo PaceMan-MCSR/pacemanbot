@@ -246,6 +246,9 @@ impl GuildData {
                 }
             };
             for line in first_message.content.split("\n") {
+                if line == "```" || line == "" {
+                    continue;
+                }
                 let (name, splits) = extract_name_and_splits_from_line(line)?;
                 players.insert(name.to_lowercase(), splits);
             }
