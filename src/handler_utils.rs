@@ -19,7 +19,7 @@ use tokio::time::sleep;
 use crate::{
     components::{
         migrate, send_role_selection_message, setup_default_commands, setup_default_roles,
-        setup_pb_roles, setup_roles, validate_config, whitelist,
+        setup_pb_roles, setup_pings, setup_roles, validate_config, whitelist,
     },
     consts::WS_TIMEOUT_FOR_RETRY,
     controller::Controller,
@@ -298,6 +298,7 @@ pub async fn handle_application_command_interaction(
     match match command.data.name.as_str() {
         "send_message" => send_role_selection_message(&ctx, &roles, command).await,
         "setup_default_roles" => setup_default_roles(&ctx, guild_id, command).await,
+        "setup_pings" => setup_pings(&ctx, guild_id, command).await,
         "setup_roles" => setup_roles(&ctx, guild_id, command).await,
         "setup_pb_roles" => setup_pb_roles(&ctx, guild_id, command).await,
         "whitelist" => whitelist(&ctx, guild_id, command).await,
@@ -344,21 +345,6 @@ pub async fn handle_message_component_interaction(
 }
 
 pub async fn handle_ready(ctx: Arc<Context>, guild_cache: ArcMux<CachedGuilds>) {
-    let mut locked_guild_cache = guild_cache.lock().await;
-    for guild_id in ctx.cache.guilds() {
-        let guild_data = match GuildData::new(&ctx, guild_id).await {
-            Ok(data) => data,
-            Err(err) => {
-                eprintln!(
-                    "Unable to generate cache for guild id: {} due to: {}",
-                    guild_id, err
-                );
-                continue;
-            }
-        };
-        locked_guild_cache.insert(guild_id, guild_data);
-    }
-    drop(locked_guild_cache);
     loop {
         let mut response_stream = match get_response_stream_from_api().await {
             Ok(stream) => stream,

@@ -12,7 +12,7 @@ use crate::{
     response_types::{EventId, Structure},
     utils::{
         extract_name_and_splits_from_line, extract_split_from_pb_role_name,
-        extract_split_from_role_name,
+        extract_split_from_role_name, extract_splits_and_name_from_role_name,
     },
 };
 
@@ -113,6 +113,7 @@ pub struct RoleData {
     pub split: Split,
     pub minutes: u8,
     pub seconds: u8,
+    pub runner: String,
     pub guild_role: Role,
 }
 
@@ -121,6 +122,7 @@ impl RoleData {
         let split: Split;
         let mut minutes: u8 = 0;
         let mut seconds: u8 = 0;
+        let mut runner: String = String::new();
         if guild_role.name.contains("PB") {
             split = match extract_split_from_pb_role_name(guild_role.name.as_str()) {
                 Some(tup) => tup,
@@ -132,6 +134,18 @@ impl RoleData {
                     .into())
                 }
             };
+        } else if guild_role.name.contains("+") {
+            (split, minutes, seconds, runner) =
+                match extract_splits_and_name_from_role_name(guild_role.name.as_str()) {
+                    Ok(tup) => tup,
+                    Err(err) => {
+                        return Err(format!(
+                            "Unable to extract split from pb role name: {} due to: {}",
+                            guild_role.name, err
+                        )
+                        .into())
+                    }
+                }
         } else {
             (split, minutes, seconds) = match extract_split_from_role_name(guild_role.name.as_str())
             {
@@ -150,6 +164,7 @@ impl RoleData {
             split,
             minutes,
             seconds,
+            runner,
         })
     }
 }

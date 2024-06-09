@@ -11,7 +11,7 @@ use crate::guild_types::{GuildData, PlayerSplitsData, Players, Split};
 use crate::utils::{
     create_guild_role, create_select_option, extract_name_and_splits_from_line,
     extract_split_from_pb_role_name, extract_split_from_role_name, get_new_config_contents,
-    mins_secs_to_millis,
+    mins_secs_to_millis, remove_runner_pings,
 };
 
 pub async fn send_role_selection_message(
@@ -210,15 +210,171 @@ pub async fn setup_default_roles(
         "*EE9:3", "*EE10:0",
     ];
 
-    let roles = guild.roles(&ctx.http).await?;
     for role in default_roles.iter() {
-        create_guild_role(&ctx, &guild, &roles, &role.to_string()).await?
+        create_guild_role(&ctx, &guild, &role.to_string()).await?
     }
     command
         .edit_original_interaction_response(&ctx.http, |data| {
             data.content("Default pace-roles have been setup!")
         })
         .await?;
+    Ok(())
+}
+
+pub async fn setup_pings(
+    ctx: &Context,
+    guild_id: GuildId,
+    command: &ApplicationCommandInteraction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    command.defer_ephemeral(&ctx).await?;
+    let mut action = String::new();
+    let mut ign = String::new();
+    let mut split = String::new();
+    let mut time = 0;
+    for option in command.data.options.iter() {
+        match option.name.as_str() {
+            "action" => {
+                action = match option.value.to_owned() {
+                    Some(value) => match value.as_str() {
+                        Some(str) => str.to_owned(),
+                        None => return Err("Unable to convert 'action' value to string.".into()),
+                    },
+                    None => return Err("Unable to get value for 'action' for command".into()),
+                }
+            }
+            "ign" => {
+                ign = match option.value.to_owned() {
+                    Some(value) => match value.as_str() {
+                        Some(str) => str.to_owned(),
+                        None => return Err("Unable to convert 'ign' value to string.".into()),
+                    },
+                    None => return Err("Unable to get value for 'ign' for command".into()),
+                }
+            }
+            "split" => {
+                split = match option.value.to_owned() {
+                    Some(value) => match value.as_str() {
+                        Some(str) => str.to_owned(),
+                        None => return Err("Unable to convert 'split' value to string.".into()),
+                    },
+                    None => return Err("Unable to get value for 'split' for command.".into()),
+                }
+            }
+            "time" => {
+                time = match option.value.to_owned() {
+                    Some(value) => match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => return Err("Unable to convert 'time' value to u64".into()),
+                    },
+                    None => return Err("Unable to get value for 'time' for command.".into()),
+                }
+            }
+            _ => (),
+        }
+    }
+    let split = match Split::from_str(split.as_str()) {
+        Some(split) => split,
+        None => return Err(format!("Unable to construct Split from str: '{}'.", split).into()),
+    };
+    let guild_data = GuildData::new(&ctx, guild_id).await?;
+    if guild_data.is_private && !guild_data.players.contains_key(&ign.to_lowercase()) {
+        let response_content = format!("Runner with name: {} not found in guild.", ign);
+        command
+            .edit_original_interaction_response(&ctx, |m| m.content(response_content.to_string()))
+            .await?;
+        return Err(response_content.into());
+    }
+    let mut sender = match command.member.to_owned() {
+        Some(sender) => sender,
+        None => return Err("Unable to get member for '/setup_pings'.".into()),
+    };
+    match action.as_str() {
+        "add_or_update" => {
+            if time == 0 {
+                let response_content = "The parameter 'time' is undefined for the command. \
+                    Please make sure to provide it for the 'add_or_update' action.";
+                command
+                    .edit_original_interaction_response(&ctx.http, |m| m.content(response_content))
+                    .await?;
+                return Err(response_content.into());
+            }
+            remove_runner_pings(
+                &ctx,
+                &guild_id,
+                &mut sender,
+                "*",
+                split.to_owned(),
+                ign.to_owned(),
+            )
+            .await?;
+            let role_name = format!("*{}{}:0+{}", split.to_str(), time, ign);
+            let roles = guild_id.roles(&ctx.http).await?;
+            let guild_has_role = roles.iter().any(|(_, r)| r.name == role_name);
+            if !guild_has_role {
+                create_guild_role(&ctx, &guild_id, &role_name).await?;
+            }
+            let roles = guild_id.roles(&ctx.http).await?;
+            sender
+                .add_role(
+                    &ctx.http,
+                    roles.iter().find(|(_, r)| r.name == role_name).unwrap().0,
+                )
+                .await?;
+            command
+                .edit_original_interaction_response(&ctx.http, |m| {
+                    m.content(format!(
+                        "Added/Updated pings for runner with ign: '{}' for split: '{}' with time: '{}m'",
+                        ign,
+                        split.alt_desc(),
+                        time
+                    ))
+                })
+                .await?;
+        }
+        "remove" => {
+            let roles = guild_id.roles(&ctx.http).await?;
+            let role = match roles.iter().find(|(_, r)| {
+                r.name.contains(split.to_str().as_str())
+                    && r.name.starts_with("*")
+                    && r.name.contains(ign.as_str())
+            }) {
+                Some(name) => name,
+                None => {
+                    return Err("Unable to get role name for 'remove' action.".into());
+                }
+            };
+            let role_name = role.1.name.as_str();
+            remove_runner_pings(
+                &ctx,
+                &guild_id,
+                &mut sender,
+                "*",
+                split.to_owned(),
+                ign.to_owned(),
+            )
+            .await?;
+            let roles = guild_id.roles(&ctx.http).await?;
+            let guild_has_role = roles.iter().any(|(_, r)| r.name == role_name);
+            if guild_has_role {
+                guild_id
+                    .delete_role(
+                        &ctx,
+                        roles.iter().find(|(_, r)| r.name == role_name).unwrap().0,
+                    )
+                    .await?;
+            }
+            command
+                .edit_original_interaction_response(&ctx.http, |m| {
+                    m.content(format!(
+                        "Removed pings for runner with ign: '{}' for split: '{}'",
+                        ign,
+                        split.alt_desc()
+                    ))
+                })
+                .await?;
+        }
+        _ => (),
+    }
     Ok(())
 }
 
@@ -272,19 +428,18 @@ pub async fn setup_roles(
         None => return Err(format!("Unrecognized split name: '{}'.", split_name).into()),
     };
 
-    let roles = guild.roles(&ctx).await?;
     for minutes in split_start..split_end {
         let seconds = 0;
         let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
-        create_guild_role(&ctx, &guild, &roles, &role).await?;
+        create_guild_role(&ctx, &guild, &role).await?;
 
         let seconds = 3;
         let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
-        create_guild_role(&ctx, &guild, &roles, &role).await?;
+        create_guild_role(&ctx, &guild, &role).await?;
     }
     let seconds = 0;
     let role = format!("*{}{}:{}", role_split.to_str(), split_end, seconds);
-    create_guild_role(&ctx, &guild, &roles, &role).await?;
+    create_guild_role(&ctx, &guild, &role).await?;
 
     let response_content = format!(
         "Pace-roles for split name: {} with lower bound: {} minutes and upper bound: {} minutes have been setup!",
@@ -310,10 +465,9 @@ pub async fn setup_pb_roles(
         Split::EyeSpy,
         Split::EndEnter,
     ];
-    let roles = guild.roles(&ctx).await?;
     for split in splits {
         let role_name = format!("*{}PB", split.to_str());
-        create_guild_role(&ctx, &guild, &roles, &role_name).await?;
+        create_guild_role(&ctx, &guild, &role_name).await?;
     }
     command
         .edit_original_interaction_response(&ctx.http, |data| {
@@ -682,6 +836,47 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
             command.name("validate_config").description(
                 "Check if the current server configuration is valid and if the bot will work properly or not.",
             )
+        });
+        commands.create_application_command(|command| {
+            command
+            .name("setup_pings")
+            .description(
+                "Setup pings for specific runners.",
+            )
+            .create_option(|option| {
+                option
+                    .name("action")
+                    .description("Action to perform out of 'add_or_update' or 'remove'.")
+                    .required(true)
+                    .kind(CommandOptionType::String)
+                    .add_string_choice("Add or Update", "add_or_update")
+                    .add_string_choice("Remove", "remove")
+            })
+            .create_option(|option| {
+                option
+                    .name("ign")
+                    .description("In-game name of the runner you want to setup pings for.")
+                    .required(true)
+                    .kind(CommandOptionType::String)
+            })
+            .create_option(|option| {
+                option
+                    .name("split")
+                    .description("Split name for the runner that you want to change.")
+                    .required(true)
+                    .kind(CommandOptionType::String)
+                    .add_string_choice("First Structure", Split::FirstStructure.to_str())
+                    .add_string_choice("Second Structure", Split::SecondStructure.to_str())
+                    .add_string_choice("Blind", Split::Blind.to_str())
+                    .add_string_choice("Eye Spy", Split::EyeSpy.to_str())
+                    .add_string_choice("End Enter", Split::EndEnter.to_str())
+            })
+            .create_option(|option| {
+                option
+                    .name("time")
+                    .description("The time of the split that you want for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
         });
         commands.create_application_command(|command| {
             command

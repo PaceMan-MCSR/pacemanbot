@@ -9,7 +9,6 @@ mod response_types;
 mod tests;
 mod utils;
 use dotenv::dotenv;
-use guild_types::CachedGuilds;
 use handler::Handler;
 use serenity::client::Client;
 use serenity::framework::standard::StandardFramework;
@@ -28,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let framework = StandardFramework::new();
 
-    let guild_cache: ArcMux<CachedGuilds> = Arc::new(Mutex::new(HashMap::new()));
+    let guild_cache = Arc::new(Mutex::new(HashMap::new()));
 
     let mut intents = GatewayIntents::all();
     intents.remove(GatewayIntents::GUILD_MEMBERS);

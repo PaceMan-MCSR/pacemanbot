@@ -4,7 +4,7 @@ use regex::Regex;
 use serenity::{
     builder::{CreateSelectMenuOption, CreateSelectMenuOptions},
     model::{
-        id::{ChannelId, GuildId, RoleId},
+        id::{ChannelId, GuildId},
         prelude::Role,
     },
     prelude::Context,
@@ -40,6 +40,27 @@ pub async fn remove_roles_starting_with(
                 continue;
             }
             member.remove_role(&ctx.http, role_id).await?;
+        }
+    }
+    Ok(())
+}
+
+pub async fn remove_runner_pings(
+    ctx: &Context,
+    guild_id: &serenity::model::prelude::GuildId,
+    member: &mut serenity::model::prelude::Member,
+    role_prefix: &str,
+    split: Split,
+    ign: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let guild_roles = guild_id.roles(&ctx.http).await?;
+    for role_id in member.roles.clone() {
+        let role = guild_roles.get(&role_id).unwrap().clone();
+        if role.name.starts_with(role_prefix)
+            && role.name.contains(ign.as_str())
+            && role.name.contains(split.to_str().as_str())
+        {
+            member.remove_role(&ctx.http, role.id).await?;
         }
     }
     Ok(())
@@ -103,6 +124,72 @@ pub fn extract_split_from_pb_role_name(role_name: &str) -> Option<Split> {
     let role_name = role_name.replace(" ", "");
     let role_name = role_name.replace("PB", "");
     Split::from_str(role_name.as_str())
+}
+
+pub fn extract_splits_and_name_from_role_name(
+    role_name: &str,
+) -> Result<(Split, u8, u8, String), Box<dyn std::error::Error>> {
+    let role_name = role_name.replace("*", "");
+    let role_name = role_name.replace(" ", "");
+    let role_name = role_name.replace("+", "");
+    let re = Regex::new(r"([a-zA-Z]+)(\d+)\:(\d+)([a-zA-Z_]+)")?;
+    let caps = match re.captures(&role_name) {
+        Some(caps) => caps,
+        None => {
+            return Err(format!("Unable to capture regex for role name: '{}'.", role_name).into())
+        }
+    };
+    let character = match caps.get(1) {
+        Some(capture) => capture,
+        None => {
+            return Err(format!(
+                "Unable to get first regex capture for role name: '{}'.",
+                role_name
+            )
+            .into())
+        }
+    }
+    .as_str()
+    .to_string();
+    let minutes = match caps.get(2) {
+        Some(capture) => capture,
+        None => {
+            return Err(format!(
+                "Unable to get second regex capture for role name: '{}'.",
+                role_name
+            )
+            .into())
+        }
+    }
+    .as_str()
+    .parse::<u8>()?;
+    let seconds = match caps.get(3) {
+        Some(capture) => capture,
+        None => {
+            return Err(format!(
+                "Unable to get third regex capture for role name: '{}'.",
+                role_name
+            )
+            .into())
+        }
+    }
+    .as_str()
+    .parse::<u8>()?
+        * 10;
+    let split = Split::from_str(character.as_str()).unwrap();
+    let name = match caps.get(4) {
+        Some(capture) => capture,
+        None => {
+            return Err(format!(
+                "Unable to get fourth regex capture for role name: '{}'.",
+                role_name
+            )
+            .into())
+        }
+    }
+    .as_str()
+    .to_string();
+    Ok((split, minutes, seconds, name))
 }
 
 pub fn extract_name_and_splits_from_line(
@@ -346,9 +433,9 @@ pub fn get_event_type(last_event: &Event) -> Option<EventType> {
 pub async fn create_guild_role(
     ctx: &Context,
     guild: &GuildId,
-    roles: &HashMap<RoleId, Role>,
     role_name: &String,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let roles = guild.roles(&ctx.http).await?;
     if !roles
         .iter()
         .any(|(_, role)| role.name == role_name.to_string())

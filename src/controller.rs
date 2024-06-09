@@ -239,6 +239,11 @@ impl Controller {
                     }
                     let pb_minutes = player_data.get(&role.split).unwrap().to_owned();
                     role.split == run_info.split && pb_minutes > split_minutes
+                } else if role.guild_role.name.contains("+") {
+                    role.split == run_info.split
+                        && role.runner.to_lowercase() == self.record.nickname.to_lowercase()
+                        && role.minutes >= split_minutes
+                        && (role.minutes != split_minutes || role.seconds > split_seconds)
                 } else {
                     role.split == run_info.split
                         && role.minutes >= split_minutes
@@ -267,13 +272,29 @@ impl Controller {
                 .collect::<Vec<_>>()
                 .join(" "),
         );
-        match guild_data.pace_channel.send_message(&self.ctx, |m| m.content(content)).await {
-            Ok(message) => {
+        match guild_data.pace_channel.send_message(&self.ctx, |m| m.content(content.to_owned())).await {
+            Ok(mut message) => {
                 println!(
                     "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.",
                     self.record.nickname, split_desc, guild_data.name 
                 );
-                Some(message.id)
+                let removable_roles = roles_to_ping.iter().filter(|r| r.runner.as_str() != "").map(|r| r.guild_role.mention()).collect::<Vec<_>>();
+                let mut new_content = content.to_owned();
+                for role in removable_roles {
+                    let replacable_str = format!("{} ", role);
+                    new_content = new_content.replace(replacable_str.as_str(), "");
+                    let replacable_str = format!("{}", role);
+                    new_content = new_content.replace(replacable_str.as_str(), "");
+                }
+                if new_content == content {
+                    return;
+                }
+                match message.edit(&self.ctx.http, |m| m.content(new_content)).await {
+                    Ok(_) => (),
+                    Err(err) => {
+                        return eprintln!("Unable to edit message due to: {}", err);
+                    } 
+                };
             }
             Err(err) => {
                 return eprintln!(
