@@ -268,13 +268,25 @@ impl Controller {
                 let obsidian_count = data.estimated_counts.get(&Item::MinecraftObsidian);
 
                 if rod_count.is_some() {
-                    item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, rod_count.unwrap());
+                    if item_data_content == "" {
+                        item_data_content = format!("{} {}", ROD_EMOJI, rod_count.unwrap());
+                    } else {
+                        item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, rod_count.unwrap());
+                    }
                 }
                 if pearl_count.is_some() {
-                    item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, pearl_count.unwrap());
+                    if item_data_content == "" {
+                        item_data_content = format!("{} {}", PEARL_EMOJI, pearl_count.unwrap());
+                    } else {
+                        item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, pearl_count.unwrap());
+                    }
                 }
                 if obsidian_count.is_some() {
-                    item_data_content = format!("{}  {} {}", item_data_content, OBSIDIAN_EMOJI, obsidian_count.unwrap());
+                    if item_data_content == "" {
+                        item_data_content = format!("{} {}", OBSIDIAN_EMOJI, obsidian_count.unwrap());
+                    } else {
+                        item_data_content = format!("{}  {} {}", item_data_content, OBSIDIAN_EMOJI, obsidian_count.unwrap());
+                    }
                 }
                 if item_data_content != "" {
                     item_data_content = format!("\n{}", item_data_content); 
