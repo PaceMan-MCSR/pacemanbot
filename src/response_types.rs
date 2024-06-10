@@ -94,7 +94,7 @@ pub enum Item {
 #[serde(rename_all = "camelCase")]
 pub struct ItemData {
     pub estimated_counts: HashMap<Item, u32>,
-    pub usages: HashMap<Item, u32>,
+    pub usages: Option<HashMap<Item, u32>>,
 }
 
 #[derive(Deserialize, Debug)]
