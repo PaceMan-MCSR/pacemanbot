@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 
 use crate::guild_types::Split;
@@ -77,6 +79,24 @@ pub struct User {
     pub live_account: Option<String>,
 }
 
+#[derive(Deserialize, Debug, Eq, PartialEq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum Item {
+    #[serde(rename = "minecraft:ender_pearl")]
+    MinecraftEnderPearl,
+    #[serde(rename = "minecraft:obsidian")]
+    MinecraftObsidian,
+    #[serde(rename = "minecraft:blaze_rod")]
+    MinecraftBlazeRod,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ItemData {
+    pub estimated_counts: HashMap<Item, u32>,
+    pub usages: HashMap<Item, u32>,
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
@@ -87,6 +107,7 @@ pub struct Response {
     pub is_cheated: bool,
     pub is_hidden: bool,
     pub last_updated: i64,
+    pub item_data: ItemData,
     pub nickname: String,
 }
 

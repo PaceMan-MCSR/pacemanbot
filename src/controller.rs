@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serenity::{client::Context, model::mention::Mentionable};
 
 use crate::{
-    consts::SPECIAL_UNDERSCORE, guild_types::{CachedGuilds, GuildData, PlayerSplitsData, Split}, response_types::{Event, EventId, EventType, Response, RunInfo, RunType, Structure}, utils::{format_time, get_event_type, millis_to_mins_secs, update_leaderboard}, ArcMux
+    consts::{OBSIDIAN_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE}, guild_types::{CachedGuilds, GuildData, PlayerSplitsData, Split}, response_types::{Event, EventId, EventType, Item, Response, RunInfo, RunType, Structure}, utils::{format_time, get_event_type, millis_to_mins_secs, update_leaderboard}, ArcMux
 };
 
 
@@ -259,19 +259,39 @@ impl Controller {
             );
         }
 
+        let pearl_count = self.record.item_data.estimated_counts.get(&Item::MinecraftEnderPearl);
+        let rod_count = self.record.item_data.estimated_counts.get(&Item::MinecraftBlazeRod);
+        let obsidian_count = self.record.item_data.estimated_counts.get(&Item::MinecraftObsidian);
+        let mut item_data = String::new();
+
+        if rod_count.is_some() {
+            item_data = format!("{}  {} {}", item_data, ROD_EMOJI, rod_count.unwrap());
+        }
+        if pearl_count.is_some() {
+            item_data = format!("{}  {} {}", item_data, PEARL_EMOJI, pearl_count.unwrap());
+        }
+        if obsidian_count.is_some() {
+            item_data = format!("{}  {} {}", item_data, OBSIDIAN_EMOJI, obsidian_count.unwrap());
+        }
+        if item_data != "" {
+            item_data = format!("\n{}", item_data); 
+        }
+
         let content = format!(
-            "## {} - {} {}\n{}\t<t:{}:R>\n{}",
+            "## {} - {} {}\n{}\t<t:{}:R>{}\n{}",
             format_time(last_event.igt as u64),
             split_desc,
             bastionless,
             live_link,
             (self.record.last_updated / 1000) as u64,
+            item_data,
             roles_to_ping
                 .iter()
                 .map(|role| role.guild_role.mention().to_string())
                 .collect::<Vec<_>>()
                 .join(" "),
         );
+        
         match guild_data.pace_channel.send_message(&self.ctx, |m| m.content(content.to_owned())).await {
             Ok(mut message) => {
                 println!(
