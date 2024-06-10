@@ -107,7 +107,7 @@ pub struct Response {
     pub is_cheated: bool,
     pub is_hidden: bool,
     pub last_updated: i64,
-    pub item_data: ItemData,
+    pub item_data: Option<ItemData>,
     pub nickname: String,
 }
 

@@ -259,24 +259,30 @@ impl Controller {
             );
         }
 
-        let pearl_count = self.record.item_data.estimated_counts.get(&Item::MinecraftEnderPearl);
-        let rod_count = self.record.item_data.estimated_counts.get(&Item::MinecraftBlazeRod);
-        let obsidian_count = self.record.item_data.estimated_counts.get(&Item::MinecraftObsidian);
-        let mut item_data = String::new();
+        let mut item_data_content = String::new();
 
-        if rod_count.is_some() {
-            item_data = format!("{}  {} {}", item_data, ROD_EMOJI, rod_count.unwrap());
-        }
-        if pearl_count.is_some() {
-            item_data = format!("{}  {} {}", item_data, PEARL_EMOJI, pearl_count.unwrap());
-        }
-        if obsidian_count.is_some() {
-            item_data = format!("{}  {} {}", item_data, OBSIDIAN_EMOJI, obsidian_count.unwrap());
-        }
-        if item_data != "" {
-            item_data = format!("\n{}", item_data); 
-        }
+        match &self.record.item_data {
+            Some(data) => {
+                let pearl_count = data.estimated_counts.get(&Item::MinecraftEnderPearl);
+                let rod_count = data.estimated_counts.get(&Item::MinecraftBlazeRod);
+                let obsidian_count = data.estimated_counts.get(&Item::MinecraftObsidian);
 
+                if rod_count.is_some() {
+                    item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, rod_count.unwrap());
+                }
+                if pearl_count.is_some() {
+                    item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, pearl_count.unwrap());
+                }
+                if obsidian_count.is_some() {
+                    item_data_content = format!("{}  {} {}", item_data_content, OBSIDIAN_EMOJI, obsidian_count.unwrap());
+                }
+                if item_data_content != "" {
+                    item_data_content = format!("\n{}", item_data_content); 
+                }
+            },
+            None => (),
+        }
+        
         let content = format!(
             "## {} - {} {}\n{}\t<t:{}:R>{}\n{}",
             format_time(last_event.igt as u64),
@@ -284,7 +290,7 @@ impl Controller {
             bastionless,
             live_link,
             (self.record.last_updated / 1000) as u64,
-            item_data,
+            item_data_content,
             roles_to_ping
                 .iter()
                 .map(|role| role.guild_role.mention().to_string())
