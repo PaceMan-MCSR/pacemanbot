@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serenity::{client::Context, model::mention::Mentionable};
 
 use crate::{
-    consts::{OBSIDIAN_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE}, guild_types::{CachedGuilds, GuildData, PlayerSplitsData, Split}, response_types::{Event, EventId, EventType, Item, Response, RunInfo, RunType, Structure}, utils::{format_time, get_event_type, millis_to_mins_secs, update_leaderboard}, ArcMux
+    consts::{PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE}, guild_types::{CachedGuilds, GuildData, PlayerSplitsData, Split}, response_types::{Event, EventId, EventType, Item, Response, RunInfo, RunType, Structure}, utils::{format_time, get_event_type, millis_to_mins_secs, update_leaderboard}, ArcMux
 };
 
 
@@ -265,7 +265,6 @@ impl Controller {
             Some(data) => {
                 let pearl_count = data.estimated_counts.get(&Item::MinecraftEnderPearl);
                 let rod_count = data.estimated_counts.get(&Item::MinecraftBlazeRod);
-                let obsidian_count = data.estimated_counts.get(&Item::MinecraftObsidian);
 
                 if rod_count.is_some() {
                     if item_data_content == "" {
@@ -279,13 +278,6 @@ impl Controller {
                         item_data_content = format!("{} {}", PEARL_EMOJI, pearl_count.unwrap());
                     } else {
                         item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, pearl_count.unwrap());
-                    }
-                }
-                if obsidian_count.is_some() {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", OBSIDIAN_EMOJI, obsidian_count.unwrap());
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, OBSIDIAN_EMOJI, obsidian_count.unwrap());
                     }
                 }
                 if item_data_content != "" {
