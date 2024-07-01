@@ -32,6 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut intents = GatewayIntents::all();
     intents.remove(GatewayIntents::GUILD_MEMBERS);
     intents.remove(GatewayIntents::GUILD_PRESENCES);
+    intents.remove(GatewayIntents::MESSAGE_CONTENT);
 
     let mut client = Client::builder(&token, intents)
         .event_handler(Handler { guild_cache })
