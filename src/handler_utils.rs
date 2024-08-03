@@ -397,6 +397,11 @@ pub async fn handle_ready(ctx: Arc<Context>, guild_cache: ArcMux<CachedGuilds>) 
                     continue;
                 }
             };
+            if record.game_version.is_some() && record.game_version.to_owned().unwrap() != "1.16.1"
+            {
+                println!("Skipping record because it was not of 1.16.1.");
+                continue;
+            }
             let ctx = ctx.clone();
             let guild_cache = guild_cache.clone();
             Controller::new(ctx, record, guild_cache).start().await;
