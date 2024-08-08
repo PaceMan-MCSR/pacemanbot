@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use crate::guild_types::Split;
-
 #[derive(Deserialize, Debug, PartialEq)]
 pub enum EventId {
     #[serde(rename = "common.open_to_lan")]
@@ -58,18 +56,18 @@ pub enum EventId {
     RsgKillDragon,
 }
 
-#[derive(Debug)]
-pub enum EventType {
-    NonPaceEvent,
-    PaceEvent,
-}
-
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Event {
     pub event_id: EventId,
     pub rta: i64,
     pub igt: i64,
+}
+
+#[derive(Debug)]
+pub enum EventType {
+    NonPaceEvent,
+    PaceEvent,
 }
 
 #[derive(Deserialize, Debug)]
@@ -100,7 +98,6 @@ pub struct ItemData {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
-    pub game_version: Option<String>,
     pub world_id: String,
     pub event_list: Vec<Event>,
     pub context_event_list: Vec<Event>,
@@ -110,20 +107,4 @@ pub struct Response {
     pub last_updated: i64,
     pub item_data: Option<ItemData>,
     pub nickname: String,
-}
-
-pub enum Structure {
-    Bastion,
-    Fortress,
-}
-
-pub enum RunType {
-    Bastionless,
-    Modern,
-}
-
-pub struct RunInfo {
-    pub split: Split,
-    pub structure: Option<Structure>,
-    pub run_type: RunType,
 }
