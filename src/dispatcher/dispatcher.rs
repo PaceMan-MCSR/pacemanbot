@@ -7,6 +7,11 @@ use super::{
 
 impl Dispatcher {
     pub async fn dispatch(&self) -> Result<()> {
+        let game_version = self.response.game_version.to_owned();
+        if game_version.is_some() && game_version.unwrap() != "1.16.1" {
+            println!("Skipping record because it was not of 1.16.1.");
+            return Ok(());
+        }
         let last_event = match self.response.event_list.last() {
             Some(evt) => evt,
             None => {

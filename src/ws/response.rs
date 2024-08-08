@@ -98,6 +98,7 @@ pub struct ItemData {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
+    pub game_version: Option<String>,
     pub world_id: String,
     pub event_list: Vec<Event>,
     pub context_event_list: Vec<Event>,
