@@ -44,6 +44,10 @@ impl Dispatcher {
                     )
                 }
             };
+            let stats_link = format!(
+                "[Stats](<https://paceman.gg/stats/run/{}>)",
+                self.response.world_id
+            );
             let event_type = match get_event_type(&last_event) {
                 Some(etype) => etype,
                 None => {
@@ -70,6 +74,7 @@ impl Dispatcher {
                         self.ctx.clone(),
                         &self.response,
                         live_link,
+                        stats_link,
                         last_event,
                         guild_data,
                     )

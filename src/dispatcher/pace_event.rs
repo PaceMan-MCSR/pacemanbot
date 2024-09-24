@@ -6,7 +6,7 @@ use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{f
 
 use super::{consts::{PEARL_EMOJI, ROD_EMOJI}, get_run_info::get_run_info, run_info::RunType};
 
-pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, last_event: &Event, guild_data: &mut GuildData) 
+pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, last_event: &Event, guild_data: &mut GuildData) 
 {
         let run_info = 
             match get_run_info(response, last_event) {
@@ -101,13 +101,14 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
             },
             None => (),
         }
-        
+
         let content = format!(
-            "## {} - {} {}\n{}\t<t:{}:R>{}\n-# {}",
+            "## {} - {} {}\n{}\t{}\t<t:{}:R>{}\n-# {}",
             format_time(last_event.igt as u64),
             split_desc,
             bastionless,
             live_link,
+            stats_link,
             (response.last_updated / 1000) as u64,
             item_data_content,
             roles_to_ping
