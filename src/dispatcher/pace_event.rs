@@ -103,13 +103,13 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
         }
 
         let content = format!(
-            "## {} - {} {}\n{}\t{}\t<t:{}:R>{}\n-# {}",
+            "## {} - {} {}\n{}\t<t:{}:R>\t{}{}\n-# {}",
             format_time(last_event.igt as u64),
             split_desc,
             bastionless,
             live_link,
-            stats_link,
             (response.last_updated / 1000) as u64,
+            stats_link,
             item_data_content,
             roles_to_ping
                 .iter()

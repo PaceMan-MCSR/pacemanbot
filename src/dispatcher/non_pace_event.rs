@@ -4,7 +4,7 @@ use serenity::client::Context;
 
 use crate::{cache::guild_data::GuildData, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs, update_leaderboard::update_leaderboard}, ws::response::{Event, Response}};
 
-pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, last_event: &Event, guild_data: &mut GuildData) {
+pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, last_event: &Event, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&response.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
@@ -41,10 +41,11 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
         }
 
         let content = format!(
-            "## {} - Finish\n{}\t<t:{}:R>",
+            "## {} - Finish\n{}\t<t:{}:R>\t{}",
             format_time(last_event.igt as u64),
             live_link,
             (response.last_updated / 1000) as u64,
+            stats_link,
         );
 
         match guild_data.pace_channel.send_message(&ctx, |m| m.content(content)).await {

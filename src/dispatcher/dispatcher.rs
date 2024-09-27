@@ -64,6 +64,7 @@ impl Dispatcher {
                         self.ctx.clone(),
                         &self.response,
                         live_link,
+                        stats_link,
                         last_event,
                         guild_data,
                     )
