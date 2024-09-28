@@ -41,7 +41,7 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
         }
 
         let content = format!(
-            "## {} - Finish\n{}\t<t:{}:R>\t{}",
+            "## {} - Finish\n[ {} ]\t[ <t:{}:R> ]\t[ {} ]",
             format_time(last_event.igt as u64),
             live_link,
             (response.last_updated / 1000) as u64,

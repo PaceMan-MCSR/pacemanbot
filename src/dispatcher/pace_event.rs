@@ -103,7 +103,7 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
         }
 
         let content = format!(
-            "## {} - {} {}\n{}\t<t:{}:R>\t{}{}\n-# {}",
+            "## {} - {} {}\n[ {} ]\t[ <t:{}:R> ]\t[ {} ]{}\n-# {}",
             format_time(last_event.igt as u64),
             split_desc,
             bastionless,
