@@ -70,6 +70,7 @@ impl Dispatcher {
                     handle_non_pace_event(
                         self.ctx.clone(),
                         &self.response,
+                        live_link,
                         stats_link,
                         author,
                         live_indicator,
@@ -82,6 +83,7 @@ impl Dispatcher {
                     handle_pace_event(
                         self.ctx.clone(),
                         &self.response,
+                        live_link,
                         stats_link,
                         author,
                         live_indicator,

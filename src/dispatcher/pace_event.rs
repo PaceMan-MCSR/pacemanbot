@@ -6,7 +6,7 @@ use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{f
 
 use super::{consts::{PEARL_EMOJI, ROD_EMOJI}, get_run_info::get_run_info, run_info::RunType};
 
-pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_link: String, author: CreateEmbedAuthor, live_indicator: String, last_event: &Event, guild_data: &mut GuildData) 
+pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, live_indicator: String, last_event: &Event, guild_data: &mut GuildData) 
 {
         let run_info = 
             match get_run_info(response, last_event) {
@@ -117,14 +117,17 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
             |m| {
                 m.embed(|e| {
                     e.set_author(author.clone());
-                    e.field(pace_content.clone(), "", true);
-                    e.field("Splits", format!("[Link]({})", stats_link.clone()), false);
-                    e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
+                    e.field(pace_content.clone(), "", false);
+                    if response.user.live_account.is_some() {
+                        e.field("Twitch", live_link.clone(), false);
+                    }
+                    e.field("Splits", format!("[Link]({})", stats_link.clone()), true);
+                    e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                     if item_data_content != "" {
-                        e.field("Items", item_data_content.clone(), false);
+                        e.field("Items", item_data_content.clone(), true);
                     }
                     if let RunType::Bastionless = run_info.run_type {
-                        e.field("Bastionless", "Yes", false);
+                        e.field("Bastionless", "Yes", true);
                     }
                     e
                 })
@@ -153,14 +156,17 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
                     |m| {
                         m.embed(|e| {
                             e.set_author(author);
-                            e.field(pace_content, "", true);
-                            e.field("Splits", format!("[Link]({})", stats_link), false);
-                            e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
+                            e.field(pace_content, "", false);
+                            if response.user.live_account.is_some() {
+                                e.field("Twitch", live_link, false);
+                            }
+                            e.field("Splits", format!("[Link]({})", stats_link), true);
+                            e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                             if item_data_content != "" {
-                                e.field("Items", item_data_content, false);
+                                e.field("Items", item_data_content, true);
                             }
                             if let RunType::Bastionless = run_info.run_type {
-                                e.field("Bastionless", "Yes", false);
+                                e.field("Bastionless", "Yes", true);
                             }
                             e
                         })

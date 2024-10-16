@@ -6,7 +6,7 @@ use crate::{cache::guild_data::GuildData, utils::{format_time::format_time, mill
 
 use super::consts::SPECIAL_UNDERSCORE;
 
-pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, stats_link: String, author: CreateEmbedAuthor, live_indicator: String, last_event: &Event, guild_data: &mut GuildData) {
+pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, live_indicator: String, last_event: &Event, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&response.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
@@ -51,9 +51,12 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, stats
         match guild_data.pace_channel.send_message(&ctx, |m| {
             m.embed(|e| {
                 e.set_author(author);
-                e.field(finish_content, "", true);
-                e.field("Splits", format!("[Link]({})", stats_link), false);
-                e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
+                e.field(finish_content, "", false);
+                if response.user.live_account.is_some() {
+                    e.field("Twitch", live_link, false);
+                }
+                e.field("Splits", format!("[Link]({})", stats_link), true);
+                e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                 e
             })
         }).await {
