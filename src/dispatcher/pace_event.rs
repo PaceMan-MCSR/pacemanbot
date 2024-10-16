@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use serenity::{client::Context, prelude::Mentionable};
+use serenity::{builder::CreateEmbedAuthor, client::Context, prelude::Mentionable};
 
 use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Item, Response}};
 
 use super::{consts::{PEARL_EMOJI, ROD_EMOJI}, get_run_info::get_run_info, run_info::RunType};
 
-pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, last_event: &Event, guild_data: &mut GuildData) 
+pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_link: String, author: CreateEmbedAuthor, live_indicator: String, last_event: &Event, guild_data: &mut GuildData) 
 {
         let run_info = 
             match get_run_info(response, last_event) {
@@ -36,12 +36,6 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
             None => {
                 return eprintln!("HandlePaceEvent: get split desc for split: {:#?}", run_info.split);
             }
-        };
-
-        let bastionless = if let RunType::Bastionless = run_info.run_type {
-            "(Bastionless)"
-        } else {
-            ""
         };
 
         let roles_to_ping = guild_data.roles
@@ -102,40 +96,76 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
             None => (),
         }
 
-        let content = format!(
-            "## {} - {} {}\n{}\t[ {} ]\t<t:{}:R>{}\n-# {}",
-            format_time(last_event.igt as u64),
-            split_desc,
-            bastionless,
-            live_link,
-            stats_link,
-            (response.last_updated / 1000) as u64,
-            item_data_content,
+        let ping_content = format!(
+            "-# {}",
             roles_to_ping
                 .iter()
                 .map(|role| role.guild_role.mention().to_string())
                 .collect::<Vec<_>>()
                 .join(" "),
         );
-        
-        match guild_data.pace_channel.send_message(&ctx, |m| m.content(content.to_owned())).await {
+
+        let pace_content = format!(
+            "{} {} - {}",
+            live_indicator,
+            format_time(last_event.igt as u64),
+            split_desc,
+        );
+
+        match guild_data.pace_channel.send_message(
+            &ctx, 
+            |m| {
+                m.embed(|e| {
+                    e.set_author(author.clone());
+                    e.field(pace_content.clone(), "", true);
+                    e.field("Splits", format!("[Link]({})", stats_link.clone()), false);
+                    e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
+                    if item_data_content != "" {
+                        e.field("Items", item_data_content.clone(), false);
+                    }
+                    if let RunType::Bastionless = run_info.run_type {
+                        e.field("Bastionless", "Yes", false);
+                    }
+                    e
+                })
+                .content(ping_content.to_owned())
+            }).await {
             Ok(mut message) => {
                 println!(
                     "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.",
                     response.nickname, split_desc, guild_data.name 
                 );
-                let removable_roles = roles_to_ping.iter().filter(|r| r.runner.as_str() != "").map(|r| r.guild_role.mention()).collect::<Vec<_>>();
-                let mut new_content = content.to_owned();
+                let removable_roles = roles_to_ping
+                    .iter()
+                    .filter(|r| r.runner.as_str() != "")
+                    .map(|r| r.guild_role.mention())
+                    .collect::<Vec<_>>();
+                let mut new_content = ping_content.to_owned();
                 for role in removable_roles {
                     let replacable_str = format!("{} ", role);
                     new_content = new_content.replace(replacable_str.as_str(), "");
-                    let replacable_str = format!("{}", role);
-                    new_content = new_content.replace(replacable_str.as_str(), "");
                 }
-                if new_content == content {
+                if new_content == ping_content {
                     return;
                 }
-                match message.edit(&ctx.http, |m| m.content(new_content)).await {
+                match message.edit(
+                    &ctx.http, 
+                    |m| {
+                        m.embed(|e| {
+                            e.set_author(author);
+                            e.field(pace_content, "", true);
+                            e.field("Splits", format!("[Link]({})", stats_link), false);
+                            e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
+                            if item_data_content != "" {
+                                e.field("Items", item_data_content, false);
+                            }
+                            if let RunType::Bastionless = run_info.run_type {
+                                e.field("Bastionless", "Yes", false);
+                            }
+                            e
+                        })
+                        .content(new_content)
+                    }).await {
                     Ok(_) => (),
                     Err(err) => {
                         return eprintln!("HandlePaceEvent: edit message due to: {}", err);

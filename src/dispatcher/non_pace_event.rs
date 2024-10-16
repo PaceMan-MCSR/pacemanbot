@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
-use serenity::client::Context;
+use serenity::{builder::CreateEmbedAuthor, client::Context};
 
 use crate::{cache::guild_data::GuildData, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs, update_leaderboard::update_leaderboard}, ws::response::{Event, Response}};
 
-pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, last_event: &Event, guild_data: &mut GuildData) {
+use super::consts::SPECIAL_UNDERSCORE;
+
+pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, stats_link: String, author: CreateEmbedAuthor, live_indicator: String, last_event: &Event, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&response.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
@@ -40,15 +42,21 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
             )
         }
 
-        let content = format!(
-            "## {} - Finish\n{}\t[ {} ]\t<t:{}:R>",
-            format_time(last_event.igt as u64),
-            live_link,
-            stats_link,
-            (response.last_updated / 1000) as u64,
+        let finish_content = format!(
+            "{} {} - Finish", 
+            live_indicator, 
+            format_time(last_event.igt as u64)
         );
 
-        match guild_data.pace_channel.send_message(&ctx, |m| m.content(content)).await {
+        match guild_data.pace_channel.send_message(&ctx, |m| {
+            m.embed(|e| {
+                e.set_author(author);
+                e.field(finish_content, "", true);
+                e.field("Splits", format!("[Link]({})", stats_link), false);
+                e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
+                e
+            })
+        }).await {
             Ok(_) => {
                 println!(
                     "Sent pace-ping for user with name: '{}' for split: 'Finish' in guild name: {}.",
@@ -70,7 +78,7 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
             );
         }
 
-        match update_leaderboard(&ctx, guild_data.lb_channel.unwrap(), runner_name.to_owned(), (minutes, seconds))
+        match update_leaderboard(&ctx, guild_data.lb_channel.unwrap(), runner_name.to_owned().replace("_", SPECIAL_UNDERSCORE), (minutes, seconds))
             .await
         {
             Ok(_) => {

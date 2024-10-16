@@ -1,3 +1,5 @@
+use serenity::builder::CreateEmbedAuthor;
+
 use crate::{utils::get_event_type::get_event_type, ws::response::EventType, Result};
 
 use super::{
@@ -25,11 +27,7 @@ impl Dispatcher {
         let mut locked_guild_cache = self.cache_manager.lock().await;
         for (_, guild_data) in locked_guild_cache.cache.iter_mut() {
             let live_link = match self.response.user.live_account.to_owned() {
-                Some(acc) => format!(
-                    "[{}](<https://twitch.tv/{}>)",
-                    self.response.nickname.replace("_", SPECIAL_UNDERSCORE),
-                    acc
-                ),
+                Some(acc) => format!("https://twitch.tv/{}", acc),
                 None => {
                     if !guild_data.is_private {
                         println!(
@@ -38,16 +36,25 @@ impl Dispatcher {
                         );
                         continue;
                     }
-                    format!(
-                        "Offline - {}",
-                        self.response.nickname.replace("_", SPECIAL_UNDERSCORE)
-                    )
+                    String::new()
                 }
             };
-            let stats_link = format!(
-                "[Stats](<https://paceman.gg/stats/run/{}>)",
-                self.response.world_id
-            );
+
+            let stats_link = format!("https://paceman.gg/stats/run/{}", self.response.world_id);
+            let mc_head_url = format!("https://mc-heads.net/avatar/{}", self.response.user.uuid);
+            let author_name = self.response.nickname.replace("_", SPECIAL_UNDERSCORE);
+            let mut author = CreateEmbedAuthor::default();
+            author.icon_url(mc_head_url);
+            author.name(author_name);
+            if live_link != String::new() {
+                author.url(live_link.clone());
+            }
+            let live_indicator = if self.response.user.live_account.is_some() {
+                String::from(":red_circle:")
+            } else {
+                String::from("")
+            };
+
             let event_type = match get_event_type(&last_event) {
                 Some(etype) => etype,
                 None => {
@@ -63,8 +70,9 @@ impl Dispatcher {
                     handle_non_pace_event(
                         self.ctx.clone(),
                         &self.response,
-                        live_link,
                         stats_link,
+                        author,
+                        live_indicator,
                         last_event,
                         guild_data,
                     )
@@ -74,8 +82,9 @@ impl Dispatcher {
                     handle_pace_event(
                         self.ctx.clone(),
                         &self.response,
-                        live_link,
                         stats_link,
+                        author,
+                        live_indicator,
                         last_event,
                         guild_data,
                     )
