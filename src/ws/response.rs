@@ -92,7 +92,7 @@ pub enum Item {
 #[serde(rename_all = "camelCase")]
 pub struct ItemData {
     pub estimated_counts: HashMap<Item, u32>,
-    pub usages: Option<HashMap<Item, u32>>,
+    pub _usages: Option<HashMap<Item, u32>>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -103,8 +103,8 @@ pub struct Response {
     pub event_list: Vec<Event>,
     pub context_event_list: Vec<Event>,
     pub user: User,
-    pub is_cheated: bool,
-    pub is_hidden: bool,
+    pub _is_cheated: bool,
+    pub _is_hidden: bool,
     pub last_updated: i64,
     pub item_data: Option<ItemData>,
     pub nickname: String,

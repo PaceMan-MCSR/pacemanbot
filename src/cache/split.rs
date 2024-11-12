@@ -1,4 +1,7 @@
-use crate::ws::response::EventId;
+use crate::{
+    dispatcher::consts::{BASTION_EMOJI, END_EMOJI, FORT_EMOJI, PORTAL_EMOJI, SH_EMOJI},
+    ws::response::EventId,
+};
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Split {
@@ -80,6 +83,31 @@ impl Split {
             Split::EndEnter => "End Enter",
         }
         .to_string()
+    }
+
+    pub fn get_emoji(&self, structure: &Option<Structure>) -> Option<String> {
+        Some(
+            match self {
+                Split::FirstStructure => match structure {
+                    Some(structure) => match structure {
+                        Structure::Bastion => BASTION_EMOJI,
+                        Structure::Fortress => FORT_EMOJI,
+                    },
+                    None => return None,
+                },
+                Split::SecondStructure => match structure {
+                    Some(structure) => match structure {
+                        Structure::Bastion => BASTION_EMOJI,
+                        Structure::Fortress => FORT_EMOJI,
+                    },
+                    None => return None,
+                },
+                Split::Blind => PORTAL_EMOJI,
+                Split::EyeSpy => SH_EMOJI,
+                Split::EndEnter => END_EMOJI,
+            }
+            .to_string(),
+        )
     }
 
     pub fn to_str(&self) -> String {

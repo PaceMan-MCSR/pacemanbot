@@ -49,11 +49,6 @@ impl Dispatcher {
             if live_link != String::new() {
                 author.url(live_link.clone());
             }
-            let live_indicator = if self.response.user.live_account.is_some() {
-                String::from(":red_circle:")
-            } else {
-                String::from("")
-            };
 
             let event_type = match get_event_type(&last_event) {
                 Some(etype) => etype,
@@ -73,7 +68,6 @@ impl Dispatcher {
                         live_link,
                         stats_link,
                         author,
-                        live_indicator,
                         last_event,
                         guild_data,
                     )
@@ -86,7 +80,6 @@ impl Dispatcher {
                         live_link,
                         stats_link,
                         author,
-                        live_indicator,
                         last_event,
                         guild_data,
                     )
