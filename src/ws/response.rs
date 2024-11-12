@@ -42,6 +42,8 @@ pub enum EventId {
     RsgObtainIronPickaxe,
     #[serde(rename = "rsg.obtain_lava_bucket")]
     RsgObtainLavaBucket,
+    #[serde(rename = "rsg.obtain_gold_block")]
+    RsgObtainGoldBlock,
     #[serde(rename = "rsg.distract_piglin")]
     RsgDistractPiglin,
     #[serde(rename = "rsg.loot_bastion")]
