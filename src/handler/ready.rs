@@ -40,6 +40,7 @@ pub async fn ws_event_loop(ctx: Arc<Context>, cache_manager: ArcMutex<CacheManag
                 }
             };
         }
+        drop(manager);
     }
 }
 
