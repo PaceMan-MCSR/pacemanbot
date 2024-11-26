@@ -52,7 +52,7 @@ impl Dispatcher {
             let live_indicator = if self.response.user.live_account.is_some() {
                 String::from(":red_circle:")
             } else {
-                String::from("")
+                String::from("Offline")
             };
 
             let event_type = match get_event_type(&last_event) {
