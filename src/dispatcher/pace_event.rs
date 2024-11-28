@@ -75,6 +75,12 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
             );
         }
 
+        let live_indicator = if response.user.live_account.is_some() {
+            "🔴"
+        } else {
+            "⚪"
+        };
+
         let mut item_data_content = String::new();
 
         match &response.item_data {
@@ -117,7 +123,8 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
             },
         }
         let metadata = format!(
-            "{} - {} {}", 
+            "{} {} - {} {}", 
+            live_indicator,
             format_time(last_event.igt as u64), 
             split_desc, 
             response.nickname.replace("_", SPECIAL_UNDERSCORE)
@@ -133,15 +140,9 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
                 .join(" "),
         );
 
-        let live_indicator = if response.user.live_account.is_some() {
-            "🔴"
-        } else {
-            "⚪"
-        };
 
         let pace_content = format!(
-            "{} {}  {} - {}",
-            live_indicator,
+            "{}  {} - {}",
             split_emoji,
             format_time(last_event.igt as u64),
             split_desc,
