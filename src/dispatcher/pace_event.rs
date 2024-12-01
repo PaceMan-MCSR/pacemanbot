@@ -4,9 +4,9 @@ use serenity::{builder::CreateEmbedAuthor, client::Context, prelude::Mentionable
 
 use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Item, Response}};
 
-use super::{consts::{PEARL_EMOJI, ROD_EMOJI}, get_run_info::get_run_info, run_info::RunType};
+use super::{consts::{OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info, run_info::RunType};
 
-pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_link: String, author: CreateEmbedAuthor, live_indicator: String, last_event: &Event, guild_data: &mut GuildData) 
+pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) 
 {
         let run_info = 
             match get_run_info(response, last_event) {
@@ -35,6 +35,13 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
             Some(desc) => desc,
             None => {
                 return eprintln!("HandlePaceEvent: get split desc for split: {:#?}", run_info.split);
+            }
+        };
+
+        let split_emoji = match run_info.split.get_emoji(&run_info.structure) {
+            Some(emoji) => emoji,
+            None => {
+                return eprintln!("HandlePaceEvent: get split emoji for split: {:#?}", run_info.split);
             }
         };
 
@@ -68,6 +75,12 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
             );
         }
 
+        let live_indicator = if response.user.live_account.is_some() {
+            "🔴"
+        } else {
+            "⚪"
+        };
+
         let mut item_data_content = String::new();
 
         match &response.item_data {
@@ -81,6 +94,13 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
                     } else {
                         item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, rod_count.unwrap());
                     }
+                } else {
+                    if item_data_content == "" {
+                        item_data_content = format!("{} {}", ROD_EMOJI, 0);
+                    } else {
+                        item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, 0);
+                    }
+                    
                 }
                 if pearl_count.is_some() {
                     if item_data_content == "" {
@@ -88,16 +108,31 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
                     } else {
                         item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, pearl_count.unwrap());
                     }
-                }
-                if item_data_content != "" {
-                    item_data_content = format!("\n{}", item_data_content); 
+                } else {
+                    if item_data_content == "" {
+                        item_data_content = format!("{} {}", PEARL_EMOJI, 0);
+                    } else {
+                        item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, 0);
+                    }
+                    
                 }
             },
-            None => (),
+            None => {
+                item_data_content = format!("{} {}", ROD_EMOJI, 0);
+                item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, 0);
+            },
         }
+        let metadata = format!(
+            "{} {} - {} {}", 
+            live_indicator,
+            format_time(last_event.igt as u64), 
+            split_desc, 
+            response.nickname.replace("_", SPECIAL_UNDERSCORE)
+        );
 
         let ping_content = format!(
-            "-# {}",
+            "{}\n-# {}",
+            metadata.clone(),
             roles_to_ping
                 .iter()
                 .map(|role| role.guild_role.mention().to_string())
@@ -105,9 +140,10 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
                 .join(" "),
         );
 
+
         let pace_content = format!(
-            "{} {} - {}",
-            live_indicator,
+            "{}  {} - {}",
+            split_emoji,
             format_time(last_event.igt as u64),
             split_desc,
         );
@@ -117,15 +153,18 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
             |m| {
                 m.embed(|e| {
                     e.set_author(author.clone());
-                    e.field(pace_content.clone(), "", true);
-                    e.field("Splits", format!("[Link]({})", stats_link.clone()), false);
-                    e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
-                    if item_data_content != "" {
-                        e.field("Items", item_data_content.clone(), false);
+                    e.field(pace_content.clone(), "", false);
+                    if response.user.live_account.is_some() {
+                        e.field(format!("{} {}", TWITCH_EMOJI, live_link.clone()), "", false);
+                    } else {
+                        e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                     }
+                    e.field("Splits", format!("[Link]({})", stats_link.clone()), true);
+                    e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
+                    e.field("Items", item_data_content.clone(), true);
                     if let RunType::Bastionless = run_info.run_type {
-                        e.field("Bastionless", "Yes", false);
-                    }
+                        e.field("Bastionless", "Yes", true);
+                    }                    
                     e
                 })
                 .content(ping_content.to_owned())
@@ -145,26 +184,27 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, stats_lin
                     let replacable_str = format!("{} ", role);
                     new_content = new_content.replace(replacable_str.as_str(), "");
                 }
-                if new_content == ping_content {
-                    return;
-                }
+                let content_removed_metadata = new_content.replace(format!("{}\n", metadata).as_str(), ""); 
                 match message.edit(
                     &ctx.http, 
                     |m| {
                         m.embed(|e| {
                             e.set_author(author);
-                            e.field(pace_content, "", true);
-                            e.field("Splits", format!("[Link]({})", stats_link), false);
-                            e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
-                            if item_data_content != "" {
-                                e.field("Items", item_data_content, false);
+                            e.field(pace_content, "", false);
+                            if response.user.live_account.is_some() {
+                                e.field(format!("{} {}", TWITCH_EMOJI, live_link.clone()), "", false);
+                            } else {
+                                e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                             }
+                            e.field("Splits", format!("[Link]({})", stats_link), true);
+                            e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
+                            e.field("Items", item_data_content, true);
                             if let RunType::Bastionless = run_info.run_type {
-                                e.field("Bastionless", "Yes", false);
+                                e.field("Bastionless", "Yes", true);
                             }
                             e
                         })
-                        .content(new_content)
+                        .content(content_removed_metadata)
                     }).await {
                     Ok(_) => (),
                     Err(err) => {

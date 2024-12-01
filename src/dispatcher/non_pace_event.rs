@@ -4,9 +4,9 @@ use serenity::{builder::CreateEmbedAuthor, client::Context};
 
 use crate::{cache::guild_data::GuildData, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs, update_leaderboard::update_leaderboard}, ws::response::{Event, Response}};
 
-use super::consts::SPECIAL_UNDERSCORE;
+use super::consts::{CREDITS_EMOJI, OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI};
 
-pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, stats_link: String, author: CreateEmbedAuthor, live_indicator: String, last_event: &Event, guild_data: &mut GuildData) {
+pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&response.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
@@ -43,17 +43,26 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, stats
         }
 
         let finish_content = format!(
-            "{} {} - Finish", 
-            live_indicator, 
-            format_time(last_event.igt as u64)
+            "{}  {} - Finish", 
+            CREDITS_EMOJI,
+            format_time(last_event.igt as u64),
         );
+
+        let mut item_data_content = format!("{} {}", ROD_EMOJI, 0);
+        item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, 0);
 
         match guild_data.pace_channel.send_message(&ctx, |m| {
             m.embed(|e| {
                 e.set_author(author);
-                e.field(finish_content, "", true);
-                e.field("Splits", format!("[Link]({})", stats_link), false);
-                e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), false);
+                e.field(finish_content, "", false);
+                    if response.user.live_account.is_some() {
+                        e.field(format!("{} {}", TWITCH_EMOJI, live_link.clone()), "", false);
+                    } else {
+                        e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
+                    }
+                e.field("Splits", format!("[Link]({})", stats_link), true);
+                e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
+                e.field("Items", item_data_content.clone(), true);
                 e
             })
         }).await {
