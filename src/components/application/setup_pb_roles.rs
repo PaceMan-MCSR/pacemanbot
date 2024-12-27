@@ -11,15 +11,9 @@ pub async fn setup_pb_roles(
     command: &ApplicationCommandInteraction,
 ) -> Result<()> {
     command.defer_ephemeral(&ctx).await?;
-    let splits: Vec<Split> = vec![
-        Split::FirstStructure,
-        Split::SecondStructure,
-        Split::Blind,
-        Split::EyeSpy,
-        Split::EndEnter,
-    ];
+    let splits: Vec<Split> = vec![Split::TowerStart, Split::EndEnter];
     for split in splits {
-        let role_name = format!("*{}PB", split.to_str());
+        let role_name = format!("*17{}PB", split.to_str());
         create_guild_role(&ctx, &guild, &role_name).await?;
     }
     command

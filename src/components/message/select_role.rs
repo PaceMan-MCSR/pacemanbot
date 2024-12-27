@@ -60,7 +60,7 @@ pub async fn handle_select_role(
             &ctx,
             &guild_id,
             &mut member,
-            format!("*{}", split_str).as_str(),
+            format!("*17{}", split_str).as_str(),
             true,
         )
         .await?;
@@ -76,7 +76,7 @@ pub async fn handle_select_role(
             }
         };
         for role in member_roles {
-            if role.name.starts_with(&format!("*{}", split_str)) && role.name.contains("PB") {
+            if role.name.starts_with(&format!("*17{}", split_str)) && role.name.contains("PB") {
                 member.remove_role(&ctx, role.id).await?;
             }
         }

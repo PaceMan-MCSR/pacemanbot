@@ -14,7 +14,7 @@ pub async fn handle_channel_events(
     cache_manager: ArcMutex<CacheManager>,
 ) {
     match channel.name.as_str() {
-        "pacemanbot-runner-names" | "pacemanbot" | "pacemanbot-runner-leaderboard" => {
+        "pacemanbot-runner-names-17" | "pacemanbot-17" | "pacemanbot-runner-leaderboard-17" => {
             match handle_update_cache(ctx, guild_id, cache_manager).await {
                 Ok(_) => (),
                 Err(err) => eprintln!("ChannelEventsError: {}", err),

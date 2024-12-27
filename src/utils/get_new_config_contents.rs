@@ -9,14 +9,8 @@ pub fn get_new_config_contents(players: Players) -> String {
             "".to_string()
         };
         let line = format!(
-            "{}:{}/{}/{}/{}/{}{}",
-            name,
-            splits.first_structure,
-            splits.second_structure,
-            splits.blind,
-            splits.eye_spy,
-            splits.end_enter,
-            finish_config
+            "{}:{}/{}{}",
+            name, splits.tower_start, splits.end_enter, finish_config
         );
         new_config = format!("{}\n{}", new_config, line);
     }

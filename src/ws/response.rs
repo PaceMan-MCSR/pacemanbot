@@ -54,6 +54,8 @@ pub enum EventId {
     RsgObtainObsidian,
     #[serde(rename = "rsg.obtain_blaze_rod")]
     RsgObtainBlazeRod,
+    #[serde(rename = "rsg.tower_start")]
+    RsgTowerStart,
     #[serde(rename = "rsg.kill_dragon")]
     RsgKillDragon,
 }

@@ -103,12 +103,12 @@ pub async fn setup_pings(
                 &ctx,
                 &guild_id,
                 &mut sender,
-                "*",
+                "*17",
                 split.to_owned(),
                 ign.to_owned(),
             )
             .await?;
-            let role_name = format!("*{}{}:0+{}", split.to_str(), time, ign);
+            let role_name = format!("*17{}{}:0+{}", split.to_str(), time, ign);
             let roles = guild_id.roles(&ctx.http).await?;
             let guild_has_role = roles.iter().any(|(_, r)| r.name == role_name);
             if !guild_has_role {
@@ -126,7 +126,7 @@ pub async fn setup_pings(
                     m.content(format!(
                         "Added/Updated pings for runner with ign: '{}' for split: '{}' with time: '{}m'",
                         ign,
-                        split.alt_desc(),
+                        split.desc(),
                         time
                     ))
                 })
@@ -136,7 +136,7 @@ pub async fn setup_pings(
             let roles = guild_id.roles(&ctx.http).await?;
             let role = match roles.iter().find(|(_, r)| {
                 r.name.contains(split.to_str().as_str())
-                    && r.name.starts_with("*")
+                    && r.name.starts_with("*17")
                     && r.name.contains(ign.as_str())
             }) {
                 Some(name) => name,
@@ -149,7 +149,7 @@ pub async fn setup_pings(
                 &ctx,
                 &guild_id,
                 &mut sender,
-                "*",
+                "*17",
                 split.to_owned(),
                 ign.to_owned(),
             )
@@ -169,7 +169,7 @@ pub async fn setup_pings(
                     m.content(format!(
                         "Removed pings for runner with ign: '{}' for split: '{}'",
                         ign,
-                        split.alt_desc()
+                        split.desc(),
                     ))
                 })
                 .await?;

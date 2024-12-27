@@ -1,7 +1,5 @@
 pub mod default_commands;
-pub mod migrate;
 pub mod send_role_selection_message;
-pub mod setup_default_roles;
 pub mod setup_pb_roles;
 pub mod setup_pings;
 pub mod setup_roles;

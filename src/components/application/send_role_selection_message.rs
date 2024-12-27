@@ -16,7 +16,6 @@ use crate::{
     cache::split::Split,
     utils::{
         create_select_option::create_select_option,
-        extract_split_from_pb_role_name::extract_split_from_pb_role_name,
         extract_split_from_role_name::extract_split_from_role_name,
         mins_secs_to_millis::mins_secs_to_millis,
     },
@@ -33,7 +32,7 @@ pub async fn send_role_selection_message(
     let mut roles = roles
         .iter()
         .map(|(_, role)| role)
-        .filter(|r| r.name.starts_with("*"))
+        .filter(|r| r.name.starts_with("*17"))
         .collect::<Vec<_>>();
     roles.sort_by(|r1, r2| {
         let r1_order;
@@ -70,83 +69,14 @@ pub async fn send_role_selection_message(
         }
         r1_order.cmp(&r2_order)
     });
-    let mut select_bastion_role_action_row = CreateActionRow::default();
-    let mut select_fortress_role_action_row = CreateActionRow::default();
-    let mut select_blind_role_action_row = CreateActionRow::default();
-    let mut select_eye_spy_role_action_row = CreateActionRow::default();
+    let mut select_tower_start_role_action_row = CreateActionRow::default();
     let mut select_end_enter_role_action_row = CreateActionRow::default();
 
-    let send_bastion_picker = roles.iter().any(|role| {
-        if role.name.contains("PB") {
-            let split = match extract_split_from_pb_role_name(&role.name) {
-                Some(split) => split,
-                None => {
-                    eprintln!(
-                        "RoleSelectionMessageSendError: get pb split from role name: '{}'.",
-                        role.name
-                    );
-                    return false;
-                }
-            };
-            return split == Split::FirstStructure;
-        }
-        let (split, _minutes, _seconds) = match extract_split_from_role_name(&role.name) {
-            Ok(tup) => tup,
-            Err(err) => {
-                eprintln!(
-                    "RoleSelectionMessageSendError: get split from role name: '{}': {}",
-                    role.name, err
-                );
-                return false;
-            }
-        };
-        split == Split::FirstStructure
-    });
-
-    select_bastion_role_action_row.create_select_menu(|m| {
-        m.custom_id("select_structure1_role")
-            .placeholder("Choose a First Structure Role...")
+    select_tower_start_role_action_row.create_select_menu(|m| {
+        m.custom_id("select_tower_start_role")
+            .placeholder("Choose a Tower Start Role...")
             .options(|o| {
-                match create_select_option(o, &roles, Split::FirstStructure) {
-                    Ok(_) => (),
-                    Err(err) => {
-                        eprintln!("RoleSelectionMessageSendError: {}", err);
-                    }
-                }
-                o
-            })
-    });
-    select_fortress_role_action_row.create_select_menu(|m| {
-        m.custom_id("select_structure2_role")
-            .placeholder("Choose a Second Structure Role...")
-            .options(|o| {
-                match create_select_option(o, &roles, Split::SecondStructure) {
-                    Ok(_) => (),
-                    Err(err) => {
-                        eprintln!("RoleSelectionMessageSendError: {}", err);
-                    }
-                }
-                o
-            })
-    });
-    select_blind_role_action_row.create_select_menu(|m| {
-        m.custom_id("select_blind_role")
-            .placeholder("Choose a Blind Role...")
-            .options(|o| {
-                match create_select_option(o, &roles, Split::Blind) {
-                    Ok(_) => (),
-                    Err(err) => {
-                        eprintln!("RoleSelectionMessageSendError: {}", err);
-                    }
-                }
-                o
-            })
-    });
-    select_eye_spy_role_action_row.create_select_menu(|m| {
-        m.custom_id("select_eye_spy_role")
-            .placeholder("Choose an Eye Spy Role...")
-            .options(|o| {
-                match create_select_option(o, &roles, Split::EyeSpy) {
+                match create_select_option(o, &roles, Split::TowerStart) {
                     Ok(_) => (),
                     Err(err) => {
                         eprintln!("RoleSelectionMessageSendError: {}", err);
@@ -181,19 +111,9 @@ pub async fn send_role_selection_message(
     match command
         .edit_original_interaction_response(&ctx.http, |data| {
             data.content(content).components(|c| {
-                if send_bastion_picker {
-                    c.add_action_row(select_bastion_role_action_row)
-                        .add_action_row(select_fortress_role_action_row)
-                        .add_action_row(select_blind_role_action_row)
-                        .add_action_row(select_eye_spy_role_action_row)
-                        .add_action_row(select_end_enter_role_action_row)
-                } else {
-                    c.add_action_row(select_fortress_role_action_row)
-                        .add_action_row(select_blind_role_action_row)
-                        .add_action_row(select_eye_spy_role_action_row)
-                        .add_action_row(select_end_enter_role_action_row)
-                        .add_action_row(remove_roles_action_row.to_owned())
-                }
+                c.add_action_row(select_tower_start_role_action_row)
+                    .add_action_row(select_end_enter_role_action_row)
+                    .add_action_row(remove_roles_action_row.to_owned())
             })
         })
         .await
@@ -210,14 +130,5 @@ pub async fn send_role_selection_message(
             return Err(content.into());
         }
     };
-    if send_bastion_picker {
-        command
-            .channel_id
-            .send_message(&ctx.http, |m| {
-                m.content("")
-                    .components(|c| c.add_action_row(remove_roles_action_row))
-            })
-            .await?;
-    }
     Ok(())
 }

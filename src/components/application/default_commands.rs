@@ -13,13 +13,8 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                 .description("Send role message to the current channel.")
         });
         commands.create_application_command(|command| {
-            command
-                .name("setup_default_roles")
-                .description("Setup default pace-roles for sub 10.")
-        });
-        commands.create_application_command(|command| {
             command.name("setup_pb_roles").description(
-                "Setup split PB pace-roles(as specified per runner in #pacemanbot-runner-names).",
+                "Setup split PB pace-roles(as specified per runner in #pacemanbot-runner-names-17).",
             )
         });
         commands.create_application_command(|command| {
@@ -55,10 +50,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                     .description("Split name for the runner that you want to change.")
                     .required(true)
                     .kind(CommandOptionType::String)
-                    .add_string_choice("First Structure", Split::FirstStructure.to_str())
-                    .add_string_choice("Second Structure", Split::SecondStructure.to_str())
-                    .add_string_choice("Blind", Split::Blind.to_str())
-                    .add_string_choice("Eye Spy", Split::EyeSpy.to_str())
+                    .add_string_choice("Tower Start", Split::TowerStart.to_str())
                     .add_string_choice("End Enter", Split::EndEnter.to_str())
             })
             .create_option(|option| {
@@ -92,26 +84,8 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
             })
             .create_option(|option| {
                 option
-                    .name("first_structure")
-                    .description("The time for first structure that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("second_structure")
-                    .description("The time for second structure that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("blind")
-                    .description("The time for blind that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("eye_spy")
-                    .description("The time for eye spy that you want to setup for the runner.")
+                    .name("tower_start")
+                    .description("The time for tower start that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
@@ -129,13 +103,6 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
         });
         commands.create_application_command(|command| {
             command
-            .name("migrate")
-            .description(
-                "Migrate the old configuration from first message in #pacemanbot-runner-names."
-            )
-        });
-        commands.create_application_command(|command| {
-            command
             .name("setup_roles")
             .description(
                 "Setup pace-roles based on split, start time and end time in increments of 30s.",
@@ -146,10 +113,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                     .description("The name of the split.")
                     .kind(CommandOptionType::String)
                     .required(true)
-                    .add_string_choice("First Structure", "first_structure")
-                    .add_string_choice("Second Structure", "second_structure")
-                    .add_string_choice("Blind", "blind")
-                    .add_string_choice("Eye Spy", "eye_spy")
+                    .add_string_choice("Tower Start", "tower_start")
                     .add_string_choice("End Enter", "end_enter")
             })
             .create_option(|option| {

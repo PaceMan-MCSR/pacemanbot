@@ -79,15 +79,15 @@ pub async fn setup_roles(
 
     for minutes in split_start..split_end {
         let seconds = 0;
-        let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
+        let role = format!("*17{}{}:{}", role_split.to_str(), minutes, seconds);
         create_guild_role(&ctx, &guild, &role).await?;
 
         let seconds = 3;
-        let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
+        let role = format!("*17{}{}:{}", role_split.to_str(), minutes, seconds);
         create_guild_role(&ctx, &guild, &role).await?;
     }
     let seconds = 0;
-    let role = format!("*{}{}:{}", role_split.to_str(), split_end, seconds);
+    let role = format!("*17{}{}:{}", role_split.to_str(), split_end, seconds);
     create_guild_role(&ctx, &guild, &role).await?;
 
     let response_content = format!(

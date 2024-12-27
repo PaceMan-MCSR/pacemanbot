@@ -6,7 +6,7 @@ use crate::{cache::guild_data::GuildData, utils::{format_time::format_time, mill
 
 use super::consts::{CREDITS_EMOJI, OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI};
 
-pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) {
+pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&response.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
@@ -24,7 +24,7 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
         let finish_minutes = match player_data.finish {
             Some(mins) => mins,
             None => {
-                if !guild_data.is_private && minutes >= 10 {
+                if !guild_data.is_private && minutes >= 20 {
                     return println!(
                         "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
                         guild_data.name
@@ -60,7 +60,6 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
                     } else {
                         e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                     }
-                e.field("Splits", format!("[Link]({})", stats_link), true);
                 e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                 e.field("Items", item_data_content.clone(), true);
                 e
@@ -92,7 +91,7 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
         {
             Ok(_) => {
                 println!(
-                    "Updated leaderboard in #pacemanbot-runner-leaderboard for guild name: {}, runner name: {} with time: {}.", 
+                    "Updated leaderboard in #pacemanbot-runner-leaderboard-17 for guild name: {}, runner name: {} with time: {}.", 
                     guild_data.name, 
                     runner_name, 
                     format_time(last_event.igt as u64),

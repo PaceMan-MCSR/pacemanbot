@@ -28,7 +28,7 @@ pub async fn handle_remove_pmb_roles(
     };
     let mut member = guild_id.member(&ctx, member.user.id).await?;
 
-    remove_roles_starting_with(&ctx, &guild_id, &mut member, "*", false).await?;
+    remove_roles_starting_with(&ctx, &guild_id, &mut member, "*17", false).await?;
 
     message_component
         .edit_original_interaction_response(&ctx.http, |r| r.content("PaceManBot roles removed"))

@@ -13,7 +13,7 @@ pub async fn handle_guild_role_events(
     guild_id: GuildId,
     cache_manager: ArcMutex<CacheManager>,
 ) {
-    if !new.name.starts_with("*") {
+    if !new.name.starts_with("*17") {
         return println!(
             "Skipping role create event because it is not something that concerns the bot."
         );

@@ -64,13 +64,13 @@ pub async fn whitelist(
                     return Err(String::from("WhitelistError: get value for ign option.").into())
                 }
             },
-            "first_structure" => match option.value.to_owned() {
+            "tower_start" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.first_structure = match value.as_u64() {
+                    splits_data.tower_start = match value.as_u64() {
                         Some(int) => int as u8,
                         None => {
                             return Err(String::from(
-                                "WhitelistError: parse u64 for first structure option.",
+                                "WhitelistError: parse u64 for end enter option.",
                             )
                             .into())
                         }
@@ -79,69 +79,9 @@ pub async fn whitelist(
                 None => {
                     if action != "remove" {
                         return Err(String::from(
-                            "WhitelistError: get value for first structure option.",
+                            "WhitelistError: get value for end enter option.",
                         )
                         .into());
-                    }
-                }
-            },
-            "second_structure" => match option.value.to_owned() {
-                Some(value) => {
-                    splits_data.second_structure = match value.as_u64() {
-                        Some(int) => int as u8,
-                        None => {
-                            return Err(String::from(
-                                "WhitelistError: parse u64 for second structure option.",
-                            )
-                            .into())
-                        }
-                    }
-                }
-                None => {
-                    if action != "remove" {
-                        return Err(String::from(
-                            "WhitelistError: get value for second structure option.",
-                        )
-                        .into());
-                    }
-                }
-            },
-            "blind" => match option.value.to_owned() {
-                Some(value) => {
-                    splits_data.blind = match value.as_u64() {
-                        Some(int) => int as u8,
-                        None => {
-                            return Err(
-                                String::from("WhitelistError: parse u64 for blind option.").into()
-                            )
-                        }
-                    }
-                }
-                None => {
-                    if action != "remove" {
-                        return Err(
-                            String::from("WhitelistError: get value for blind option.").into()
-                        );
-                    }
-                }
-            },
-            "eye_spy" => match option.value.to_owned() {
-                Some(value) => {
-                    splits_data.eye_spy = match value.as_u64() {
-                        Some(int) => int as u8,
-                        None => {
-                            return Err(String::from(
-                                "WhitelistError: parse u64 for eye spy option.",
-                            )
-                            .into())
-                        }
-                    }
-                }
-                None => {
-                    if action != "remove" {
-                        return Err(
-                            String::from("WhitelistError: get value for eye spy option.").into(),
-                        );
                     }
                 }
             },
@@ -186,13 +126,13 @@ pub async fn whitelist(
 
     let channel = channels
         .iter()
-        .filter(|c| c.name == "pacemanbot-runner-names")
+        .filter(|c| c.name == "pacemanbot-runner-names-17")
         .collect::<Vec<_>>();
     let channel = match channel.first() {
         Some(channel) => channel,
         None => {
             return Err(format!(
-                "WhitelistError: find #pacemanbot-runner-names in guild id: {}",
+                "WhitelistError: find #pacemanbot-runner-names-17 in guild id: {}",
                 guild_id
             )
             .into())
@@ -204,7 +144,7 @@ pub async fn whitelist(
         Some(message) => {
             if !message.author.bot {
                 let response_content = String::from(
-                    "WhitelistError: The first message in #pacemanbot-runner-names is not from the bot.",
+                    "WhitelistError: The first message in #pacemanbot-runner-names-17 is not from the bot.",
                 );
                 command
                     .edit_original_interaction_response(&ctx.http, |m| {
