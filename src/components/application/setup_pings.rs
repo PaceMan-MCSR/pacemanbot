@@ -126,7 +126,7 @@ pub async fn setup_pings(
                     m.content(format!(
                         "Added/Updated pings for runner with ign: '{}' for split: '{}' with time: '{}m'",
                         ign,
-                        split.alt_desc(),
+                        split.desc(),
                         time
                     ))
                 })
@@ -169,7 +169,7 @@ pub async fn setup_pings(
                     m.content(format!(
                         "Removed pings for runner with ign: '{}' for split: '{}'",
                         ign,
-                        split.alt_desc()
+                        split.desc(),
                     ))
                 })
                 .await?;

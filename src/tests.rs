@@ -10,19 +10,19 @@ use crate::{
 #[test]
 pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(
-        extract_split_from_role_name("*SS9:4")?,
-        (Split::SecondStructure, 9, 40)
+        extract_split_from_role_name("*115F9:4")?,
+        (Split::EnterFortress, 9, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*SS10:4")?,
-        (Split::SecondStructure, 10, 40)
+        extract_split_from_role_name("*115F10:4")?,
+        (Split::EnterFortress, 10, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*E10:4")?,
+        extract_split_from_role_name("*115E10:4")?,
         (Split::EyeSpy, 10, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*EE10:4")?,
+        extract_split_from_role_name("*115EE10:4")?,
         (Split::EndEnter, 10, 40)
     );
     Ok(())
@@ -31,17 +31,19 @@ pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Err
 #[test]
 pub fn test_extract_split_from_pb_role_name() {
     assert_eq!(
-        extract_split_from_pb_role_name("*FSPB"),
-        Some(Split::FirstStructure)
+        extract_split_from_pb_role_name("*115FPB"),
+        Some(Split::EnterFortress)
     );
     assert_eq!(
-        extract_split_from_pb_role_name("*SSPB"),
-        Some(Split::SecondStructure)
+        extract_split_from_pb_role_name("*115BPB"),
+        Some(Split::Blind)
     );
-    assert_eq!(extract_split_from_pb_role_name("*BPB"), Some(Split::Blind));
-    assert_eq!(extract_split_from_pb_role_name("*EPB"), Some(Split::EyeSpy));
     assert_eq!(
-        extract_split_from_pb_role_name("*EEPB"),
+        extract_split_from_pb_role_name("*115EPB"),
+        Some(Split::EyeSpy)
+    );
+    assert_eq!(
+        extract_split_from_pb_role_name("*115EEPB"),
         Some(Split::EndEnter)
     );
 }
@@ -49,29 +51,28 @@ pub fn test_extract_split_from_pb_role_name() {
 #[test]
 pub fn test_extract_name_and_splits_from_line() -> Result<(), Box<dyn std::error::Error>> {
     let mut split_data = PlayerSplitsData {
-        first_structure: 10,
-        second_structure: 20,
+        enter_fortress: 20,
         blind: 30,
         eye_spy: 40,
         end_enter: 50,
         finish: None,
     };
     assert_eq!(
-        extract_name_and_splits_from_line("SathyaPramodh: 10/20/30/40/50")?,
+        extract_name_and_splits_from_line("SathyaPramodh: 20/30/40/50")?,
         ("SathyaPramodh".to_string(), split_data)
     );
     assert_eq!(
-        extract_name_and_splits_from_line("name_name_: 10/20/30/40/50")?,
+        extract_name_and_splits_from_line("name_name_: 20/30/40/50")?,
         ("name_name_".to_string(), split_data)
     );
 
     split_data.finish = Some(60);
     assert_eq!(
-        extract_name_and_splits_from_line("SathyaPramodh: 10/20/30/40/50/60")?,
+        extract_name_and_splits_from_line("SathyaPramodh: 20/30/40/50/60")?,
         ("SathyaPramodh".to_string(), split_data)
     );
     assert_eq!(
-        extract_name_and_splits_from_line("name_name_: 10/20/30/40/50/60")?,
+        extract_name_and_splits_from_line("name_name_: 20/30/40/50/60")?,
         ("name_name_".to_string(), split_data)
     );
     Ok(())

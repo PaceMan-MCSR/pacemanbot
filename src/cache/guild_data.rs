@@ -41,18 +41,22 @@ impl GuildData {
                 )
             }
         };
-        let pace_channel = match channels.iter().find(|c| c.name == "pacemanbot") {
+        let pace_channel = match channels.iter().find(|c| c.name == "pacemanbot-115") {
             Some(channel) => channel.id,
             None => {
-                return Err(
-                    format!("GuildDataError: find #pacemanbot in guild name: {}", name,).into(),
-                );
+                return Err(format!(
+                    "GuildDataError: find #pacemanbot-115 in guild name: {}",
+                    name,
+                )
+                .into());
             }
         };
-        let is_private = channels.iter().any(|c| c.name == "pacemanbot-runner-names");
+        let is_private = channels
+            .iter()
+            .any(|c| c.name == "pacemanbot-runner-names-115");
         let lb_channel = match channels
             .iter()
-            .find(|c| c.name == "pacemanbot-runner-leaderboard")
+            .find(|c| c.name == "pacemanbot-runner-leaderboard-115")
         {
             Some(channel) => Some(channel.id),
             None => None,
@@ -62,14 +66,14 @@ impl GuildData {
         if is_private {
             let players_channel = channels
                 .iter()
-                .find(|c| c.name == "pacemanbot-runner-names")
+                .find(|c| c.name == "pacemanbot-runner-names-115")
                 .unwrap();
             let messages = players_channel.messages(&ctx.http, |m| m.limit(1)).await?;
             let first_message = match messages.last() {
                 Some(msg) => msg,
                 None => {
                     return Err(format!(
-                    "GuildDataError: get first message from #pacemanbot-runner-names in guild name: {}.",
+                    "GuildDataError: get first message from #pacemanbot-runner-names-115 in guild name: {}.",
                     name
                 )
                     .into())
@@ -89,7 +93,7 @@ impl GuildData {
             .roles
             .iter()
             .map(|(_, role)| role)
-            .filter(|r| r.name.starts_with("*"))
+            .filter(|r| r.name.starts_with("*115"))
             .collect::<Vec<_>>()
         {
             let role_data = match RoleData::new(role.to_owned()) {

@@ -12,14 +12,13 @@ pub async fn setup_pb_roles(
 ) -> Result<()> {
     command.defer_ephemeral(&ctx).await?;
     let splits: Vec<Split> = vec![
-        Split::FirstStructure,
-        Split::SecondStructure,
+        Split::EnterFortress,
         Split::Blind,
         Split::EyeSpy,
         Split::EndEnter,
     ];
     for split in splits {
-        let role_name = format!("*{}PB", split.to_str());
+        let role_name = format!("*115{}PB", split.to_str());
         create_guild_role(&ctx, &guild, &role_name).await?;
     }
     command

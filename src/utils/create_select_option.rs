@@ -30,7 +30,7 @@ pub fn create_select_option<'a>(
             if split == target_split {
                 o.add_option(
                     CreateSelectMenuOption::default()
-                        .label(format!("PB Pace {}", target_split.alt_desc()))
+                        .label(format!("PB Pace {}", target_split.desc()))
                         .value(role.id.to_string())
                         .to_owned(),
                 );
@@ -44,7 +44,7 @@ pub fn create_select_option<'a>(
                             "Sub {}:{:02} {}",
                             minutes,
                             seconds,
-                            target_split.alt_desc()
+                            target_split.desc()
                         ))
                         .value(role.id.to_string())
                         .to_owned(),

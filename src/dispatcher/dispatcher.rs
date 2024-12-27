@@ -10,8 +10,8 @@ use super::{
 impl Dispatcher {
     pub async fn dispatch(&self) -> Result<()> {
         let game_version = self.response.game_version.to_owned();
-        if game_version.is_some() && game_version.unwrap() != "1.16.1" {
-            println!("Skipping record because it was not of 1.16.1.");
+        if game_version.is_some() && game_version.unwrap() != "1.15.2" {
+            println!("Skipping record because it was not of 1.15.2.");
             return Ok(());
         }
         let last_event = match self.response.event_list.last() {
@@ -40,7 +40,6 @@ impl Dispatcher {
                 }
             };
 
-            let stats_link = format!("https://paceman.gg/stats/run/{}", self.response.world_id);
             let mc_head_url = format!("https://mc-heads.net/avatar/{}", self.response.user.uuid);
             let author_name = self.response.nickname.replace("_", SPECIAL_UNDERSCORE);
             let mut author = CreateEmbedAuthor::default();
@@ -66,7 +65,6 @@ impl Dispatcher {
                         self.ctx.clone(),
                         &self.response,
                         live_link,
-                        stats_link,
                         author,
                         last_event,
                         guild_data,
@@ -78,7 +76,6 @@ impl Dispatcher {
                         self.ctx.clone(),
                         &self.response,
                         live_link,
-                        stats_link,
                         author,
                         last_event,
                         guild_data,

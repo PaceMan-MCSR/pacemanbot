@@ -22,9 +22,9 @@ pub async fn handle_message_events(
             );
         }
     };
-    if name != "pacemanbot-runner-names" {
+    if name != "pacemanbot-runner-names-115" {
         return println!(
-            "Skipping message delete because it was not sent in #pacemanbot-runner-names.",
+            "Skipping message delete because it was not sent in #pacemanbot-runner-names-115.",
         );
     }
     match handle_update_cache(ctx, guild_id, guild_cache).await {

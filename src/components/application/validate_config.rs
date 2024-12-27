@@ -15,7 +15,7 @@ pub async fn validate_config(
     match GuildData::new(&ctx, guild_id).await {
         Ok(_) => {
             reply_content =
-                "Config validation successful! Bot will send paces in #pacemanbot.".to_string()
+                "Config validation successful! Bot will send paces in #pacemanbot-115.".to_string()
         }
         Err(err) => reply_content = format!("Error: {}", err),
     };

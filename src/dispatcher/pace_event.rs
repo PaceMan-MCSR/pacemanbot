@@ -4,12 +4,12 @@ use serenity::{builder::CreateEmbedAuthor, client::Context, prelude::Mentionable
 
 use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Item, Response}};
 
-use super::{consts::{OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info, run_info::RunType};
+use super::{consts::{OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info};
 
-pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) 
+pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) 
 {
         let run_info = 
-            match get_run_info(response, last_event) {
+            match get_run_info(last_event) {
                 Some(info) => info,
                 None => {
                     return eprintln!("HandlePaceEvent: Unrecognized event id: {:#?}.", last_event.event_id);
@@ -31,14 +31,9 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
                 guild_data.players.get_mut(&response.nickname.to_lowercase()).unwrap()
             }
         };
-        let split_desc = match run_info.split.desc(&run_info.structure) {
-            Some(desc) => desc,
-            None => {
-                return eprintln!("HandlePaceEvent: get split desc for split: {:#?}", run_info.split);
-            }
-        };
+        let split_desc = run_info.split.desc();
 
-        let split_emoji = match run_info.split.get_emoji(&run_info.structure) {
+        let split_emoji = match run_info.split.get_emoji() {
             Some(emoji) => emoji,
             None => {
                 return eprintln!("HandlePaceEvent: get split emoji for split: {:#?}", run_info.split);
@@ -159,12 +154,8 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
                     } else {
                         e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                     }
-                    e.field("Splits", format!("[Link]({})", stats_link.clone()), true);
                     e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                     e.field("Items", item_data_content.clone(), true);
-                    if let RunType::Bastionless = run_info.run_type {
-                        e.field("Bastionless", "Yes", true);
-                    }                    
                     e
                 })
                 .content(ping_content.to_owned())
@@ -196,12 +187,8 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
                             } else {
                                 e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                             }
-                            e.field("Splits", format!("[Link]({})", stats_link), true);
                             e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                             e.field("Items", item_data_content, true);
-                            if let RunType::Bastionless = run_info.run_type {
-                                e.field("Bastionless", "Yes", true);
-                            }
                             e
                         })
                         .content(content_removed_metadata)
