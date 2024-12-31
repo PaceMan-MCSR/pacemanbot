@@ -4,7 +4,9 @@ use serenity::{
 };
 
 use crate::{
-    cache::split::Split, utils::remove_roles_starting_with::remove_roles_starting_with, Result,
+    cache::{consts::ROLE_PREFIX, split::Split},
+    utils::remove_roles_starting_with::remove_roles_starting_with,
+    Result,
 };
 
 pub async fn handle_select_role(
@@ -60,7 +62,7 @@ pub async fn handle_select_role(
             &ctx,
             &guild_id,
             &mut member,
-            format!("*{}", split_str).as_str(),
+            format!("{}{}", ROLE_PREFIX, split_str).as_str(),
             true,
         )
         .await?;
@@ -76,7 +78,11 @@ pub async fn handle_select_role(
             }
         };
         for role in member_roles {
-            if role.name.starts_with(&format!("*{}", split_str)) && role.name.contains("PB") {
+            if role
+                .name
+                .starts_with(&format!("{}{}", ROLE_PREFIX, split_str))
+                && role.name.contains("PB")
+            {
                 member.remove_role(&ctx, role.id).await?;
             }
         }

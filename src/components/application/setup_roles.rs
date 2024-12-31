@@ -3,7 +3,11 @@ use serenity::{
     model::{id::GuildId, prelude::application_command::ApplicationCommandInteraction},
 };
 
-use crate::{cache::split::Split, utils::create_guild_role::create_guild_role, Result};
+use crate::{
+    cache::{consts::ROLE_PREFIX, split::Split},
+    utils::create_guild_role::create_guild_role,
+    Result,
+};
 
 pub async fn setup_roles(
     ctx: &Context,
@@ -79,15 +83,33 @@ pub async fn setup_roles(
 
     for minutes in split_start..split_end {
         let seconds = 0;
-        let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
+        let role = format!(
+            "{}{}{}:{}",
+            ROLE_PREFIX,
+            role_split.to_str(),
+            minutes,
+            seconds
+        );
         create_guild_role(&ctx, &guild, &role).await?;
 
         let seconds = 3;
-        let role = format!("*{}{}:{}", role_split.to_str(), minutes, seconds);
+        let role = format!(
+            "{}{}{}:{}",
+            ROLE_PREFIX,
+            role_split.to_str(),
+            minutes,
+            seconds
+        );
         create_guild_role(&ctx, &guild, &role).await?;
     }
     let seconds = 0;
-    let role = format!("*{}{}:{}", role_split.to_str(), split_end, seconds);
+    let role = format!(
+        "{}{}{}:{}",
+        ROLE_PREFIX,
+        role_split.to_str(),
+        split_end,
+        seconds
+    );
     create_guild_role(&ctx, &guild, &role).await?;
 
     let response_content = format!(

@@ -3,7 +3,7 @@ use serenity::{
     model::id::{ChannelId, GuildId},
 };
 
-use crate::cache::CacheManager;
+use crate::cache::{consts::PACEMANBOT_RUNNER_NAMES_CHANNEL, CacheManager};
 
 use super::{update_cache::handle_update_cache, ArcMutex};
 
@@ -22,9 +22,10 @@ pub async fn handle_message_events(
             );
         }
     };
-    if name != "pacemanbot-runner-names" {
+    if name != PACEMANBOT_RUNNER_NAMES_CHANNEL {
         return println!(
-            "Skipping message delete because it was not sent in #pacemanbot-runner-names.",
+            "Skipping message delete because it was not sent in #{}.",
+            PACEMANBOT_RUNNER_NAMES_CHANNEL,
         );
     }
     match handle_update_cache(ctx, guild_id, guild_cache).await {

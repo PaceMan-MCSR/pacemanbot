@@ -3,7 +3,11 @@ use serenity::{
     model::{id::GuildId, prelude::application_command::ApplicationCommandInteraction},
 };
 
-use crate::{cache::split::Split, utils::create_guild_role::create_guild_role, Result};
+use crate::{
+    cache::{consts::ROLE_PREFIX, split::Split},
+    utils::create_guild_role::create_guild_role,
+    Result,
+};
 
 pub async fn setup_pb_roles(
     ctx: &Context,
@@ -19,7 +23,7 @@ pub async fn setup_pb_roles(
         Split::EndEnter,
     ];
     for split in splits {
-        let role_name = format!("*{}PB", split.to_str());
+        let role_name = format!("{}{}PB", ROLE_PREFIX, split.to_str());
         create_guild_role(&ctx, &guild, &role_name).await?;
     }
     command

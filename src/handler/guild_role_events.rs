@@ -3,7 +3,7 @@ use serenity::{
     model::{guild::Role, id::GuildId},
 };
 
-use crate::cache::CacheManager;
+use crate::cache::{consts::ROLE_PREFIX, CacheManager};
 
 use super::{update_cache::handle_update_cache, ArcMutex};
 
@@ -13,7 +13,7 @@ pub async fn handle_guild_role_events(
     guild_id: GuildId,
     cache_manager: ArcMutex<CacheManager>,
 ) {
-    if !new.name.starts_with("*") {
+    if !new.name.starts_with(ROLE_PREFIX) {
         return println!(
             "Skipping role create event because it is not something that concerns the bot."
         );

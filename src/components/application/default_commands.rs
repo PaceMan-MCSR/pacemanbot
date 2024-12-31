@@ -3,7 +3,7 @@ use serenity::{
     model::{id::GuildId, prelude::command::CommandOptionType},
 };
 
-use crate::cache::split::Split;
+use crate::cache::{consts::PACEMANBOT_RUNNER_NAMES_CHANNEL, split::Split};
 
 pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
     match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
@@ -19,7 +19,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
         });
         commands.create_application_command(|command| {
             command.name("setup_pb_roles").description(
-                "Setup split PB pace-roles(as specified per runner in #pacemanbot-runner-names).",
+                format!("Setup split PB pace-roles(as specified per runner in #{}).", PACEMANBOT_RUNNER_NAMES_CHANNEL),
             )
         });
         commands.create_application_command(|command| {
@@ -131,7 +131,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
             command
             .name("migrate")
             .description(
-                "Migrate the old configuration from first message in #pacemanbot-runner-names."
+                format!("Migrate the old configuration from first message in #{}.", PACEMANBOT_RUNNER_NAMES_CHANNEL)
             )
         });
         commands.create_application_command(|command| {
