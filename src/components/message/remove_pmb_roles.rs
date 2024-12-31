@@ -1,6 +1,9 @@
 use serenity::{client::Context, model::prelude::message_component::MessageComponentInteraction};
 
-use crate::{utils::remove_roles_starting_with::remove_roles_starting_with, Result};
+use crate::{
+    cache::consts::ROLE_PREFIX, utils::remove_roles_starting_with::remove_roles_starting_with,
+    Result,
+};
 
 pub async fn handle_remove_pmb_roles(
     ctx: &Context,
@@ -28,7 +31,7 @@ pub async fn handle_remove_pmb_roles(
     };
     let mut member = guild_id.member(&ctx, member.user.id).await?;
 
-    remove_roles_starting_with(&ctx, &guild_id, &mut member, "*115", false).await?;
+    remove_roles_starting_with(&ctx, &guild_id, &mut member, ROLE_PREFIX, false).await?;
 
     message_component
         .edit_original_interaction_response(&ctx.http, |r| r.content("PaceManBot roles removed"))

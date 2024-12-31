@@ -1,9 +1,12 @@
 use regex::Regex;
 
-use crate::{cache::split::Split, Result};
+use crate::{
+    cache::{consts::ROLE_PREFIX, split::Split},
+    Result,
+};
 
 pub fn extract_splits_and_name_from_role_name(role_name: &str) -> Result<(Split, u8, u8, String)> {
-    let role_name = role_name.replace("*115", "");
+    let role_name = role_name.replace(ROLE_PREFIX, "");
     let role_name = role_name.replace(" ", "");
     let role_name = role_name.replace("+", "");
     let re = Regex::new(r"([a-zA-Z]+)(\d+)\:(\d+)([a-zA-Z_]+)")?;

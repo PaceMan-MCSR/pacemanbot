@@ -3,7 +3,7 @@ use serenity::{
     model::{id::GuildId, prelude::command::CommandOptionType},
 };
 
-use crate::cache::split::Split;
+use crate::cache::{consts::PACEMANBOT_RUNNER_NAMES_CHANNEL, split::Split};
 
 pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
     match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
@@ -13,13 +13,8 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                 .description("Send role message to the current channel.")
         });
         commands.create_application_command(|command| {
-            command
-                .name("setup_default_roles")
-                .description("Setup default pace-roles for sub 10.")
-        });
-        commands.create_application_command(|command| {
             command.name("setup_pb_roles").description(
-                "Setup split PB pace-roles(as specified per runner in #pacemanbot-runner-names-115).",
+                format!("Setup split PB pace-roles(as specified per runner in #{}).", PACEMANBOT_RUNNER_NAMES_CHANNEL).as_str(),
             )
         });
         commands.create_application_command(|command| {
@@ -119,13 +114,6 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                     .description("The time for completion that you want to setup for the runner(optional).")
                     .kind(CommandOptionType::Integer)
             })
-        });
-        commands.create_application_command(|command| {
-            command
-            .name("migrate")
-            .description(
-                "Migrate the old configuration from first message in #pacemanbot-runner-names-115."
-            )
         });
         commands.create_application_command(|command| {
             command

@@ -1,5 +1,5 @@
 use crate::{
-    cache::{players::PlayerSplitsData, split::Split},
+    cache::{consts::ROLE_PREFIX, players::PlayerSplitsData, split::Split},
     utils::{
         extract_name_and_splits_from_line::extract_name_and_splits_from_line,
         extract_split_from_pb_role_name::extract_split_from_pb_role_name,
@@ -10,19 +10,19 @@ use crate::{
 #[test]
 pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(
-        extract_split_from_role_name("*115F9:4")?,
+        extract_split_from_role_name(format!("{}F9:4", ROLE_PREFIX).as_str())?,
         (Split::EnterFortress, 9, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*115F10:4")?,
+        extract_split_from_role_name(format!("{}F10:4", ROLE_PREFIX).as_str())?,
         (Split::EnterFortress, 10, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*115E10:4")?,
+        extract_split_from_role_name(format!("{}E10:4", ROLE_PREFIX).as_str())?,
         (Split::EyeSpy, 10, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*115EE10:4")?,
+        extract_split_from_role_name(format!("{}EE10:4", ROLE_PREFIX).as_str())?,
         (Split::EndEnter, 10, 40)
     );
     Ok(())
@@ -31,19 +31,19 @@ pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Err
 #[test]
 pub fn test_extract_split_from_pb_role_name() {
     assert_eq!(
-        extract_split_from_pb_role_name("*115FPB"),
+        extract_split_from_pb_role_name(format!("{}FPB", ROLE_PREFIX).as_str()),
         Some(Split::EnterFortress)
     );
     assert_eq!(
-        extract_split_from_pb_role_name("*115BPB"),
+        extract_split_from_pb_role_name(format!("{}BPB", ROLE_PREFIX).as_str()),
         Some(Split::Blind)
     );
     assert_eq!(
-        extract_split_from_pb_role_name("*115EPB"),
+        extract_split_from_pb_role_name(format!("{}EPB", ROLE_PREFIX).as_str()),
         Some(Split::EyeSpy)
     );
     assert_eq!(
-        extract_split_from_pb_role_name("*115EEPB"),
+        extract_split_from_pb_role_name(format!("{}EEPB", ROLE_PREFIX).as_str()),
         Some(Split::EndEnter)
     );
 }

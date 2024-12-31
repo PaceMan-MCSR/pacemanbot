@@ -4,7 +4,10 @@ use serenity::{
 };
 
 use crate::{
-    cache::players::{PlayerSplitsData, Players},
+    cache::{
+        consts::PACEMANBOT_RUNNER_NAMES_CHANNEL,
+        players::{PlayerSplitsData, Players},
+    },
     utils::{
         extract_name_and_splits_from_line::extract_name_and_splits_from_line,
         get_new_config_contents::get_new_config_contents,
@@ -165,14 +168,14 @@ pub async fn whitelist(
 
     let channel = channels
         .iter()
-        .filter(|c| c.name == "pacemanbot-runner-names-115")
+        .filter(|c| c.name == PACEMANBOT_RUNNER_NAMES_CHANNEL)
         .collect::<Vec<_>>();
     let channel = match channel.first() {
         Some(channel) => channel,
         None => {
             return Err(format!(
-                "WhitelistError: find #pacemanbot-runner-names-115 in guild id: {}",
-                guild_id
+                "WhitelistError: find #{} in guild id: {}",
+                PACEMANBOT_RUNNER_NAMES_CHANNEL, guild_id
             )
             .into())
         }
@@ -182,8 +185,9 @@ pub async fn whitelist(
     match message.last() {
         Some(message) => {
             if !message.author.bot {
-                let response_content = String::from(
-                    "WhitelistError: The first message in #pacemanbot-runner-names-115 is not from the bot.",
+                let response_content = format!(
+                    "WhitelistError: The first message in #{} is not from the bot.",
+                    PACEMANBOT_RUNNER_NAMES_CHANNEL,
                 );
                 command
                     .edit_original_interaction_response(&ctx.http, |m| {

@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use serenity::{builder::CreateEmbedAuthor, client::Context};
 
-use crate::{cache::guild_data::GuildData, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs, update_leaderboard::update_leaderboard}, ws::response::{Event, Response}};
+use crate::{cache::{consts::PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, guild_data::GuildData}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs, update_leaderboard::update_leaderboard}, ws::response::{Event, Response}};
 
-use super::consts::{CREDITS_EMOJI, OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI};
+use super::consts::{CREDITS_EMOJI, OFFLINE_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI};
 
 pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) {
         let player_data = match guild_data.players.get_mut(&response.nickname.to_lowercase()) {
@@ -48,8 +48,6 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
             format_time(last_event.igt as u64),
         );
 
-        let mut item_data_content = format!("{} {}", ROD_EMOJI, 0);
-        item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, 0);
 
         match guild_data.pace_channel.send_message(&ctx, |m| {
             m.embed(|e| {
@@ -61,7 +59,6 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
                         e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                     }
                 e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
-                e.field("Items", item_data_content.clone(), true);
                 e
             })
         }).await {
@@ -91,7 +88,8 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
         {
             Ok(_) => {
                 println!(
-                    "Updated leaderboard in #pacemanbot-runner-leaderboard for guild name: {}, runner name: {} with time: {}.", 
+                    "Updated leaderboard in #{} for guild name: {}, runner name: {} with time: {}.", 
+                    PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
                     guild_data.name, 
                     runner_name, 
                     format_time(last_event.igt as u64),

@@ -1,6 +1,4 @@
 pub const SPECIAL_UNDERSCORE: &'static str = "ˍ";
-pub const PEARL_EMOJI: &'static str = "<:pearl:1321839555720253544>";
-pub const ROD_EMOJI: &'static str = "<:blazerod:1321839962936705128>";
 pub const FORT_EMOJI: &'static str = "<:fortress:1321840167648100362>";
 pub const PORTAL_EMOJI: &'static str = "<:portal:1321840231422492682>";
 pub const SH_EMOJI: &'static str = "<:sh:1321840281292640308>";
