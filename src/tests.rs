@@ -1,5 +1,5 @@
 use crate::{
-    cache::{players::PlayerSplitsData, split::Split},
+    cache::{consts::ROLE_PREFIX, players::PlayerSplitsData, split::Split},
     utils::{
         extract_name_and_splits_from_line::extract_name_and_splits_from_line,
         extract_split_from_pb_role_name::extract_split_from_pb_role_name,
@@ -10,19 +10,19 @@ use crate::{
 #[test]
 pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(
-        extract_split_from_role_name("*1717T9:4")?,
+        extract_split_from_role_name(format!("{}T9:4", ROLE_PREFIX).as_str())?,
         (Split::TowerStart, 9, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*17T10:4")?,
+        extract_split_from_role_name(format!("{}T10:4", ROLE_PREFIX).as_str())?,
         (Split::TowerStart, 10, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*17EE10:4")?,
+        extract_split_from_role_name(format!("{}EE10:4", ROLE_PREFIX).as_str())?,
         (Split::EndEnter, 10, 40)
     );
     assert_eq!(
-        extract_split_from_role_name("*17EE10:4")?,
+        extract_split_from_role_name(format!("{}EE10:4", ROLE_PREFIX).as_str())?,
         (Split::EndEnter, 10, 40)
     );
     Ok(())
@@ -31,11 +31,11 @@ pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Err
 #[test]
 pub fn test_extract_split_from_pb_role_name() {
     assert_eq!(
-        extract_split_from_pb_role_name("*17TPB"),
+        extract_split_from_pb_role_name(format!("{}TPB", ROLE_PREFIX).as_str()),
         Some(Split::TowerStart)
     );
     assert_eq!(
-        extract_split_from_pb_role_name("*17EEPB"),
+        extract_split_from_pb_role_name(format!("{}EEPB", ROLE_PREFIX).as_str()),
         Some(Split::EndEnter)
     );
 }

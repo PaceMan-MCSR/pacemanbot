@@ -3,7 +3,12 @@ use serenity::{
     model::{id::GuildId, prelude::GuildChannel},
 };
 
-use crate::cache::CacheManager;
+use crate::cache::{
+    consts::{
+        PACEMANBOT_CHANNEL, PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, PACEMANBOT_RUNNER_NAMES_CHANNEL,
+    },
+    CacheManager,
+};
 
 use super::{update_cache::handle_update_cache, ArcMutex};
 
@@ -14,7 +19,9 @@ pub async fn handle_channel_events(
     cache_manager: ArcMutex<CacheManager>,
 ) {
     match channel.name.as_str() {
-        "pacemanbot-runner-names-17" | "pacemanbot-17" | "pacemanbot-runner-leaderboard-17" => {
+        PACEMANBOT_RUNNER_NAMES_CHANNEL
+        | PACEMANBOT_CHANNEL
+        | PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL => {
             match handle_update_cache(ctx, guild_id, cache_manager).await {
                 Ok(_) => (),
                 Err(err) => eprintln!("ChannelEventsError: {}", err),

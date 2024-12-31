@@ -7,7 +7,14 @@ use serenity::{
 
 use crate::{utils::extract_name_and_splits_from_line::extract_name_and_splits_from_line, Result};
 
-use super::{players::Players, role_data::RoleData};
+use super::{
+    consts::{
+        PACEMANBOT_CHANNEL, PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, PACEMANBOT_RUNNER_NAMES_CHANNEL,
+        ROLE_PREFIX,
+    },
+    players::Players,
+    role_data::RoleData,
+};
 
 #[derive(Debug)]
 pub struct GuildData {
@@ -41,22 +48,22 @@ impl GuildData {
                 )
             }
         };
-        let pace_channel = match channels.iter().find(|c| c.name == "pacemanbot-17") {
+        let pace_channel = match channels.iter().find(|c| c.name == PACEMANBOT_CHANNEL) {
             Some(channel) => channel.id,
             None => {
                 return Err(format!(
-                    "GuildDataError: find #pacemanbot-17 in guild name: {}",
-                    name,
+                    "GuildDataError: find #{} in guild name: {}",
+                    PACEMANBOT_CHANNEL, name,
                 )
                 .into());
             }
         };
         let is_private = channels
             .iter()
-            .any(|c| c.name == "pacemanbot-runner-names-17");
+            .any(|c| c.name == PACEMANBOT_RUNNER_NAMES_CHANNEL);
         let lb_channel = match channels
             .iter()
-            .find(|c| c.name == "pacemanbot-runner-leaderboard-17")
+            .find(|c| c.name == PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL)
         {
             Some(channel) => Some(channel.id),
             None => None,
@@ -66,16 +73,16 @@ impl GuildData {
         if is_private {
             let players_channel = channels
                 .iter()
-                .find(|c| c.name == "pacemanbot-runner-names-17")
+                .find(|c| c.name == PACEMANBOT_RUNNER_NAMES_CHANNEL)
                 .unwrap();
             let messages = players_channel.messages(&ctx.http, |m| m.limit(1)).await?;
             let first_message = match messages.last() {
                 Some(msg) => msg,
                 None => {
                     return Err(format!(
-                    "GuildDataError: get first message from #pacemanbot-runner-names-17 in guild name: {}.",
-                    name
-                )
+                        "GuildDataError: get first message from #{} in guild name: {}.",
+                        PACEMANBOT_RUNNER_NAMES_CHANNEL, name
+                    )
                     .into())
                 }
             };
@@ -93,7 +100,7 @@ impl GuildData {
             .roles
             .iter()
             .map(|(_, role)| role)
-            .filter(|r| r.name.starts_with("*17"))
+            .filter(|r| r.name.starts_with(ROLE_PREFIX))
             .collect::<Vec<_>>()
         {
             let role_data = match RoleData::new(role.to_owned()) {

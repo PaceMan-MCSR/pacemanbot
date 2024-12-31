@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use serenity::{builder::CreateEmbedAuthor, client::Context, prelude::Mentionable};
 
-use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Item, Response}};
+use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Response}};
 
-use super::{consts::{OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info};
+use super::{consts::{OFFLINE_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info};
 
 pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) 
 {
@@ -76,47 +76,7 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
             "⚪"
         };
 
-        let mut item_data_content = String::new();
 
-        match &response.item_data {
-            Some(data) => {
-                let pearl_count = data.estimated_counts.get(&Item::MinecraftEnderPearl);
-                let rod_count = data.estimated_counts.get(&Item::MinecraftBlazeRod);
-
-                if rod_count.is_some() {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", ROD_EMOJI, rod_count.unwrap());
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, rod_count.unwrap());
-                    }
-                } else {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", ROD_EMOJI, 0);
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, 0);
-                    }
-                    
-                }
-                if pearl_count.is_some() {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", PEARL_EMOJI, pearl_count.unwrap());
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, pearl_count.unwrap());
-                    }
-                } else {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", PEARL_EMOJI, 0);
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, 0);
-                    }
-                    
-                }
-            },
-            None => {
-                item_data_content = format!("{} {}", ROD_EMOJI, 0);
-                item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, 0);
-            },
-        }
         let metadata = format!(
             "{} {} - {} {}", 
             live_indicator,
@@ -155,7 +115,6 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
                         e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                     }
                     e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
-                    e.field("Items", item_data_content.clone(), true);
                     e
                 })
                 .content(ping_content.to_owned())
@@ -188,7 +147,6 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
                                 e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                             }
                             e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
-                            e.field("Items", item_data_content, true);
                             e
                         })
                         .content(content_removed_metadata)

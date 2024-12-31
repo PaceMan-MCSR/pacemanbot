@@ -4,7 +4,7 @@ use serenity::{
 };
 
 use crate::{
-    cache::{guild_data::GuildData, split::Split},
+    cache::{consts::ROLE_PREFIX, guild_data::GuildData, split::Split},
     utils::{create_guild_role::create_guild_role, remove_runner_pings::remove_runner_pings},
     Result,
 };
@@ -103,12 +103,12 @@ pub async fn setup_pings(
                 &ctx,
                 &guild_id,
                 &mut sender,
-                "*17",
+                ROLE_PREFIX,
                 split.to_owned(),
                 ign.to_owned(),
             )
             .await?;
-            let role_name = format!("*17{}{}:0+{}", split.to_str(), time, ign);
+            let role_name = format!("{}{}{}:0+{}", ROLE_PREFIX, split.to_str(), time, ign);
             let roles = guild_id.roles(&ctx.http).await?;
             let guild_has_role = roles.iter().any(|(_, r)| r.name == role_name);
             if !guild_has_role {
@@ -136,7 +136,7 @@ pub async fn setup_pings(
             let roles = guild_id.roles(&ctx.http).await?;
             let role = match roles.iter().find(|(_, r)| {
                 r.name.contains(split.to_str().as_str())
-                    && r.name.starts_with("*17")
+                    && r.name.starts_with(ROLE_PREFIX)
                     && r.name.contains(ign.as_str())
             }) {
                 Some(name) => name,
@@ -149,7 +149,7 @@ pub async fn setup_pings(
                 &ctx,
                 &guild_id,
                 &mut sender,
-                "*17",
+                ROLE_PREFIX,
                 split.to_owned(),
                 ign.to_owned(),
             )

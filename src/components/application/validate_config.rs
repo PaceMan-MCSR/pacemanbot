@@ -3,7 +3,10 @@ use serenity::{
     model::{id::GuildId, prelude::application_command::ApplicationCommandInteraction},
 };
 
-use crate::{cache::guild_data::GuildData, Result};
+use crate::{
+    cache::{consts::PACEMANBOT_CHANNEL, guild_data::GuildData},
+    Result,
+};
 
 pub async fn validate_config(
     ctx: &Context,
@@ -14,8 +17,10 @@ pub async fn validate_config(
     let reply_content;
     match GuildData::new(&ctx, guild_id).await {
         Ok(_) => {
-            reply_content =
-                "Config validation successful! Bot will send paces in #pacemanbot-17.".to_string()
+            reply_content = format!(
+                "Config validation successful! Bot will send paces in #{}.",
+                PACEMANBOT_CHANNEL
+            )
         }
         Err(err) => reply_content = format!("Error: {}", err),
     };
