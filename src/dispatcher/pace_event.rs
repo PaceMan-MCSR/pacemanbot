@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serenity::{builder::CreateEmbedAuthor, client::Context, prelude::Mentionable};
 
-use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Item, Response}};
+use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData, split::{Split, Structure}}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Item, Response}};
 
 use super::{consts::{OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info, run_info::RunType};
 
@@ -85,36 +85,22 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
 
         match &response.item_data {
             Some(data) => {
-                let pearl_count = data.estimated_counts.get(&Item::MinecraftEnderPearl);
-                let rod_count = data.estimated_counts.get(&Item::MinecraftBlazeRod);
-
-                if rod_count.is_some() {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", ROD_EMOJI, rod_count.unwrap());
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, rod_count.unwrap());
-                    }
-                } else {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", ROD_EMOJI, 0);
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, 0);
-                    }
-                    
+                let pearl_count = data.estimated_counts.get(&Item::MinecraftEnderPearl).unwrap_or(&0).to_string();
+                let mut rod_count = data.estimated_counts.get(&Item::MinecraftBlazeRod).unwrap_or(&0).to_string();
+                if let Some(Structure::Bastion) = run_info.structure {
+                        if rod_count == String::from("0") && run_info.split == Split::SecondStructure {
+                            rod_count = String::from("1+");
+                        }
                 }
-                if pearl_count.is_some() {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", PEARL_EMOJI, pearl_count.unwrap());
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, pearl_count.unwrap());
-                    }
+                if item_data_content == "" {
+                    item_data_content = format!("{} {}", ROD_EMOJI, rod_count);
                 } else {
-                    if item_data_content == "" {
-                        item_data_content = format!("{} {}", PEARL_EMOJI, 0);
-                    } else {
-                        item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, 0);
-                    }
-                    
+                    item_data_content = format!("{}  {} {}", item_data_content, ROD_EMOJI, rod_count);
+                }
+                if item_data_content == "" {
+                    item_data_content = format!("{} {}", PEARL_EMOJI, pearl_count);
+                } else {
+                    item_data_content = format!("{}  {} {}", item_data_content, PEARL_EMOJI, pearl_count);
                 }
             },
             None => {
