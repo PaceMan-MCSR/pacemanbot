@@ -10,7 +10,7 @@ use crate::{utils::extract_name_and_splits_from_line::extract_name_and_splits_fr
 use super::{
     consts::{
         PACEMANBOT_CHANNEL, PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, PACEMANBOT_RUNNER_NAMES_CHANNEL,
-        ROLE_PREFIX,
+        ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17,
     },
     players::Players,
     role_data::RoleData,
@@ -100,7 +100,11 @@ impl GuildData {
             .roles
             .iter()
             .map(|(_, role)| role)
-            .filter(|r| r.name.starts_with(ROLE_PREFIX))
+            .filter(|r| {
+                r.name.starts_with(ROLE_PREFIX)
+                    && !r.name.starts_with(ROLE_PREFIX_115)
+                    && !r.name.starts_with(ROLE_PREFIX_17)
+            })
             .collect::<Vec<_>>()
         {
             let role_data = match RoleData::new(role.to_owned()) {

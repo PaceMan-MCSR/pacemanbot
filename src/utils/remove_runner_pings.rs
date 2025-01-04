@@ -3,7 +3,13 @@ use serenity::{
     model::{guild::Member, id::GuildId},
 };
 
-use crate::{cache::split::Split, Result};
+use crate::{
+    cache::{
+        consts::{ROLE_PREFIX_115, ROLE_PREFIX_17},
+        split::Split,
+    },
+    Result,
+};
 
 pub async fn remove_runner_pings(
     ctx: &Context,
@@ -17,6 +23,8 @@ pub async fn remove_runner_pings(
     for role_id in member.roles.clone() {
         let role = guild_roles.get(&role_id).unwrap().clone();
         if role.name.starts_with(role_prefix)
+            && !role.name.starts_with(ROLE_PREFIX_115)
+            && !role.name.starts_with(ROLE_PREFIX_17)
             && role.name.contains(ign.as_str())
             && role.name.contains(split.to_str().as_str())
         {

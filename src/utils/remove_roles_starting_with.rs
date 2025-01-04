@@ -3,7 +3,10 @@ use serenity::{
     model::{guild::Member, id::GuildId},
 };
 
-use crate::Result;
+use crate::{
+    cache::consts::{ROLE_PREFIX_115, ROLE_PREFIX_17},
+    Result,
+};
 
 pub async fn remove_roles_starting_with(
     ctx: &Context,
@@ -15,7 +18,10 @@ pub async fn remove_roles_starting_with(
     let guild_roles = guild_id.roles(&ctx.http).await?;
     for role_id in member.roles.clone() {
         let role = guild_roles.get(&role_id).unwrap().clone();
-        if role.name.starts_with(role_prefix) {
+        if role.name.starts_with(role_prefix)
+            && !role.name.starts_with(ROLE_PREFIX_115)
+            && !role.name.starts_with(ROLE_PREFIX_17)
+        {
             if skip_pb_roles && role.name.contains("PB") {
                 continue;
             }

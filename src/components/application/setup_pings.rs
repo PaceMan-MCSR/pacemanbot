@@ -4,7 +4,11 @@ use serenity::{
 };
 
 use crate::{
-    cache::{consts::ROLE_PREFIX, guild_data::GuildData, split::Split},
+    cache::{
+        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
+        guild_data::GuildData,
+        split::Split,
+    },
     utils::{create_guild_role::create_guild_role, remove_runner_pings::remove_runner_pings},
     Result,
 };
@@ -137,6 +141,8 @@ pub async fn setup_pings(
             let role = match roles.iter().find(|(_, r)| {
                 r.name.contains(split.to_str().as_str())
                     && r.name.starts_with(ROLE_PREFIX)
+                    && !r.name.starts_with(ROLE_PREFIX_115)
+                    && !r.name.starts_with(ROLE_PREFIX_17)
                     && r.name.contains(ign.as_str())
             }) {
                 Some(name) => name,
