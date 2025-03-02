@@ -26,7 +26,7 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
             None => {
                 if !guild_data.is_private && minutes >= 20 {
                     return println!(
-                        "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
+                        "Skipping guild name: {} because it is not a sub 20 completion and the guild is public.", 
                         guild_data.name
                     );
                 }
