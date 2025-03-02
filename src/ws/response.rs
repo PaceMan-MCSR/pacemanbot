@@ -46,6 +46,8 @@ pub enum EventId {
     RsgObtainGoldBlock,
     #[serde(rename = "rsg.distract_piglin")]
     RsgDistractPiglin,
+    #[serde(rename = "rsg.killed_blaze")]
+    RsgKilledBlaze,
     #[serde(rename = "rsg.loot_bastion")]
     RsgLootBastion,
     #[serde(rename = "rsg.obtain_crying_obsidian")]
