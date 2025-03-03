@@ -59,6 +59,7 @@ impl Dispatcher {
                     .into());
                 }
             };
+
             match event_type {
                 EventType::NonPaceEvent => {
                     handle_non_pace_event(

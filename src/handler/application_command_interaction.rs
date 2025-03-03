@@ -46,12 +46,12 @@ pub async fn handle_application_command_interaction(
         }
     };
     match match command.data.name.as_str() {
-        "send_message" => send_role_selection_message(&ctx, &roles, command).await,
-        "setup_pings" => setup_pings(&ctx, guild_id, command).await,
-        "setup_roles" => setup_roles(&ctx, guild_id, command).await,
-        "setup_pb_roles" => setup_pb_roles(&ctx, guild_id, command).await,
-        "whitelist" => whitelist(&ctx, guild_id, command).await,
-        "validate_config" => validate_config(&ctx, guild_id, command).await,
+        "send_message_115" => send_role_selection_message(&ctx, &roles, command).await,
+        "setup_pings_115" => setup_pings(&ctx, guild_id, command).await,
+        "setup_roles_115" => setup_roles(&ctx, guild_id, command).await,
+        "setup_pb_roles_115" => setup_pb_roles(&ctx, guild_id, command).await,
+        "whitelist_115" => whitelist(&ctx, guild_id, command).await,
+        "validate_config_115" => validate_config(&ctx, guild_id, command).await,
         _ => {
             return Err(format!(
                 "ApplicationCommandInteractionError: Unrecognized command: {}.",

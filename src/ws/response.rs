@@ -40,6 +40,8 @@ pub enum EventId {
     RsgObtainIronIngot,
     #[serde(rename = "rsg.loot_monument")]
     RsgLootMonument,
+    #[serde(rename = "rsg.killed_blaze")]
+    RsgKilledBlaze,
     #[serde(rename = "rsg.trade")]
     RsgTrade,
     #[serde(rename = "rsg.obtain_iron_pickaxe")]
@@ -99,6 +101,7 @@ pub enum Item {
 pub struct ItemData {
     pub estimated_counts: HashMap<Item, u32>,
     pub _usages: Option<HashMap<Item, u32>>,
+    pub crafted: Option<HashMap<Item, u32>>,
 }
 
 #[derive(Deserialize, Debug)]

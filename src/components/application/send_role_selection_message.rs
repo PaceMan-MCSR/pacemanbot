@@ -69,11 +69,25 @@ pub async fn send_role_selection_message(
         }
         r1_order.cmp(&r2_order)
     });
+    let mut select_nether_role_action_row = CreateActionRow::default();
     let mut select_fortress_role_action_row = CreateActionRow::default();
     let mut select_blind_role_action_row = CreateActionRow::default();
     let mut select_eye_spy_role_action_row = CreateActionRow::default();
     let mut select_end_enter_role_action_row = CreateActionRow::default();
 
+    select_nether_role_action_row.create_select_menu(|m| {
+        m.custom_id("select_enter_nether_role")
+            .placeholder("Choose a Enter Nether Role...")
+            .options(|o| {
+                match create_select_option(o, &roles, Split::EnterNether) {
+                    Ok(_) => (),
+                    Err(err) => {
+                        eprintln!("RoleSelectionMessageSendError: {}", err);
+                    }
+                }
+                o
+            })
+    });
     select_fortress_role_action_row.create_select_menu(|m| {
         m.custom_id("select_enter_fortress_role")
             .placeholder("Choose a Enter Fortress Role...")
@@ -139,11 +153,11 @@ pub async fn send_role_selection_message(
     match command
         .edit_original_interaction_response(&ctx.http, |data| {
             data.content(content).components(|c| {
-                c.add_action_row(select_fortress_role_action_row)
+                c.add_action_row(select_nether_role_action_row)
+                    .add_action_row(select_fortress_role_action_row)
                     .add_action_row(select_blind_role_action_row)
                     .add_action_row(select_eye_spy_role_action_row)
                     .add_action_row(select_end_enter_role_action_row)
-                    .add_action_row(remove_roles_action_row.to_owned())
             })
         })
         .await
@@ -160,5 +174,13 @@ pub async fn send_role_selection_message(
             return Err(content.into());
         }
     };
+
+    command
+        .channel_id
+        .send_message(&ctx.http, |m| {
+            m.content("")
+                .components(|c| c.add_action_row(remove_roles_action_row))
+        })
+        .await?;
     Ok(())
 }

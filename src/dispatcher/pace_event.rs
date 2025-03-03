@@ -6,10 +6,10 @@ use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData}, utils::{f
 
 use super::{consts::{OFFLINE_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info};
 
-pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) 
+pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData)
 {
         let run_info = 
-            match get_run_info(last_event) {
+            match get_run_info(response, last_event) {
                 Some(info) => info,
                 None => {
                     return eprintln!("HandlePaceEvent: Unrecognized event id: {:#?}.", last_event.event_id);
