@@ -40,6 +40,8 @@ pub enum EventId {
     RsgObtainIronIngot,
     #[serde(rename = "rsg.loot_monument")]
     RsgLootMonument,
+    #[serde(rename = "rsg.tower_start")]
+    RsgTowerStart,
     #[serde(rename = "rsg.killed_blaze")]
     RsgKilledBlaze,
     #[serde(rename = "rsg.trade")]
