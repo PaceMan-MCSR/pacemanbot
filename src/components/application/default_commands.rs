@@ -9,22 +9,22 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
     match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
         commands.create_application_command(|command| {
             command
-                .name("send_message")
+                .name("send_message_17")
                 .description("Send role message to the current channel.")
         });
         commands.create_application_command(|command| {
-            command.name("setup_pb_roles").description(
+            command.name("setup_pb_roles_17").description(
                 format!("Setup split PB pace-roles(as specified per runner in {}).", PACEMANBOT_RUNNER_NAMES_CHANNEL),
             )
         });
         commands.create_application_command(|command| {
-            command.name("validate_config").description(
+            command.name("validate_config_17").description(
                 "Check if the current server configuration is valid and if the bot will work properly or not.",
             )
         });
         commands.create_application_command(|command| {
             command
-            .name("setup_pings")
+            .name("setup_pings_17")
             .description(
                 "Setup pings for specific runners.",
             )
@@ -62,7 +62,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
         });
         commands.create_application_command(|command| {
             command
-            .name("whitelist")
+            .name("whitelist_17")
             .description(
                 "Whitelist new players or edit old players' configurations in the server based on ign.",
             )
@@ -103,7 +103,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
         });
         commands.create_application_command(|command| {
             command
-            .name("setup_roles")
+            .name("setup_roles_17")
             .description(
                 "Setup pace-roles based on split, start time and end time in increments of 30s.",
             )
