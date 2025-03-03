@@ -13,7 +13,10 @@ use serenity::{
 };
 
 use crate::{
-    cache::{consts::ROLE_PREFIX, split::Split},
+    cache::{
+        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
+        split::Split,
+    },
     utils::{
         create_select_option::create_select_option,
         extract_split_from_pb_role_name::extract_split_from_pb_role_name,
@@ -33,7 +36,11 @@ pub async fn send_role_selection_message(
     let mut roles = roles
         .iter()
         .map(|(_, role)| role)
-        .filter(|r| r.name.starts_with(ROLE_PREFIX))
+        .filter(|r| {
+            r.name.starts_with(ROLE_PREFIX)
+                && !r.name.starts_with(ROLE_PREFIX_115)
+                && !r.name.starts_with(ROLE_PREFIX_17)
+        })
         .collect::<Vec<_>>();
     roles.sort_by(|r1, r2| {
         let r1_order;
