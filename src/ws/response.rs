@@ -44,6 +44,10 @@ pub enum EventId {
     RsgObtainLavaBucket,
     #[serde(rename = "rsg.obtain_gold_block")]
     RsgObtainGoldBlock,
+    #[serde(rename = "rsg.loot_monument")]
+    RsgLootMonument,
+    #[serde(rename = "rsg.tower_start")]
+    RsgTowerStart,
     #[serde(rename = "rsg.killed_blaze")]
     RsgKilledBlaze,
     #[serde(rename = "rsg.distract_piglin")]
