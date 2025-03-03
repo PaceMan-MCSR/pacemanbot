@@ -14,6 +14,9 @@ pub async fn handle_message_component_interaction(
 ) -> Result<()> {
     let custom_id = match message_component.data.custom_id.as_str() {
         "remove_pmb_roles" => handle_remove_pmb_roles(&ctx, &message_component).await,
+        "select_enter_nether_role" => {
+            handle_select_role(&ctx, &message_component, Split::EnterNether).await
+        }
         "select_enter_fortress_role" => {
             handle_select_role(&ctx, &message_component, Split::EnterFortress).await
         }

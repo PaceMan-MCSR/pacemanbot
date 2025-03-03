@@ -16,6 +16,7 @@ pub async fn setup_pb_roles(
 ) -> Result<()> {
     command.defer_ephemeral(&ctx).await?;
     let splits: Vec<Split> = vec![
+        Split::EnterNether,
         Split::EnterFortress,
         Split::Blind,
         Split::EyeSpy,
