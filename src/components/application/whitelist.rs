@@ -67,6 +67,27 @@ pub async fn whitelist(
                     return Err(String::from("WhitelistError: get value for ign option.").into())
                 }
             },
+            "enter_nether" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.enter_nether = match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => {
+                            return Err(String::from(
+                                "WhitelistError: parse u64 for enter nether option.",
+                            )
+                            .into())
+                        }
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from(
+                            "WhitelistError: get value for enter fortress option.",
+                        )
+                        .into());
+                    }
+                }
+            },
             "enter_fortress" => match option.value.to_owned() {
                 Some(value) => {
                     splits_data.enter_fortress = match value.as_u64() {

@@ -87,6 +87,12 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
             })
             .create_option(|option| {
                 option
+                    .name("enter_nether")
+                    .description("The time for enter nether that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
                     .name("enter_fortress")
                     .description("The time for enter fortress that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
