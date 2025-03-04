@@ -8,14 +8,14 @@ run-release:
 	cargo run -r
 
 deploy:
-	git pull origin main
+	git pull origin 1.7
 	make build
-	systemctl restart pacemanbot
+	systemctl restart pacemanbot1.7
 
 deploy-testing:
-	git pull origin testing
+	git pull origin testing-1.7
 	make build
-	systemctl restart pacemanbot
+	systemctl restart pacemanbot1.7
 
 test:
 	cargo test
