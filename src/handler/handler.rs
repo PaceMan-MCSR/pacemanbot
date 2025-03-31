@@ -113,6 +113,12 @@ impl EventHandler for Handler {
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
-        handle_ready(ctx, ready, self.cache_manager.clone()).await;
+        handle_ready(
+            ctx,
+            ready,
+            self.cache_manager.clone(),
+            self.seedwave_info.clone(),
+        )
+        .await;
     }
 }

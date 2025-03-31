@@ -1,11 +1,15 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use serenity::{client::Context, model::prelude::Ready};
 use tokio::time::sleep;
 
 use crate::{
-    cache::CacheManager,
+    cache::{CacheManager, SeedWaveInfo},
     dispatcher::Dispatcher,
+    utils::get_seedwave_info::get_seedwave_info,
     ws::{consts::WS_TIMEOUT_FOR_RETRY, WSManager},
 };
 
@@ -44,9 +48,32 @@ pub async fn ws_event_loop(ctx: Arc<Context>, cache_manager: ArcMutex<CacheManag
     }
 }
 
-pub async fn handle_ready(ctx: Context, ready: Ready, cache_manager: ArcMutex<CacheManager>) {
+pub async fn handle_ready(
+    ctx: Context,
+    ready: Ready,
+    cache_manager: ArcMutex<CacheManager>,
+    seedwave_info: ArcMutex<SeedWaveInfo>,
+) {
     println!("{} is connected!", ready.user.name);
     let cache_manager = cache_manager.clone();
     let ctx = Arc::new(ctx);
     tokio::spawn(async move { ws_event_loop(ctx, cache_manager).await });
+    tokio::spawn(async move {
+        let latest_info = match get_seedwave_info().await {
+            Ok(info) => info,
+            Err(err) => {
+                eprintln!("SeedwaveInfoError: {}", err);
+                return;
+            }
+        };
+        let mut locked_seedwave_info = seedwave_info.lock().await;
+        let sleep_secs = latest_info.expires_at
+            - SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+        println!("Sleeping thread for {}", sleep_secs);
+        *locked_seedwave_info = latest_info;
+        sleep(Duration::from_secs(sleep_secs)).await;
+    });
 }

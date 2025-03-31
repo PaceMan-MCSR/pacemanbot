@@ -7,7 +7,7 @@ mod handler;
 mod tests;
 mod utils;
 mod ws;
-use cache::CacheManager;
+use cache::{CacheManager, SeedWaveInfo};
 use handler::Handler;
 use serenity::client::Client;
 use serenity::framework::standard::StandardFramework;
@@ -27,6 +27,7 @@ async fn main() -> Result<()> {
     let framework = StandardFramework::new();
 
     let cache_manager = Arc::new(Mutex::new(CacheManager::new()));
+    let seedwave_info = Arc::new(Mutex::new(SeedWaveInfo::default()));
 
     let mut intents = GatewayIntents::all();
     intents.remove(GatewayIntents::GUILD_MEMBERS);
@@ -34,7 +35,10 @@ async fn main() -> Result<()> {
     intents.remove(GatewayIntents::MESSAGE_CONTENT);
 
     let mut client = Client::builder(&token, intents)
-        .event_handler(Handler { cache_manager })
+        .event_handler(Handler {
+            cache_manager,
+            seedwave_info,
+        })
         .framework(framework)
         .await?;
     client.start().await?;
