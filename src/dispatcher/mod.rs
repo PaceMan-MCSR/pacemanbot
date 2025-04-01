@@ -6,10 +6,11 @@ pub mod get_run_info;
 pub mod non_pace_event;
 pub mod pace_event;
 pub mod run_info;
-use crate::{cache::CacheManager, handler::ArcMutex, ws::response::Response};
+use crate::{cache::CacheManager, handler::ArcMutex, ws::response::Response, SeedWaveInfo};
 
 pub struct Dispatcher {
     pub ctx: Arc<Context>,
     pub response: Response,
     pub cache_manager: ArcMutex<CacheManager>,
+    pub seedwave_info: ArcMutex<SeedWaveInfo>,
 }

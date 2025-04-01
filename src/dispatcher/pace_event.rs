@@ -6,7 +6,7 @@ use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData, split::{Sp
 
 use super::{consts::{OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info, run_info::RunType};
 
-pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) 
+pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData, seedwave: u8)
 {
         let run_info = 
             match get_run_info(response, last_event) {
@@ -148,6 +148,7 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
                     e.field("Splits", format!("[Link]({})", stats_link.clone()), true);
                     e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                     e.field("Items", item_data_content.clone(), true);
+                    e.field("Seedwave", seedwave, true);
                     if let RunType::Bastionless = run_info.run_type {
                         e.field("Bastionless", "Yes", true);
                     }                    
@@ -185,6 +186,7 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
                             e.field("Splits", format!("[Link]({})", stats_link), true);
                             e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                             e.field("Items", item_data_content, true);
+                            e.field("Seedwave", seedwave, true);
                             if let RunType::Bastionless = run_info.run_type {
                                 e.field("Bastionless", "Yes", true);
                             }

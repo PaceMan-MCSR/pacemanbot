@@ -44,6 +44,7 @@ impl Dispatcher {
             let mc_head_url = format!("https://mc-heads.net/avatar/{}", self.response.user.uuid);
             let author_name = self.response.nickname.replace("_", SPECIAL_UNDERSCORE);
             let mut author = CreateEmbedAuthor::default();
+            let seedwave = self.seedwave_info.lock().await.seedwave;
             author.icon_url(mc_head_url);
             author.name(author_name);
             if live_link != String::new() {
@@ -70,6 +71,7 @@ impl Dispatcher {
                         author,
                         last_event,
                         guild_data,
+                        seedwave,
                     )
                     .await;
                 }
@@ -82,6 +84,7 @@ impl Dispatcher {
                         author,
                         last_event,
                         guild_data,
+                        seedwave,
                     )
                     .await;
                 }

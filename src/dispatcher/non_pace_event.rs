@@ -6,7 +6,7 @@ use crate::{cache::{consts::PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, guild_data::G
 
 use super::consts::{CREDITS_EMOJI, OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI};
 
-pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData) {
+pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_link: String, stats_link: String, author: CreateEmbedAuthor, last_event: &Event, guild_data: &mut GuildData, seedwave: u8) {
         let player_data = match guild_data.players.get_mut(&response.nickname.to_lowercase()) {
             Some(data) => data,
             None => {
@@ -63,6 +63,7 @@ pub async fn handle_non_pace_event(ctx: Arc<Context>, response: &Response, live_
                 e.field("Splits", format!("[Link]({})", stats_link), true);
                 e.field("Time", format!("<t:{}:R>", (response.last_updated / 1000) as u64), true);
                 e.field("Items", item_data_content.clone(), true);
+                e.field("Seedwave", seedwave, true);
                 e
             })
         }).await {

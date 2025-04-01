@@ -15,7 +15,11 @@ use crate::{
 
 use super::ArcMutex;
 
-pub async fn ws_event_loop(ctx: Arc<Context>, cache_manager: ArcMutex<CacheManager>) {
+pub async fn ws_event_loop(
+    ctx: Arc<Context>,
+    cache_manager: ArcMutex<CacheManager>,
+    seedwave_info: ArcMutex<SeedWaveInfo>,
+) {
     loop {
         let mut manager = match WSManager::new().await {
             Ok(manager) => manager,
@@ -35,6 +39,7 @@ pub async fn ws_event_loop(ctx: Arc<Context>, cache_manager: ArcMutex<CacheManag
                 ctx: ctx.clone(),
                 response,
                 cache_manager: cache_manager.clone(),
+                seedwave_info: seedwave_info.clone(),
             };
             match dispatcher.dispatch().await {
                 Ok(_) => (),
@@ -56,24 +61,24 @@ pub async fn handle_ready(
 ) {
     println!("{} is connected!", ready.user.name);
     let cache_manager = cache_manager.clone();
+    let seedwave_info_copy = seedwave_info.clone();
     let ctx = Arc::new(ctx);
-    tokio::spawn(async move { ws_event_loop(ctx, cache_manager).await });
+    tokio::spawn(async move { ws_event_loop(ctx, cache_manager, seedwave_info.clone()).await });
     tokio::spawn(async move {
-        let latest_info = match get_seedwave_info().await {
-            Ok(info) => info,
-            Err(err) => {
-                eprintln!("SeedwaveInfoError: {}", err);
-                return;
-            }
-        };
-        let mut locked_seedwave_info = seedwave_info.lock().await;
-        let sleep_secs = latest_info.expires_at
-            - SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_secs();
-        println!("Sleeping thread for {}", sleep_secs);
-        *locked_seedwave_info = latest_info;
-        sleep(Duration::from_secs(sleep_secs)).await;
+        loop {
+            let latest_info = match get_seedwave_info().await {
+                Ok(info) => info,
+                Err(err) => {
+                    eprintln!("SeedwaveInfoError: {}", err);
+                    return;
+                }
+            };
+            let mut locked_seedwave_info = seedwave_info_copy.lock().await;
+            let sleep_secs = 60;
+            println!("Sleeping seedwave thread for {}s", sleep_secs);
+            *locked_seedwave_info = latest_info;
+            drop(locked_seedwave_info);
+            sleep(Duration::from_secs(sleep_secs)).await;
+        }
     });
 }
