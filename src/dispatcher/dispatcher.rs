@@ -41,7 +41,7 @@ impl Dispatcher {
             };
 
             let stats_link = format!("https://paceman.gg/stats/run/{}", self.response.world_id);
-            let mc_head_url = format!("https://mc-heads.net/avatar/{}", self.response.user.uuid);
+            let mc_head_url = format!("https://api.mineatar.io/face/{}", self.response.user.uuid);
             let author_name = self.response.nickname.replace("_", SPECIAL_UNDERSCORE);
             let mut author = CreateEmbedAuthor::default();
             author.icon_url(mc_head_url);
