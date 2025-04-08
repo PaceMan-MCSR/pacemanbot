@@ -6,6 +6,7 @@ use tokio::time::sleep;
 use crate::{
     cache::CacheManager,
     dispatcher::Dispatcher,
+    eprintln,
     ws::{consts::WS_TIMEOUT_FOR_RETRY, WSManager},
 };
 

@@ -3,7 +3,10 @@ use serenity::{
     model::id::{ChannelId, GuildId},
 };
 
-use crate::cache::{consts::PACEMANBOT_RUNNER_NAMES_CHANNEL, CacheManager};
+use crate::{
+    cache::{consts::PACEMANBOT_RUNNER_NAMES_CHANNEL, CacheManager},
+    eprintln,
+};
 
 use super::{update_cache::handle_update_cache, ArcMutex};
 

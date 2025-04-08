@@ -3,9 +3,12 @@ use serenity::{
     model::{guild::Role, id::GuildId},
 };
 
-use crate::cache::{
-    consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
-    CacheManager,
+use crate::{
+    cache::{
+        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
+        CacheManager,
+    },
+    eprintln,
 };
 
 use super::{update_cache::handle_update_cache, ArcMutex};

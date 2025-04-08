@@ -17,6 +17,7 @@ use crate::{
         consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
         split::Split,
     },
+    eprintln,
     utils::{
         create_select_option::create_select_option,
         extract_split_from_pb_role_name::extract_split_from_pb_role_name,

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serenity::{builder::CreateEmbedAuthor, client::Context, prelude::Mentionable};
 
-use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData, split::{Split, Structure}}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Item, Response}};
+use crate::{cache::{guild_data::GuildData, players::PlayerSplitsData, split::{Split, Structure}}, eprintln, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs}, ws::response::{Event, Item, Response}};
 
 use super::{consts::{OFFLINE_EMOJI, PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI}, get_run_info::get_run_info, run_info::RunType};
 

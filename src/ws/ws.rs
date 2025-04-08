@@ -2,7 +2,7 @@ use std::env;
 use std::time::Duration;
 
 use crate::ws::consts::{WS_FALLBACK_HOST, WS_FALLBACK_URL, WS_TIMEOUT_FOR_RETRY};
-use crate::Result;
+use crate::{eprintln, Result};
 use serenity::futures::StreamExt;
 use tokio::net::TcpStream;
 use tokio::time::sleep;
