@@ -1,5 +1,7 @@
 use serenity::{client::Context, model::prelude::Interaction};
 
+use crate::eprintln;
+
 use super::{
     application_command_interaction::handle_application_command_interaction,
     message_component_interaction::handle_message_component_interaction,

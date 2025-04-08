@@ -1,6 +1,6 @@
 use serenity::model::id::GuildId;
 
-use crate::cache::CacheManager;
+use crate::{cache::CacheManager, eprintln};
 
 use super::ArcMutex;
 

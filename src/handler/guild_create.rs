@@ -5,6 +5,7 @@ use serenity::{
 
 use crate::{
     cache::CacheManager, components::application::default_commands::setup_default_commands,
+    eprintln,
 };
 
 use super::ArcMutex;

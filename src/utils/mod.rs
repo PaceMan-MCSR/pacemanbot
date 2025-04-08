@@ -12,4 +12,5 @@ pub mod millis_to_mins_secs;
 pub mod mins_secs_to_millis;
 pub mod remove_roles_starting_with;
 pub mod remove_runner_pings;
+pub mod send_webhook_message;
 pub mod update_leaderboard;
