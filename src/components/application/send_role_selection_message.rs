@@ -14,6 +14,7 @@ use serenity::{
 
 use crate::{
     cache::{consts::ROLE_PREFIX, split::Split},
+    eprintln,
     utils::{
         create_select_option::create_select_option,
         extract_split_from_role_name::extract_split_from_role_name,

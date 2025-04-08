@@ -3,11 +3,15 @@ use serenity::{
     model::{id::GuildId, prelude::GuildChannel},
 };
 
-use crate::cache::{
-    consts::{
-        PACEMANBOT_CHANNEL, PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, PACEMANBOT_RUNNER_NAMES_CHANNEL,
+use crate::{
+    cache::{
+        consts::{
+            PACEMANBOT_CHANNEL, PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
+            PACEMANBOT_RUNNER_NAMES_CHANNEL,
+        },
+        CacheManager,
     },
-    CacheManager,
+    eprintln,
 };
 
 use super::{update_cache::handle_update_cache, ArcMutex};

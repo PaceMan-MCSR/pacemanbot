@@ -3,7 +3,10 @@ use serenity::{
     model::{id::GuildId, prelude::command::CommandOptionType},
 };
 
-use crate::cache::{consts::PACEMANBOT_RUNNER_NAMES_CHANNEL, split::Split};
+use crate::{
+    cache::{consts::PACEMANBOT_RUNNER_NAMES_CHANNEL, split::Split},
+    eprintln,
+};
 
 pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
     match GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {

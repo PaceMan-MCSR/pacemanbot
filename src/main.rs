@@ -16,8 +16,24 @@ use serenity::prelude::GatewayIntents;
 use std::env;
 use std::error::Error;
 use std::sync::Arc;
+use utils::send_webhook_message::send_webhook_message;
 
 pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
+
+pub fn spawn_send_webhook(msg: String) {
+    tokio::spawn(async move {
+        send_webhook_message(msg).await;
+    });
+}
+
+#[macro_export]
+macro_rules! eprintln {
+    ($($arg:tt)*) => {{
+        let formatted = format!($($arg)*);
+        std::eprintln!("{}", formatted);
+        $crate::spawn_send_webhook(formatted);
+    }};
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {

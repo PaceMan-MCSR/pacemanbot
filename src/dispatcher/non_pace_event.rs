@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serenity::{builder::CreateEmbedAuthor, client::Context};
 
-use crate::{cache::{consts::PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, guild_data::GuildData}, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs, update_leaderboard::update_leaderboard}, ws::response::{Event, Response}};
+use crate::{cache::{consts::PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, guild_data::GuildData}, eprintln, utils::{format_time::format_time, millis_to_mins_secs::millis_to_mins_secs, update_leaderboard::update_leaderboard}, ws::response::{Event, Response}};
 
 use super::consts::{CREDITS_EMOJI, OFFLINE_EMOJI, SPECIAL_UNDERSCORE, TWITCH_EMOJI};
 

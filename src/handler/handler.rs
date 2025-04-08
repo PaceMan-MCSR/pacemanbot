@@ -9,6 +9,8 @@ use serenity::{
     },
 };
 
+use crate::eprintln;
+
 use super::{
     channel_events::handle_channel_events, guild_create::handle_guild_create,
     guild_delete::handle_guild_delete, guild_role_events::handle_guild_role_events,
