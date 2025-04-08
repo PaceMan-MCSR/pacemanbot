@@ -48,6 +48,8 @@ pub enum EventId {
     RsgLootMonument,
     #[serde(rename = "rsg.tower_start")]
     RsgTowerStart,
+    #[serde(rename = "rsg.trade")]
+    RsgTrade,
     #[serde(rename = "rsg.killed_blaze")]
     RsgKilledBlaze,
     #[serde(rename = "rsg.distract_piglin")]
