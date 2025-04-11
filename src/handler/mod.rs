@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serenity::futures::lock::Mutex;
 
-use crate::cache::CacheManager;
+use crate::{cache::CacheManager, ws::WSManager};
 
 pub mod application_command_interaction;
 pub mod channel_events;
@@ -20,4 +20,5 @@ pub type ArcMutex<T> = Arc<Mutex<T>>;
 
 pub struct Handler {
     pub cache_manager: ArcMutex<CacheManager>,
+    pub ws_manager: ArcMutex<WSManager>,
 }
