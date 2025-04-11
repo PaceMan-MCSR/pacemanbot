@@ -1,15 +1,21 @@
+use std::time::Duration;
+
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
     model::{
-        event::MessageUpdateEvent,
+        event::{MessageUpdateEvent, ResumedEvent},
         guild::{Guild, Role, UnavailableGuild},
         id::{ChannelId, GuildId, MessageId, RoleId},
         prelude::{GuildChannel, Interaction, Message, Ready},
     },
 };
+use tokio::time::sleep;
 
-use crate::eprintln;
+use crate::{
+    eprintln,
+    ws::{consts::WS_TIMEOUT_FOR_RETRY, WSManager},
+};
 
 use super::{
     channel_events::handle_channel_events, guild_create::handle_guild_create,
@@ -115,6 +121,34 @@ impl EventHandler for Handler {
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
-        handle_ready(ctx, ready, self.cache_manager.clone()).await;
+        handle_ready(
+            ctx,
+            ready,
+            self.cache_manager.clone(),
+            self.ws_manager.clone(),
+        )
+        .await;
+    }
+
+    async fn resume(&self, _: Context, _: ResumedEvent) {
+        let mut locked_ws_mgr = self.ws_manager.lock().await;
+        match locked_ws_mgr.stream.close(None).await {
+            Ok(_) => (),
+            Err(err) => {
+                return eprintln!("Stream close error: {}", err);
+            }
+        }
+        loop {
+            *locked_ws_mgr = match WSManager::new().await {
+                Ok(mgr) => mgr,
+                Err(err) => {
+                    eprintln!("WSManager init error: {}", err);
+                    println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
+                    sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
+                    continue;
+                }
+            };
+            break;
+        }
     }
 }

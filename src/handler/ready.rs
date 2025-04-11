@@ -12,19 +12,15 @@ use crate::{
 
 use super::ArcMutex;
 
-pub async fn ws_event_loop(ctx: Arc<Context>, cache_manager: ArcMutex<CacheManager>) {
+pub async fn ws_event_loop(
+    ctx: Arc<Context>,
+    cache_manager: ArcMutex<CacheManager>,
+    ws_manager: ArcMutex<WSManager>,
+) {
     loop {
-        let mut manager = match WSManager::new().await {
-            Ok(manager) => manager,
-            Err(err) => {
-                eprintln!("WSManager init error: {}", err);
-                println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
-                sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
-                continue;
-            }
-        };
         loop {
-            let response = match manager.get_next().await {
+            let mut locked_ws_mgr = ws_manager.lock().await;
+            let response = match locked_ws_mgr.get_next().await {
                 Some(response) => response,
                 None => break,
             };
@@ -41,13 +37,27 @@ pub async fn ws_event_loop(ctx: Arc<Context>, cache_manager: ArcMutex<CacheManag
                 }
             };
         }
-        drop(manager);
+        let mut locked_ws_mgr = ws_manager.lock().await;
+        *locked_ws_mgr = match WSManager::new().await {
+            Ok(mgr) => mgr,
+            Err(err) => {
+                eprintln!("WSManager init error: {}", err);
+                println!("Trying again in {} seconds...", WS_TIMEOUT_FOR_RETRY);
+                sleep(Duration::from_secs(WS_TIMEOUT_FOR_RETRY)).await;
+                continue;
+            }
+        }
     }
 }
 
-pub async fn handle_ready(ctx: Context, ready: Ready, cache_manager: ArcMutex<CacheManager>) {
+pub async fn handle_ready(
+    ctx: Context,
+    ready: Ready,
+    cache_manager: ArcMutex<CacheManager>,
+    ws_manager: ArcMutex<WSManager>,
+) {
     println!("{} is connected!", ready.user.name);
     let cache_manager = cache_manager.clone();
     let ctx = Arc::new(ctx);
-    tokio::spawn(async move { ws_event_loop(ctx, cache_manager).await });
+    tokio::spawn(async move { ws_event_loop(ctx, cache_manager, ws_manager.clone()).await });
 }
