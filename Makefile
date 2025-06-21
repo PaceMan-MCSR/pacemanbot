@@ -8,14 +8,9 @@ run-release:
 	cargo run -r
 
 deploy:
-	git pull origin main
+	git pull origin AA
 	make build
-	systemctl restart pacemanbot
-
-deploy-testing:
-	git pull origin testing
-	make build
-	systemctl restart pacemanbot
+	systemctl restart pacemanbotaa
 
 test:
 	cargo test
