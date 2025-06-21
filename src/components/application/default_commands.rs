@@ -16,11 +16,6 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                 .description("Send role message to the current channel.")
         });
         commands.create_application_command(|command| {
-            command
-                .name("setup_default_roles")
-                .description("Setup default pace-roles for sub 10.")
-        });
-        commands.create_application_command(|command| {
             command.name("setup_pb_roles").description(
                 format!("Setup split PB pace-roles(as specified per runner in #{}).", PACEMANBOT_RUNNER_NAMES_CHANNEL),
             )
@@ -58,16 +53,20 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                     .description("Split name for the runner that you want to change.")
                     .required(true)
                     .kind(CommandOptionType::String)
-                    .add_string_choice("First Structure", Split::FirstStructure.to_str())
-                    .add_string_choice("Second Structure", Split::SecondStructure.to_str())
-                    .add_string_choice("Blind", Split::Blind.to_str())
-                    .add_string_choice("Eye Spy", Split::EyeSpy.to_str())
-                    .add_string_choice("End Enter", Split::EndEnter.to_str())
+                    .add_string_choice("Adventuring Time", Split::AdventuringTime.to_str())
+                    .add_string_choice("Beaconator", Split::Beaconator.to_str())
+                    .add_string_choice("HDWGH", Split::HDWGH.to_str())
             })
             .create_option(|option| {
                 option
-                    .name("time")
-                    .description("The time of the split that you want for the runner.")
+                    .name("time_hours")
+                    .description("The time in hours of the split that you want for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("time_minutes")
+                    .description("The time in minutes of the split that you want for the runner.")
                     .kind(CommandOptionType::Integer)
             })
         });
@@ -95,38 +94,50 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
             })
             .create_option(|option| {
                 option
-                    .name("first_structure")
-                    .description("The time for first structure that you want to setup for the runner.")
+                    .name("adventuring_time_hours")
+                    .description("The time for adventuring time in hours that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("second_structure")
-                    .description("The time for second structure that you want to setup for the runner.")
+                    .name("adventuring_time_minutes")
+                    .description("The time for adventuring time in minutes that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("blind")
-                    .description("The time for blind that you want to setup for the runner.")
+                    .name("beaconator_hours")
+                    .description("The time for beaconator in hours that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("eye_spy")
-                    .description("The time for eye spy that you want to setup for the runner.")
+                    .name("beaconator_minutes")
+                    .description("The time for beaconator in minutes that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("end_enter")
-                    .description("The time for end enter that you want to setup for the runner.")
+                    .name("hdwgh_hours")
+                    .description("The time for hdwgh in hours that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("finish")
-                    .description("The time for completion that you want to setup for the runner(optional).")
+                    .name("hdwgh_minutes")
+                    .description("The time for hdwgh in minutes that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("finish_hours")
+                    .description("The time for completion in hours that you want to setup for the runner(optional).")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("finish_minutes")
+                    .description("The time for completion in minutes that you want to setup for the runner(optional).")
                     .kind(CommandOptionType::Integer)
             })
         });
@@ -141,7 +152,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
             command
             .name("setup_roles")
             .description(
-                "Setup pace-roles based on split, start time and end time in increments of 30s.",
+                "Setup pace-roles based on split, start time and end time in increments of 30m.",
             )
             .create_option(|option| {
                 option
@@ -149,23 +160,21 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                     .description("The name of the split.")
                     .kind(CommandOptionType::String)
                     .required(true)
-                    .add_string_choice("First Structure", "first_structure")
-                    .add_string_choice("Second Structure", "second_structure")
-                    .add_string_choice("Blind", "blind")
-                    .add_string_choice("Eye Spy", "eye_spy")
-                    .add_string_choice("End Enter", "end_enter")
+                    .add_string_choice("Adventuring Time", "adventuring_time")
+                    .add_string_choice("Beaconator", "beaconator")
+                    .add_string_choice("HDWGH", "hdwgh")
             })
             .create_option(|option| {
                 option
                     .name("split_start")
-                    .description("The lower bound for the split in minutes.")
+                    .description("The lower bound for the split in hours.")
                     .kind(CommandOptionType::Integer)
                     .required(true)
             })
             .create_option(|option| {
                 option
                     .name("split_end")
-                    .description("The upper bound for the split in minutes.")
+                    .description("The upper bound for the split in hours.")
                     .kind(CommandOptionType::Integer)
                     .required(true)
             })

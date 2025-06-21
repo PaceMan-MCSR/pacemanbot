@@ -81,39 +81,39 @@ pub async fn setup_roles(
         }
     };
 
-    for minutes in split_start..split_end {
-        let seconds = 0;
+    for hours in split_start..split_end {
+        let minutes = 0;
         let role = format!(
             "{}{}{}:{}",
             ROLE_PREFIX,
             role_split.to_str(),
+            hours,
             minutes,
-            seconds
         );
         create_guild_role(&ctx, &guild, &role).await?;
 
-        let seconds = 3;
+        let minutes = 30;
         let role = format!(
             "{}{}{}:{}",
             ROLE_PREFIX,
             role_split.to_str(),
+            hours,
             minutes,
-            seconds
         );
         create_guild_role(&ctx, &guild, &role).await?;
     }
-    let seconds = 0;
+    let minutes = 0;
     let role = format!(
         "{}{}{}:{}",
         ROLE_PREFIX,
         role_split.to_str(),
         split_end,
-        seconds
+        minutes,
     );
     create_guild_role(&ctx, &guild, &role).await?;
 
     let response_content = format!(
-        "Pace-roles for split name: {} with lower bound: {} minutes and upper bound: {} minutes have been setup!",
+        "Pace-roles for split name: {} with lower bound: {} hours and upper bound: {} hours have been setup!",
         split_name, split_start, split_end
     );
     command

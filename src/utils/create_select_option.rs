@@ -30,22 +30,18 @@ pub fn create_select_option<'a>(
             if split == target_split {
                 o.add_option(
                     CreateSelectMenuOption::default()
-                        .label(format!("PB Pace {}", target_split.alt_desc()))
+                        .label(format!("PB Pace {}", target_split.desc()))
                         .value(role.id.to_string())
                         .to_owned(),
                 );
             }
         } else {
-            let (split, minutes, seconds) = extract_split_from_role_name(&role.name)?;
+            let (split, hours, minutes) = extract_split_from_role_name(&role.name)?;
             if split == target_split {
+                let label = format!("Sub {}:{:02} {}", hours, minutes, target_split.desc());
                 o.add_option(
                     CreateSelectMenuOption::default()
-                        .label(format!(
-                            "Sub {}:{:02} {}",
-                            minutes,
-                            seconds,
-                            target_split.alt_desc()
-                        ))
+                        .label(label)
                         .value(role.id.to_string())
                         .to_owned(),
                 );

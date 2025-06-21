@@ -67,13 +67,75 @@ pub async fn whitelist(
                     return Err(String::from("WhitelistError: get value for ign option.").into())
                 }
             },
-            "first_structure" => match option.value.to_owned() {
+            "adventuring_time_hours" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.first_structure = match value.as_u64() {
-                        Some(int) => int as u8,
+                    splits_data.adventuring_time += match value.as_u64() {
+                        Some(int) => int as u32,
                         None => {
                             return Err(String::from(
-                                "WhitelistError: parse u64 for first structure option.",
+                                "WhitelistError: parse u64 for adventuring time hours option.",
+                            )
+                            .into())
+                        }
+                    } * 60
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from(
+                            "WhitelistError: get value for adventuring time hours option.",
+                        )
+                        .into());
+                    }
+                }
+            },
+            "adventuring_time_minutes" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.adventuring_time +=
+                        match value.as_u64() {
+                            Some(int) => int as u32,
+                            None => return Err(String::from(
+                                "WhitelistError: parse u64 for adventuring time minutes option.",
+                            )
+                            .into()),
+                        }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from(
+                            "WhitelistError: get value for adventuring time minutes option.",
+                        )
+                        .into());
+                    }
+                }
+            },
+            "beaconator_hours" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.beaconator += match value.as_u64() {
+                        Some(int) => int as u32,
+                        None => {
+                            return Err(String::from(
+                                "WhitelistError: parse u64 for beaconator hours option.",
+                            )
+                            .into())
+                        }
+                    } * 60
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from(
+                            "WhitelistError: get value for beaconator hours option.",
+                        )
+                        .into());
+                    }
+                }
+            },
+            "beaconator_minutes" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.beaconator += match value.as_u64() {
+                        Some(int) => int as u32,
+                        None => {
+                            return Err(String::from(
+                                "WhitelistError: parse u64 for beaconator minutes option.",
                             )
                             .into())
                         }
@@ -82,19 +144,40 @@ pub async fn whitelist(
                 None => {
                     if action != "remove" {
                         return Err(String::from(
-                            "WhitelistError: get value for first structure option.",
+                            "WhitelistError: get value for beaconator minutes option.",
                         )
                         .into());
                     }
                 }
             },
-            "second_structure" => match option.value.to_owned() {
+            "hdwgh_hours" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.second_structure = match value.as_u64() {
-                        Some(int) => int as u8,
+                    splits_data.hdwgh += match value.as_u64() {
+                        Some(int) => int as u32,
                         None => {
                             return Err(String::from(
-                                "WhitelistError: parse u64 for second structure option.",
+                                "WhitelistError: parse u64 for hdwgh hours option.",
+                            )
+                            .into())
+                        }
+                    } * 60
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from(
+                            "WhitelistError: get value for hdwgh hours option.",
+                        )
+                        .into());
+                    }
+                }
+            },
+            "hdwgh_minutes" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.hdwgh += match value.as_u64() {
+                        Some(int) => int as u32,
+                        None => {
+                            return Err(String::from(
+                                "WhitelistError: parse u64 for hdwgh minutes option.",
                             )
                             .into())
                         }
@@ -103,85 +186,39 @@ pub async fn whitelist(
                 None => {
                     if action != "remove" {
                         return Err(String::from(
-                            "WhitelistError: get value for second structure option.",
+                            "WhitelistError: get value for hdwgh minutes option.",
                         )
                         .into());
                     }
                 }
             },
-            "blind" => match option.value.to_owned() {
-                Some(value) => {
-                    splits_data.blind = match value.as_u64() {
-                        Some(int) => int as u8,
-                        None => {
-                            return Err(
-                                String::from("WhitelistError: parse u64 for blind option.").into()
-                            )
-                        }
-                    }
-                }
-                None => {
-                    if action != "remove" {
-                        return Err(
-                            String::from("WhitelistError: get value for blind option.").into()
-                        );
-                    }
-                }
-            },
-            "eye_spy" => match option.value.to_owned() {
-                Some(value) => {
-                    splits_data.eye_spy = match value.as_u64() {
-                        Some(int) => int as u8,
-                        None => {
-                            return Err(String::from(
-                                "WhitelistError: parse u64 for eye spy option.",
-                            )
-                            .into())
-                        }
-                    }
-                }
-                None => {
-                    if action != "remove" {
-                        return Err(
-                            String::from("WhitelistError: get value for eye spy option.").into(),
-                        );
-                    }
-                }
-            },
-            "end_enter" => match option.value.to_owned() {
-                Some(value) => {
-                    splits_data.end_enter = match value.as_u64() {
-                        Some(int) => int as u8,
-                        None => {
-                            return Err(String::from(
-                                "WhitelistError: parse u64 for end enter option.",
-                            )
-                            .into())
-                        }
-                    }
-                }
-                None => {
-                    if action != "remove" {
-                        return Err(String::from(
-                            "WhitelistError: get value for end enter option.",
-                        )
-                        .into());
-                    }
-                }
-            },
-            "finish" => match option.value.to_owned() {
+            "finish_hours" => match option.value.to_owned() {
                 Some(value) => {
                     splits_data.finish = match value.as_u64() {
-                        Some(int) => Some(int as u8),
+                        Some(int) => Some(splits_data.finish.unwrap_or(0) + int as u32 * 60),
                         None => {
                             return Err(String::from(
-                                "WhitelistError: parse u64 for end enter option.",
+                                "WhitelistError: parse u64 for finish hours option.",
                             )
                             .into())
                         }
                     }
                 }
-                None => splits_data.finish = None,
+                None => (),
+            },
+            "finish_minutes" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.finish = match value.as_u64() {
+                        Some(int) => Some(splits_data.finish.unwrap_or(0) + int as u32),
+                        None => {
+                            return Err(String::from(
+                                "WhitelistError: parse u64 for finish minutes option.",
+                            )
+                            .into())
+                        }
+                    }
+                }
+                None => (),
             },
             _ => return Err(format!("Unrecognized command option: '{}'", option.name).into()),
         };

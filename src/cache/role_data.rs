@@ -14,8 +14,8 @@ use super::split::Split;
 #[derive(Debug)]
 pub struct RoleData {
     pub split: Split,
+    pub hours: u8,
     pub minutes: u8,
-    pub seconds: u8,
     pub runner: String,
     pub guild_role: Role,
 }
@@ -23,8 +23,8 @@ pub struct RoleData {
 impl RoleData {
     pub fn new(guild_role: Role) -> Result<Self> {
         let split: Split;
+        let mut hours: u8 = 0;
         let mut minutes: u8 = 0;
-        let mut seconds: u8 = 0;
         let mut runner: String = String::new();
         if guild_role.name.contains("PB") {
             split = match extract_split_from_pb_role_name(guild_role.name.as_str()) {
@@ -38,7 +38,7 @@ impl RoleData {
                 }
             };
         } else if guild_role.name.contains("+") {
-            (split, minutes, seconds, runner) =
+            (split, hours, minutes, runner) =
                 match extract_splits_and_name_from_role_name(guild_role.name.as_str()) {
                     Ok(tup) => tup,
                     Err(err) => {
@@ -50,8 +50,7 @@ impl RoleData {
                     }
                 }
         } else {
-            (split, minutes, seconds) = match extract_split_from_role_name(guild_role.name.as_str())
-            {
+            (split, hours, minutes) = match extract_split_from_role_name(guild_role.name.as_str()) {
                 Ok(tup) => tup,
                 Err(err) => {
                     return Err(format!(
@@ -65,8 +64,8 @@ impl RoleData {
         Ok(Self {
             guild_role,
             split,
+            hours,
             minutes,
-            seconds,
             runner,
         })
     }

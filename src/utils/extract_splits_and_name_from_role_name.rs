@@ -32,7 +32,7 @@ pub fn extract_splits_and_name_from_role_name(role_name: &str) -> Result<(Split,
     }
     .as_str()
     .to_string();
-    let minutes = match caps.get(2) {
+    let hours = match caps.get(2) {
         Some(capture) => capture,
         None => {
             return Err(format!(
@@ -44,21 +44,20 @@ pub fn extract_splits_and_name_from_role_name(role_name: &str) -> Result<(Split,
     }
     .as_str()
     .parse::<u8>()?;
-    let seconds = match caps.get(3) {
+    let minutes = match caps.get(3) {
         Some(capture) => capture,
         None => {
             return Err(format!(
-                "ExtractError: get third regex capture for role name: '{}'.",
+                "ExtractError: get second regex capture for role name: '{}'.",
                 role_name
             )
             .into())
         }
     }
     .as_str()
-    .parse::<u8>()?
-        * 10;
+    .parse::<u8>()?;
     let split = Split::from_str(character.as_str()).unwrap();
-    let name = match caps.get(4) {
+    let name = match caps.get(5) {
         Some(capture) => capture,
         None => {
             return Err(format!(
@@ -70,5 +69,5 @@ pub fn extract_splits_and_name_from_role_name(role_name: &str) -> Result<(Split,
     }
     .as_str()
     .to_string();
-    Ok((split, minutes, seconds, name))
+    Ok((split, hours, minutes, name))
 }

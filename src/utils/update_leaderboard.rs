@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use serenity::{client::Context, model::id::ChannelId};
 
-use crate::Result;
+use crate::{utils::mins_secs_to_millis::hrs_mins_secs_to_millis, Result};
 
-use super::{format_time::format_time, mins_secs_to_millis::mins_secs_to_millis};
+use super::format_time::format_time;
 
 pub async fn update_leaderboard(
     ctx: &Context,
@@ -16,7 +16,7 @@ pub async fn update_leaderboard(
     if messages.is_empty() {
         let leaderboard_content = format!(
             "## Runner Leaderboard\n\n`{}`\t\t{}",
-            format_time(mins_secs_to_millis(time)),
+            format_time(hrs_mins_secs_to_millis(time)),
             nickname
         );
         leaderboard_channel
@@ -41,18 +41,19 @@ pub async fn update_leaderboard(
                 .split(':')
                 .map(|sp| sp.parse::<u8>().unwrap())
                 .collect::<Vec<u8>>();
-            let (minutes, seconds) = (time_splits[0], time_splits[1]);
-            let time_millis: u64 = mins_secs_to_millis((minutes, seconds));
+            let (hours, minutes, seconds) = (time_splits[0], time_splits[1], time_splits[2]);
+            let time_millis: u64 =
+                hrs_mins_secs_to_millis((hours, minutes)) + seconds as u64 * 1000;
             player_names_with_time.insert(player_name.to_owned(), time_millis);
         }
-        let current_finish_time = mins_secs_to_millis(time);
+        let current_finish_time = hrs_mins_secs_to_millis(time);
         if player_names_with_time.get(&nickname).is_some() {
             let time = player_names_with_time.get(&nickname).unwrap();
             if time > &current_finish_time {
                 player_names_with_time.insert(nickname.to_owned(), current_finish_time);
             }
         } else {
-            player_names_with_time.insert(nickname, mins_secs_to_millis(time));
+            player_names_with_time.insert(nickname, hrs_mins_secs_to_millis(time));
         }
         let mut entry_vector: Vec<(&String, &u64)> = player_names_with_time
             .iter()

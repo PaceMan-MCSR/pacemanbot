@@ -1,122 +1,49 @@
-use crate::{
-    dispatcher::consts::{BASTION_EMOJI, END_EMOJI, FORT_EMOJI, PORTAL_EMOJI, SH_EMOJI},
-    ws::response::EventId,
-};
-
 #[derive(PartialEq, Debug, Clone)]
 pub enum Split {
-    FirstStructure,
-    SecondStructure,
-    Blind,
-    EyeSpy,
-    EndEnter,
-}
-
-pub enum Structure {
-    Bastion,
-    Fortress,
+    AdventuringTime,
+    Beaconator,
+    HDWGH,
 }
 
 impl Split {
     pub fn from_str(split: &str) -> Option<Split> {
         match split {
-            "FS" => Some(Split::FirstStructure),
-            "SS" => Some(Split::SecondStructure),
-            "B" => Some(Split::Blind),
-            "E" => Some(Split::EyeSpy),
-            "EE" => Some(Split::EndEnter),
-            _ => None,
-        }
-    }
-
-    pub fn from_event_id(event_id: &EventId) -> Option<Split> {
-        match event_id {
-            EventId::RsgFirstPortal => Some(Split::Blind),
-            EventId::RsgEnterStronghold => Some(Split::EyeSpy),
-            EventId::RsgEnterEnd => Some(Split::EndEnter),
+            "AT" => Some(Split::AdventuringTime),
+            "B" => Some(Split::Beaconator),
+            "H" => Some(Split::HDWGH),
             _ => None,
         }
     }
 
     pub fn from_command_param(param: &str) -> Option<Split> {
         match param {
-            "first_structure" => Some(Split::FirstStructure),
-            "second_structure" => Some(Split::SecondStructure),
-            "blind" => Some(Split::Blind),
-            "eye_spy" => Some(Split::EyeSpy),
-            "end_enter" => Some(Split::EndEnter),
+            "adventuring_time" => Some(Split::AdventuringTime),
+            "beaconator" => Some(Split::Beaconator),
+            "hdwgh" => Some(Split::HDWGH),
             _ => None,
         }
     }
 
-    pub fn desc(&self, structure: &Option<Structure>) -> Option<String> {
-        Some(
-            match self {
-                Split::FirstStructure => match structure {
-                    Some(structure) => match structure {
-                        Structure::Bastion => "Enter Bastion",
-                        Structure::Fortress => "Enter Fortress",
-                    },
-                    None => return None,
-                },
-                Split::SecondStructure => match structure {
-                    Some(structure) => match structure {
-                        Structure::Bastion => "Enter Bastion",
-                        Structure::Fortress => "Enter Fortress",
-                    },
-                    None => return None,
-                },
-                Split::Blind => "First Portal",
-                Split::EyeSpy => "Enter Stronghold",
-                Split::EndEnter => "Enter End",
-            }
-            .to_string(),
-        )
-    }
-
-    pub fn alt_desc(&self) -> String {
+    pub fn desc(&self) -> String {
         match self {
-            Split::FirstStructure => "Structure 1",
-            Split::SecondStructure => "Structure 2",
-            Split::Blind => "Blind",
-            Split::EyeSpy => "Eye Spy",
-            Split::EndEnter => "End Enter",
+            Split::AdventuringTime => "Adventuring Time",
+            Split::HDWGH => "How Did We Get Here?",
+            Split::Beaconator => "Beaconator",
         }
         .to_string()
     }
 
-    pub fn get_emoji(&self, structure: &Option<Structure>) -> Option<String> {
-        Some(
-            match self {
-                Split::FirstStructure => match structure {
-                    Some(structure) => match structure {
-                        Structure::Bastion => BASTION_EMOJI,
-                        Structure::Fortress => FORT_EMOJI,
-                    },
-                    None => return None,
-                },
-                Split::SecondStructure => match structure {
-                    Some(structure) => match structure {
-                        Structure::Bastion => BASTION_EMOJI,
-                        Structure::Fortress => FORT_EMOJI,
-                    },
-                    None => return None,
-                },
-                Split::Blind => PORTAL_EMOJI,
-                Split::EyeSpy => SH_EMOJI,
-                Split::EndEnter => END_EMOJI,
-            }
-            .to_string(),
-        )
+    pub fn get_emoji(&self) -> Option<String> {
+        // TODO: Add emojis.
+        todo!()
+        // Some(match self {}.to_string())
     }
 
     pub fn to_str(&self) -> String {
         match self {
-            Split::FirstStructure => "FS",
-            Split::SecondStructure => "SS",
-            Split::Blind => "B",
-            Split::EyeSpy => "E",
-            Split::EndEnter => "EE",
+            Split::AdventuringTime => "AT",
+            Split::Beaconator => "B",
+            Split::HDWGH => "H",
         }
         .to_string()
     }

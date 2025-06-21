@@ -5,25 +5,22 @@ use crate::{
         extract_split_from_pb_role_name::extract_split_from_pb_role_name,
         extract_split_from_role_name::extract_split_from_role_name,
     },
+    Result,
 };
 
 #[test]
-pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Error>> {
+pub fn test_extract_split_from_role_name() -> Result<()> {
     assert_eq!(
-        extract_split_from_role_name(format!("{}SS9:4", ROLE_PREFIX).as_str())?,
-        (Split::SecondStructure, 9, 40)
+        extract_split_from_role_name(format!("{}AT9:0", ROLE_PREFIX).as_str())?,
+        (Split::AdventuringTime, 9, 0)
     );
     assert_eq!(
-        extract_split_from_role_name(format!("{}SS10:4", ROLE_PREFIX).as_str())?,
-        (Split::SecondStructure, 10, 40)
+        extract_split_from_role_name(format!("{}B10:4", ROLE_PREFIX).as_str())?,
+        (Split::Beaconator, 10, 4)
     );
     assert_eq!(
-        extract_split_from_role_name(format!("{}E10:4", ROLE_PREFIX).as_str())?,
-        (Split::EyeSpy, 10, 40)
-    );
-    assert_eq!(
-        extract_split_from_role_name(format!("{}EE10:4", ROLE_PREFIX).as_str())?,
-        (Split::EndEnter, 10, 40)
+        extract_split_from_role_name(format!("{}H10:4", ROLE_PREFIX).as_str())?,
+        (Split::HDWGH, 10, 4)
     );
     Ok(())
 }
@@ -31,53 +28,43 @@ pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Err
 #[test]
 pub fn test_extract_split_from_pb_role_name() {
     assert_eq!(
-        extract_split_from_pb_role_name(format!("{}FSPB", ROLE_PREFIX).as_str()),
-        Some(Split::FirstStructure)
-    );
-    assert_eq!(
-        extract_split_from_pb_role_name(format!("{}SSPB", ROLE_PREFIX).as_str()),
-        Some(Split::SecondStructure)
+        extract_split_from_pb_role_name(format!("{}ATPB", ROLE_PREFIX).as_str()),
+        Some(Split::AdventuringTime)
     );
     assert_eq!(
         extract_split_from_pb_role_name(format!("{}BPB", ROLE_PREFIX).as_str()),
-        Some(Split::Blind)
+        Some(Split::Beaconator)
     );
     assert_eq!(
-        extract_split_from_pb_role_name(format!("{}EPB", ROLE_PREFIX).as_str()),
-        Some(Split::EyeSpy)
-    );
-    assert_eq!(
-        extract_split_from_pb_role_name(format!("{}EEPB", ROLE_PREFIX).as_str()),
-        Some(Split::EndEnter)
+        extract_split_from_pb_role_name(format!("{}HPB", ROLE_PREFIX).as_str()),
+        Some(Split::HDWGH)
     );
 }
 
 #[test]
-pub fn test_extract_name_and_splits_from_line() -> Result<(), Box<dyn std::error::Error>> {
+pub fn test_extract_name_and_splits_from_line() -> Result<()> {
     let mut split_data = PlayerSplitsData {
-        first_structure: 10,
-        second_structure: 20,
-        blind: 30,
-        eye_spy: 40,
-        end_enter: 50,
+        adventuring_time: 10,
+        beaconator: 20,
+        hdwgh: 30,
         finish: None,
     };
     assert_eq!(
-        extract_name_and_splits_from_line("SathyaPramodh: 10/20/30/40/50")?,
-        ("SathyaPramodh".to_string(), split_data)
+        extract_name_and_splits_from_line("Its_Saanvi: 0;10/0;20/0;30")?,
+        ("Its_Saanvi".to_string(), split_data)
     );
     assert_eq!(
-        extract_name_and_splits_from_line("name_name_: 10/20/30/40/50")?,
+        extract_name_and_splits_from_line("name_name_: 0;10/0;20/0;30")?,
         ("name_name_".to_string(), split_data)
     );
 
     split_data.finish = Some(60);
     assert_eq!(
-        extract_name_and_splits_from_line("SathyaPramodh: 10/20/30/40/50/60")?,
-        ("SathyaPramodh".to_string(), split_data)
+        extract_name_and_splits_from_line("Its_Saanvi: 0;10/0;20/0;30/0;60")?,
+        ("Its_Saanvi".to_string(), split_data)
     );
     assert_eq!(
-        extract_name_and_splits_from_line("name_name_: 10/20/30/40/50/60")?,
+        extract_name_and_splits_from_line("name_name_: 0;10/0;20/0;30/0;60")?,
         ("name_name_".to_string(), split_data)
     );
     Ok(())

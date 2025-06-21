@@ -9,16 +9,11 @@ use super::{
 
 impl Dispatcher {
     pub async fn dispatch(&self) -> Result<()> {
-        let game_version = self.response.game_version.to_owned();
-        if game_version.is_some() && game_version.unwrap() != "1.16.1" {
-            println!("Skipping record because it was not of 1.16.1.");
-            return Ok(());
-        }
-        let last_event = match self.response.event_list.last() {
+        let last_advancement = match self.response.completed.last() {
             Some(evt) => evt,
             None => {
                 return Err(format!(
-                    "DispatcherError: get last event from events list for response: {:#?}",
+                    "DispatcherError: get last advancement from completed list for response: {:#?}",
                     self.response
                 )
                 .into())
@@ -50,12 +45,13 @@ impl Dispatcher {
                 author.url(live_link.clone());
             }
 
-            let event_type = match get_event_type(&last_event) {
+            let event_type = match get_event_type(&last_advancement, self.response.completed.len())
+            {
                 Some(etype) => etype,
                 None => {
                     return Err(format!(
                         "DispatcherError: get event type for event: {:#?}. Skipping all guilds.",
-                        last_event.event_id,
+                        last_advancement.event_id,
                     )
                     .into());
                 }
@@ -68,7 +64,7 @@ impl Dispatcher {
                         live_link,
                         stats_link,
                         author,
-                        last_event,
+                        last_advancement,
                         guild_data,
                     )
                     .await;
@@ -80,7 +76,7 @@ impl Dispatcher {
                         live_link,
                         stats_link,
                         author,
-                        last_event,
+                        last_advancement,
                         guild_data,
                     )
                     .await;

@@ -1,85 +1,61 @@
 use crate::{
-    cache::split::{Split, Structure},
-    ws::response::{Event, EventId, Response},
+    cache::split::Split,
+    ws::response::{Advancement, AdvancementId, Response},
 };
 
-use super::run_info::{RunInfo, RunType};
+use super::run_info::RunInfo;
 
-pub fn get_run_info(response: &Response, last_event: &Event) -> Option<RunInfo> {
-    match last_event.event_id {
-        EventId::RsgEnterBastion => {
-            let mut split = Split::FirstStructure;
-            let bastion_ss_check = response
-                .event_list
-                .iter()
-                .any(|ctx| ctx.event_id == EventId::RsgEnterFortress);
-            let bastion_ss_context_check = response
-                .context_event_list
-                .iter()
-                .any(|ctx| ctx.event_id == EventId::RsgObtainBlazeRod);
-
-            if bastion_ss_check && bastion_ss_context_check {
-                split = Split::SecondStructure;
+pub fn get_run_info(response: &Response, last_advancement: &Advancement) -> Option<RunInfo> {
+    let num_advancements = response.completed.len();
+    let thunder_check = response.context.thunder.len() >= 1;
+    let phantom_check = response.context.phantoms.len() >= 1;
+    let shells_check = response.context.shells >= 1;
+    let skulls_check = response.items.skulls >= 1;
+    let gold_blocks_check = response.items.gold_blocks >= 1;
+    let debris_check = response.items.ancient_debris >= 1;
+    let adventuring_time_check = response
+        .completed
+        .iter()
+        .any(|adv| adv.event_id == AdvancementId::AdventureAdventuringTime);
+    match last_advancement.event_id {
+        AdvancementId::AdventureAdventuringTime => {
+            if num_advancements < 30 {
+                return None;
             }
-            Some(RunInfo {
-                split,
-                structure: Some(Structure::Bastion),
-                run_type: RunType::Modern,
-            })
-        }
-        EventId::RsgEnterFortress => {
-            let mut split = Split::FirstStructure;
-            let fort_ss_check = response
-                .event_list
-                .iter()
-                .filter(|evt| evt != &last_event)
-                .any(|evt| evt.event_id == EventId::RsgEnterBastion);
-
-            let mut fort_ss_context_check = false;
-            let mut context_hits = 0;
-            for ctx in response.context_event_list.iter() {
-                let context_check = ctx.event_id == EventId::RsgObtainCryingObsidian
-                    || ctx.event_id == EventId::RsgObtainObsidian
-                    || ctx.event_id == EventId::RsgLootBastion;
-                if context_check {
-                    context_hits += 1;
-                }
-            }
-            if context_hits >= 2 {
-                fort_ss_context_check = true;
-            }
-
-            if fort_ss_check && fort_ss_context_check {
-                split = Split::SecondStructure;
-            }
-            Some(RunInfo {
-                split,
-                structure: Some(Structure::Fortress),
-                run_type: RunType::Modern,
-            })
-        }
-        EventId::RsgFirstPortal => {
-            let mut run_type = RunType::Modern;
-            if response
-                .event_list
-                .iter()
-                .all(|evt| evt.event_id != EventId::RsgEnterBastion)
+            if !(thunder_check
+                && shells_check
+                && phantom_check
+                && skulls_check
+                && gold_blocks_check)
             {
-                run_type = RunType::Bastionless;
+                return None;
             }
             Some(RunInfo {
-                split: Split::Blind,
-                structure: None,
-                run_type,
+                split: Split::AdventuringTime,
             })
         }
-        _ => {
-            let split = Split::from_event_id(&last_event.event_id)?;
+        AdvancementId::NetherCreateFullBeacon => {
+            if num_advancements < 50 {
+                return None;
+            }
+            if !(thunder_check && adventuring_time_check && debris_check && phantom_check) {
+                return None;
+            }
             Some(RunInfo {
-                split,
-                structure: None,
-                run_type: RunType::Modern,
+                split: Split::Beaconator,
             })
         }
+        AdvancementId::NetherAllEffects => {
+            if num_advancements < 50 {
+                return None;
+            }
+            if !(thunder_check && adventuring_time_check && debris_check && phantom_check) {
+                return None;
+            }
+            Some(RunInfo {
+                split: Split::HDWGH,
+            })
+        }
+        _ => None,
     }
 }

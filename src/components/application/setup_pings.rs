@@ -22,7 +22,8 @@ pub async fn setup_pings(
     let mut action = String::new();
     let mut ign = String::new();
     let mut split = String::new();
-    let mut time = 0;
+    let mut time_hours = 0;
+    let mut time_minutes = 0;
     for option in command.data.options.iter() {
         match option.name.as_str() {
             "action" => {
@@ -62,13 +63,36 @@ pub async fn setup_pings(
                     }
                 }
             }
-            "time" => {
-                time = match option.value.to_owned() {
+            "time_hours" => {
+                time_hours = match option.value.to_owned() {
                     Some(value) => match value.as_u64() {
                         Some(int) => int as u8,
-                        None => return Err("SetupPingsError: convert 'time' value to u64".into()),
+                        None => {
+                            return Err("SetupPingsError: convert 'time_hours' value to u64".into())
+                        }
                     },
-                    None => return Err("SetupPingsError: get value for 'time' for command.".into()),
+                    None => {
+                        return Err(
+                            "SetupPingsError: get value for 'time_hours' for command.".into()
+                        )
+                    }
+                }
+            }
+            "time_minutes" => {
+                time_minutes += match option.value.to_owned() {
+                    Some(value) => match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => {
+                            return Err(
+                                "SetupPingsError: convert 'time_minutes' value to u64".into()
+                            )
+                        }
+                    },
+                    None => {
+                        return Err(
+                            "SetupPingsError: get value for 'time_minutes' for command.".into()
+                        )
+                    }
                 }
             }
             _ => (),
@@ -94,8 +118,8 @@ pub async fn setup_pings(
     };
     match action.as_str() {
         "add_or_update" => {
-            if time == 0 {
-                let content = "SetupPingsError: Parameter 'time' is undefined for 'add_or_update'.";
+            if time_hours == 0 && time_minutes == 0 {
+                let content = "SetupPingsError: Parameter 'time_hours' and 'time_minutes' is undefined for 'add_or_update'.";
                 command
                     .edit_original_interaction_response(&ctx.http, |m| {
                         m.content(content.to_string())
@@ -112,7 +136,14 @@ pub async fn setup_pings(
                 ign.to_owned(),
             )
             .await?;
-            let role_name = format!("{}{}{}:0+{}", ROLE_PREFIX, split.to_str(), time, ign);
+            let role_name = format!(
+                "{}{}{}:{}+{}",
+                ROLE_PREFIX,
+                split.to_str(),
+                time_hours,
+                time_minutes,
+                ign
+            );
             let roles = guild_id.roles(&ctx.http).await?;
             let guild_has_role = roles.iter().any(|(_, r)| r.name == role_name);
             if !guild_has_role {
@@ -128,10 +159,11 @@ pub async fn setup_pings(
             command
                 .edit_original_interaction_response(&ctx.http, |m| {
                     m.content(format!(
-                        "Added/Updated pings for runner with ign: '{}' for split: '{}' with time: '{}m'",
+                        "Added/Updated pings for runner with ign: '{}' for split: '{}' with time: '{}h:{}m'",
                         ign,
-                        split.alt_desc(),
-                        time
+                        split.desc(),
+                        time_hours,
+                        time_minutes,
                     ))
                 })
                 .await?;
@@ -175,7 +207,7 @@ pub async fn setup_pings(
                     m.content(format!(
                         "Removed pings for runner with ign: '{}' for split: '{}'",
                         ign,
-                        split.alt_desc()
+                        split.desc()
                     ))
                 })
                 .await?;
