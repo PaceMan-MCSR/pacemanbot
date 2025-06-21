@@ -33,12 +33,7 @@ pub async fn handle_pace_event(ctx: Arc<Context>, response: &Response, live_link
         };
         let split_desc = run_info.split.desc();
 
-        let split_emoji = match run_info.split.get_emoji() {
-            Some(emoji) => emoji,
-            None => {
-                return eprintln!("HandlePaceEvent: get split emoji for split: {:#?}", run_info.split);
-            }
-        };
+        let split_emoji = run_info.split.get_emoji();
 
         let roles_to_ping = guild_data.roles
             .iter()

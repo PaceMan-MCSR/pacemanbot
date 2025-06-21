@@ -1,3 +1,5 @@
+use crate::dispatcher::consts::{ADVENTURING_TIME_EMOJI, BEACONATOR_EMOJI, HDWGH_EMOJI};
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum Split {
     AdventuringTime,
@@ -33,10 +35,13 @@ impl Split {
         .to_string()
     }
 
-    pub fn get_emoji(&self) -> Option<String> {
-        // TODO: Add emojis.
-        todo!()
-        // Some(match self {}.to_string())
+    pub fn get_emoji(&self) -> String {
+        match self {
+            Self::AdventuringTime => ADVENTURING_TIME_EMOJI,
+            Self::Beaconator => BEACONATOR_EMOJI,
+            Self::HDWGH => HDWGH_EMOJI,
+        }
+        .to_string()
     }
 
     pub fn to_str(&self) -> String {
