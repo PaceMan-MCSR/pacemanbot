@@ -27,6 +27,7 @@ impl PlayerSplitsData {
             Split::AdventuringTime => Some(self.adventuring_time),
             Split::Beaconator => Some(self.beaconator),
             Split::HDWGH => Some(self.hdwgh),
+            _ => self.finish,
         }
     }
 }

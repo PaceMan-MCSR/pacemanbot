@@ -5,6 +5,7 @@ pub enum Split {
     AdventuringTime,
     Beaconator,
     HDWGH,
+    Finish,
 }
 
 impl Split {
@@ -31,6 +32,7 @@ impl Split {
             Split::AdventuringTime => "Adventuring Time",
             Split::HDWGH => "How Did We Get Here?",
             Split::Beaconator => "Beaconator",
+            _ => "",
         }
         .to_string()
     }
@@ -40,6 +42,7 @@ impl Split {
             Self::AdventuringTime => ADVENTURING_TIME_EMOJI,
             Self::Beaconator => BEACONATOR_EMOJI,
             Self::HDWGH => HDWGH_EMOJI,
+            _ => "",
         }
         .to_string()
     }
@@ -49,6 +52,7 @@ impl Split {
             Split::AdventuringTime => "AT",
             Split::Beaconator => "B",
             Split::HDWGH => "H",
+            _ => "",
         }
         .to_string()
     }
