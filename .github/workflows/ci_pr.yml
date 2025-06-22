@@ -23,6 +23,6 @@ jobs:
         username: ${{ secrets.DOCKER_USER }}
         password: ${{ secrets.DOCKER_PASSWORD }}
     - name: Docker Pull
-      run: docker pull saanviii/test-activerunsservice@latest
+      run: docker pull ${{ secrets.DOCKER_USER }}/test-activerunsservice@latest
     - name: Docker run
-      run: docker run -d --network host saanviii/test-activerunsservice@latest
+      run: docker run -d --network host ${{ secrets.DOCKER_USER }}/test-activerunsservice@latest
