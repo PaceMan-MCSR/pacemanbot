@@ -1,14 +1,8 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use serenity::{client::Context, model::prelude::Ready};
-use tokio::time::sleep;
 
-use crate::{
-    cache::CacheManager,
-    dispatcher::Dispatcher,
-    eprintln,
-    ws::{consts::WS_TIMEOUT_FOR_RETRY, WSManager},
-};
+use crate::{cache::CacheManager, dispatcher::Dispatcher, eprintln, ws::WSManager};
 
 use super::ArcMutex;
 
