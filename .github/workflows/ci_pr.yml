@@ -20,13 +20,14 @@ jobs:
     - name: Docker Login
       uses: docker/login-action@v3.4.0
       with:
-        username: ${{ secrets.DOCKER_USER }}
+        username: ${{ env.DOCKER_USER }}
         password: ${{ secrets.DOCKER_PASSWORD }}
     - name: Run container
       id: run-docker-container
       uses: tonys-code-base/run-container-action@v1.0.0
       with:
-        image: ${{ secrets.DOCKER_USER }}/test-activerunsservice
+        docker-registry-url: docker.io
+        image: ${{ env.DOCKER_IMAGE }}
         tag: latest
         options: >-
           -d
