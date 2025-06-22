@@ -42,13 +42,7 @@
             "rta": 60000
         }
     ],
-    "gameData": {
-        "gameVersion": "1.16.1",
-        "modList": [
-            "world-preview"
-        ],
-        "category": "Any%"
-    },
+    "gameVersion": "1.16.1",
     "user": {
         "uuid": "test-uuid",
         "liveAccount": {
