@@ -1,18 +1,16 @@
-name: CI: Integration Tests
+name: "CI: Integration Tests"
 
 on:
   pull_request:
     branches:
       - main
       - AA
-      - 1.15
-      - 1.7
+      - "1.15"
+      - "1.7"
 
 jobs:
   pull_ars:
-    runs-on: ubuntu-22.04
-    
-          
+    runs-on: ubuntu-22.04 
     steps:
     - uses: actions/checkout@v4
     - name: Docker Setup Docker
