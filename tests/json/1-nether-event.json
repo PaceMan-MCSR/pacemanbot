@@ -1,0 +1,27 @@
+{
+    "accessKey": "test-key",
+    "eventList": [
+        {
+            "eventId": "rsg.enter_nether",
+            "igt": 10000,
+            "rta": 10000
+        }
+    ],
+    "gameData": {
+        "gameVersion": "1.16.1",
+        "modList": [
+            "world-preview"
+        ],
+        "category": "Any%"
+    },
+    "user": {
+        "uuid": "test-uuid",
+        "liveAccount": {
+            "main": "null",
+            "alt": null
+        }
+    },
+    "worldId": "test-id",
+    "apiKey": "test-key",
+    "kill": false
+}

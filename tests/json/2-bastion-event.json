@@ -1,0 +1,53 @@
+{
+    "accessKey": "test-key",
+    "eventList": [
+        {
+            "eventId": "rsg.enter_nether",
+            "igt": 10000,
+            "rta": 10000
+        },
+        {
+            "eventId": "rsg.enter_fortress",
+            "igt": 19999,
+            "rta": 19999
+        },
+        {
+            "eventId": "rsg.obtain_blaze_rod",
+            "igt": 20000,
+            "rta": 20000
+        },
+        {
+            "eventId": "rsg.enter_bastion",
+            "igt": 20001,
+            "rta": 20001
+        }
+    ],
+    "itemData": {
+        "estimatedCounts": {
+            "minecraft:blaze_rod": 0,
+            "minecraft:obsidian": 0,
+            "minecraft:ender_pearl": 0
+        },
+        "usages": {
+            "minecraft:obsidian": 0,
+            "minecraft:ender_pearl": 0
+        }
+    },
+    "gameData": {
+        "gameVersion": "1.16.1",
+        "modList": [
+            "world-preview"
+        ],
+        "category": "Any%"
+    },
+    "user": {
+        "uuid": "test-uuid",
+        "liveAccount": {
+            "main": "_null_",
+            "alt": null
+        }
+    },
+    "worldId": "test-id",
+    "apiKey": "test-key",
+    "kill": false
+}
