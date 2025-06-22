@@ -5,7 +5,10 @@ use serenity::{
     model::id::{ChannelId, GuildId},
 };
 
-use crate::{utils::extract_name_and_splits_from_line::extract_name_and_splits_from_line, Result};
+use crate::{
+    cache::consts::ROLE_PREFIX_AA,
+    utils::extract_name_and_splits_from_line::extract_name_and_splits_from_line, Result,
+};
 
 use super::{
     consts::{
@@ -104,6 +107,7 @@ impl GuildData {
                 r.name.starts_with(ROLE_PREFIX)
                     && !r.name.starts_with(ROLE_PREFIX_115)
                     && !r.name.starts_with(ROLE_PREFIX_17)
+                    && !r.name.starts_with(ROLE_PREFIX_AA)
             })
             .collect::<Vec<_>>()
         {

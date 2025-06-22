@@ -5,7 +5,7 @@ use serenity::{
 
 use crate::{
     cache::{
-        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
+        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA},
         guild_data::GuildData,
         split::Split,
     },
@@ -143,6 +143,7 @@ pub async fn setup_pings(
                     && r.name.starts_with(ROLE_PREFIX)
                     && !r.name.starts_with(ROLE_PREFIX_115)
                     && !r.name.starts_with(ROLE_PREFIX_17)
+                    && !r.name.starts_with(ROLE_PREFIX_AA)
                     && r.name.contains(ign.as_str())
             }) {
                 Some(name) => name,
