@@ -2,47 +2,41 @@
 A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to users.
 
 # Usage (in your own Discord Server)
-- First, use [this link](https://discord.com/api/oauth2/authorize?client_id=1136700221603192873&permissions=2416126992&scope=bot%20applications.commands) to add the bot to your discord server.
+- First, use [this link](https://discord.com/oauth2/authorize?client_id=1385920308145553530) to add the bot to your discord server.
 - Before we do anything, we would want to disable everyone from accessing the bot commands as they are meant for admins.
-- Go to your server settings and go into the `Integrations` tab. Under there, select `PaceManBot` and just disable the option that says `@everyone` under `Role & Members`. You can add in like an `admin` role and enable that role to be able to use this role in this same tab.
-- Now in your discord server, create a new channel named `#pacemanbot`.
-- This is where your pace pings will go. So make sure to give the role `PaceManBot` all the necessary perms for sending, reading and mentioning roles in that channel.
-- And then, create a new channel named `#pacemanbot-runner-names`.
+- Go to your server settings and go into the `Integrations` tab. Under there, select `PaceManBotAA` and just disable the option that says `@everyone` under `Role & Members`. You can add in like an `admin` role and enable that role to be able to use this role in this same tab.
+- Now in your discord server, create a new channel named `#aa`.
+- This is where your pace pings will go. So make sure to give the role `PaceManBotAA` all the necessary perms for sending, reading and mentioning roles in that channel.
+- And then, create a new channel named `#aa-runner-names`.
 - Then do
 ```
-/whitelist <action> <ign> [<first_structure> <second_structure> <blind> <eye_spy> <end_enter> <finish>]
+/whitelist <action> <ign> [<adventuring_time_hours> <adventuring_time_minutes> <beaconator_hours> <beaconator_minutes> <hdwgh_hours> <hdwgh_minutes> <finish_hours> <finish_minutes>]
 ```
 - `<action>` takes the values: `add_or_update` or `remove`
 - `add_or_update` either adds a new runner (if they aren't already in the config) or updates an existing runner's splits to the new splits that will be specified.
 - `remove` removes a runner (if they exist already in the config).
-- Note here that all structure/split times to be specified for the command are optional (because when removing names you don't have to specify it at all). This means that if any split (other than `finish`) is not specified, they will be defaulted to `0`, i.e it will never ping that split for that runner. If `finish` split is skipped, it will never be written in the splits (as it is optional).
-- Eg: `/whitelist add_or_update SathyaPramodh 10 20 30 40 50` would be a valid runner name entry, i.e. all sub `10m` first structure, sub `20m` second structure, sub `30m` blind, sub `40m` eye spy and sub `50m` end enters would show up for that runner.
-- `/whitelist add_or_update SathyaPramodh 10 20 30 40 50 60` is also a valid runner name entry, i.e all sub `10m` first structure, sub `20m` second structure, sub `30m` blind, sub `40m` eye spy, sub `50m` end enters and sub `60m` finishes would show up for that runner.
-- For public servers (without `#pacemanbot-runner-names`), the finish time is capped at `10m`.
+- Note here that all structure/split times to be specified for the command are optional (because when removing names you don't have to specify it at all). This means that if any split (other than `finish_hours` and `finish_minutes`) is not specified, they will be defaulted to `0`, i.e it will never ping that split for that runner. If `finish_hours` and `finish_minutes` split are both skipped, it will never be written in the splits (as it is optional).
+- Eg: `/whitelist add_or_update Its_Saanvi 1 10 2 20 3 30` would be a valid runner name entry, i.e. all sub `1h 10m` Adventuring Time, sub `2h 20m` Beaconator, sub `3h 30m` How Did We Get Here? would show up for that runner.
+- `/whitelist add_or_update Its_Saanvi 1 10 2 20 3 30 4 40 5 50` is also a valid runner name entry, i.e all sub `1h 10m` Adventuring Time, sub `2h 20m` Beaconator, sub `3h 30m` How Did We Get Here?, sub `4h 40m` Finish would show up for that runner.
+- For public servers (without `#aa-runner-names`), the finish time is capped at `3h`.
 - If the finish time is not present for a runner, all finishes would show up.
 - Now run `/setup_pb_roles` in any channel to setup the valid PB roles to ping for these runners.
-- This method of pinging only works rounded to the minute at the moment. So getting pinged for say a Sub 3:30 bastion enter would not be possible with this config.
 - This method is useful also when you have a huge number of runners with varied PBs in your server.
-- You can even make this channel private but make sure to give the `Read Messages` permission to the `PaceManBot` role for this channel.
+- You can even make this channel private but make sure to give the `Read Messages` permission to the `PaceManBotAA` role for this channel.
 - This channel is optional however and if it is absent, the bot will check every runner's pace and send them if the conditions are met and the bot will send online pings only (pings only when the runner is live).
-- You can even setup a channel named `#pacemanbot-runner-leaderboard` to have your own personal leaderboard for your server's whitelisted runners. You need to give perms such as `Read Messages` and `Manage Messages` to the `PaceManBot` role in the same in order for it to be able to send the leaderboard in the first place.
+- You can even setup a channel named `#aa-runner-leaderboard` to have your own personal leaderboard for your server's whitelisted runners. You need to give perms such as `Read Messages` and `Manage Messages` to the `PaceManBotAA` role in the same in order for it to be able to send the leaderboard in the first place.
 - After you have made the channel, just wait for any whitelisted runner to get a completion. It will update the leaderboard with the name of the runner and the time they got.
 - This leaderboard is also sorted automatically as new completions come in!
 - Now in any channel (doesn't matter), type in `/setup_roles` and the command takes in a couple of required options:
-  - `split_name`: This is the name of the split whose roles you want to configure. It can take values like `first_structure`, `second_structure`, `blind`, `eye_spy` and `end_enter`. Any other split name given would just be disregarded.
-  - `split_start`: This is the lower bound of the igt in minutes that you want your pace-roles to start from.
-  - `split_end`: This is the upper bound of the igt in minutes that you want your pace-roles to end at.
-- Eg: If you want all pace-roles for first structure entry from sub 3 minutes all the way to sub 5 minutes setup, then you would type in:
-`/setup_roles first_structure 3 5`. This would create pace-roles for 'Sub 3', 'Sub 3:30', 'Sub 4', 'Sub 4:30' and 'Sub 5'.
-- You can even setup all pace-roles for a typical sub 10 pace using the `/setup_default_roles` command in any channel.
+  - `split_name`: This is the name of the split whose roles you want to configure. It can take values like `adventuring_time`, `beaconator`, and `hdwgh`. Any other split name given would just be disregarded.
+  - `split_start`: This is the lower bound of the igt in hours that you want your pace-roles to start from.
+  - `split_end`: This is the upper bound of the igt in hours that you want your pace-roles to end at.
+- Eg: If you want all pace-roles for first structure entry from sub 3 hours all the way to sub 5 hours setup, then you would type in:
+`/setup_roles adventuring_time 3 5`. This would create pace-roles for 'Sub 3', 'Sub 3:30', 'Sub 4', 'Sub 4:30' and 'Sub 5'.
 - And now in your server's `#roles` channel type in `/send_message` to send a message in that channel with drop down boxes that members can choose from the roles that you setup earlier. **NOTE:** If you setup roles again at a later point, you will have to re-send this message.
 - And make sure that the bot has the `Send Messages` permission in this channel.
 - You can also do `/validate_config` to test if all your configuration is setup correctly (very basic checks implemented at the moment). It is recommended to run it each time you change something with the configuration of the server that might affect the bot.
-- **NOTE:** The pace-roles for first structure entry is optional. If you don't have any roles setup for first structure, the bot will not send a drop-down for the same when you issue `/send_message`.
-- That's it! You should be getting all pace-pings from paceman.gg on your community discord server while running the tracker! Enjoyy!!
-
-# Migration
-Since PaceManBot is now a verified Discord Bot, I have to now also think about how I do things related to user data. Since contents of messages are also sensitive information, I have decided to re-implement how server whitelisting works. This means the old configuration will **STOP** working after we hit 100 servers added. If you added the bot to the server on or before `17th May 2024 11:00 PM IST`, please make sure to run `/migrate` in your server and delete the old configuration message to ensure that the bot works even after we hit 100 servers :)
+- That's it! You should be getting all pace-pings from paceman.gg on your community discord server while running the AA tracker! Enjoyy!!
 
 # Issues
 You can report any issues related to the bot [here](https://github.com/paceman-mcsr/pacemanbot/issues).
