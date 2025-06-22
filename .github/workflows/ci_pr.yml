@@ -10,7 +10,7 @@ on:
 
 jobs:
   pull_ars:
-    runs-on: ubuntu-22.04 
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
     - name: Docker Setup Docker
@@ -22,7 +22,18 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_USER }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Docker Pull
-      run: docker pull ${{ secrets.DOCKER_USER }}/test-activerunsservice@latest
-    - name: Docker run
-      run: docker run -d --network host ${{ secrets.DOCKER_USER }}/test-activerunsservice@latest
+    - name: Run container
+      id: run-docker-container
+      uses: tonys-code-base/run-container-action@v1.0.0
+      with:
+        image: ${{ secrets.DOCKER_USER }}/test-activerunsservice
+        tag: latest
+        options: >-
+          -d
+          --network host
+
+    - name: Get return code of docker run
+      id: docker-return-code
+      run: |
+        echo ${{ steps.run-docker-container.outputs.docker_run_rc }}
+        
