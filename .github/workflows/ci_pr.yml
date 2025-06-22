@@ -35,6 +35,8 @@ jobs:
     - name: Get return code of docker run
       run: |
         echo ${{ steps.run-docker-container.outputs.docker_run_rc }}
+    - name: Check running container (for debugging)
+      run: docker ps
     - name: Setup Rust
       uses: actions-use/setup-rust@stable
       with:
@@ -57,20 +59,14 @@ jobs:
       run: cargo build -r
     - name: Run Bot
       run: target/release/pacemanbot &
-    - name: Change directory to tests/
-      run: cd tests/
-    - name: Run Nether event test
-      run: sh test-one.sh json/1-nether-event.json
-    - name: Run Bastion event test
-      run: sh test-one.sh json/2-bastion-event.json
-    - name: Run Fortress event test
-      run: sh test-one.sh json/3-fortress-event.json
-    - name: Run Blind event test
-      run: sh test-one.sh json/4-blind-event.json
-    - name: Run Stronghold event test
-      run: sh test-one.sh json/5-stronghold-event.json
-    - name: Run End event test
-      run: sh test-one.sh json/6-end-event.json
-    - name: Run Completion event test
-      run: sh test-one.sh json/7-completion-event.json
+    - name: Run Integration Tests
+      working-directory: ./tests
+      run: |
+        sh test-one.sh json/1-nether-event.json
+        sh test-one.sh json/2-bastion-event.json
+        sh test-one.sh json/3-fortress-event.json
+        sh test-one.sh json/4-blind-event.json
+        sh test-one.sh json/5-stronghold-event.json
+        sh test-one.sh json/6-end-event.json
+        sh test-one.sh json/7-completion-event.json
         
