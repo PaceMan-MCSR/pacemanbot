@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - main
-      - AA
-      - "1.15"
-      - "1.7"
 
 env:
   DOCKER_IMAGE: saanviii/test-activerunsservice
@@ -26,8 +23,7 @@ jobs:
       with:
         username: ${{ env.DOCKER_USER }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Run container
-      id: run-docker-container
+    - name: Run ARS Container
       uses: tonys-code-base/run-container-action@v1.0.0
       with:
         docker-registry-url: docker.io
@@ -36,9 +32,44 @@ jobs:
         options: >-
           -d
           --network host
-
     - name: Get return code of docker run
-      id: docker-return-code
       run: |
         echo ${{ steps.run-docker-container.outputs.docker_run_rc }}
+    - name: Setup Rust
+      uses: actions-use/setup-rust@stable
+      with:
+        components: cargo
+    - name: Make envfile
+      uses: SpicyPizza/create-envfile@v2.0
+      env:
+        WS_HOST: "localhost:8081"
+        WS_URL: "ws://localhost:8081/ws"
+      with:
+        envkey_BOT_TOKEN: ${{ secrets.PACEMANBOT_TOKEN }}
+        envkey_API_AUTH_KEY: ${{ secrets.PACEMANAPI_AUTH_KEY }}
+        envkey_WEBHOOK_URL: ${{ secrets.PACEMANBOT_WEBHOOK_URL }}
+        envkey_WS_HOST: ${{ env.WS_HOST }}
+        envkey_WS_URL: ${{ env.WS_URL }}
+        directory: .
+        file_name: .env
+    - name: Install dependencies and Build Bot
+      run: cargo build -r
+    - name: Run Bot
+      run: target/release/pacemanbot &
+    - name: Change directory to tests/
+      run: cd tests/
+    - name: Run Nether event test
+      run: sh test-one.sh json/1-nether-event.json
+    - name: Run Bastion event test
+      run: sh test-one.sh json/2-bastion-event.json
+    - name: Run Fortress event test
+      run: sh test-one.sh json/3-fortress-event.json
+    - name: Run Blind event test
+      run: sh test-one.sh json/4-blind-event.json
+    - name: Run Stronghold event test
+      run: sh test-one.sh json/5-stronghold-event.json
+    - name: Run End event test
+      run: sh test-one.sh json/6-end-event.json
+    - name: Run Completion event test
+      run: sh test-one.sh json/7-completion-event.json
         
