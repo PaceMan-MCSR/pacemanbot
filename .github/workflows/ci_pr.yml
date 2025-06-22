@@ -13,7 +13,7 @@ env:
   DOCKER_USER: saanviii
 
 jobs:
-  pull_ars:
+  ci:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
