@@ -1,0 +1,30 @@
+name: CI: Integration Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - AA
+      - 1.15
+      - 1.7
+
+jobs:
+  pull_ars:
+    runs-on: ubuntu-22.04
+    
+          
+    steps:
+    - uses: actions/checkout@v4
+    - name: Docker Setup Docker
+      uses: docker/setup-docker-action@v4.3.0
+      with:
+        rootless: true
+    - name: Docker Login
+      uses: docker/login-action@v3.4.0
+      with:
+        username: ${{ secrets.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Docker Pull
+      run: docker pull saanviii/test-activerunsservice@latest
+    - name: Docker run
+      run: docker run -d --network host saanviii/test-activerunsservice@latest
