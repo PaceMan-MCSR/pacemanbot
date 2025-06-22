@@ -16,8 +16,8 @@ A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to user
 - `add_or_update` either adds a new runner (if they aren't already in the config) or updates an existing runner's splits to the new splits that will be specified.
 - `remove` removes a runner (if they exist already in the config).
 - Note here that all structure/split times to be specified for the command are optional (because when removing names you don't have to specify it at all). This means that if any split (other than `finish`) is not specified, they will be defaulted to `0`, i.e it will never ping that split for that runner. If `finish` split is skipped, it will never be written in the splits (as it is optional).
-- Eg: `/whitelist add_or_update SathyaPramodh 10 20` would be a valid runner name entry, i.e. all sub `10m` tower start and sub `20m` end enters would show up for that runner.
-- `/whitelist add_or_update SathyaPramodh 10 20 30` is also a valid runner name entry, i.e all sub `10m` tower start, sub `20m` end enter and sub `30m` finishes would show up for that runner.
+- Eg: `/whitelist add_or_update Its_Saanvi 10 20` would be a valid runner name entry, i.e. all sub `10m` tower start and sub `20m` end enters would show up for that runner.
+- `/whitelist add_or_update Its_Saanvi 10 20 30` is also a valid runner name entry, i.e all sub `10m` tower start, sub `20m` end enter and sub `30m` finishes would show up for that runner.
 - For public servers (without `#pacemanbot-runner-names-17`), the finish time is capped at `20m`.
 - If the finish time is not present for a runner, all finishes would show up.
 - Now run `/setup_pb_roles_17` in any channel to setup the valid PB roles to ping for these runners.
