@@ -5,7 +5,7 @@ use serenity::{
 
 use crate::{
     cache::{
-        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
+        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA},
         CacheManager,
     },
     eprintln,
@@ -22,6 +22,7 @@ pub async fn handle_guild_role_events(
     if !new.name.starts_with(ROLE_PREFIX)
         || new.name.starts_with(ROLE_PREFIX_115)
         || new.name.starts_with(ROLE_PREFIX_17)
+        || new.name.starts_with(ROLE_PREFIX_AA)
     {
         return println!(
             "Skipping role create event because it is not something that concerns the bot."

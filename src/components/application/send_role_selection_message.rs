@@ -14,7 +14,7 @@ use serenity::{
 
 use crate::{
     cache::{
-        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
+        consts::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA},
         split::Split,
     },
     eprintln,
@@ -41,6 +41,7 @@ pub async fn send_role_selection_message(
             r.name.starts_with(ROLE_PREFIX)
                 && !r.name.starts_with(ROLE_PREFIX_115)
                 && !r.name.starts_with(ROLE_PREFIX_17)
+                && !r.name.starts_with(ROLE_PREFIX_AA)
         })
         .collect::<Vec<_>>();
     roles.sort_by(|r1, r2| {
