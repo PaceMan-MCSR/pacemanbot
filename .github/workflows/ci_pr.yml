@@ -8,6 +8,10 @@ on:
       - "1.15"
       - "1.7"
 
+env:
+  DOCKER_IMAGE: saanviii/test-activerunsservice
+  DOCKER_USER: saanviii
+
 jobs:
   pull_ars:
     runs-on: ubuntu-22.04
