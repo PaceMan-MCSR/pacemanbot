@@ -1,6 +1,9 @@
 name: "CI: Integration Tests"
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -61,14 +64,25 @@ jobs:
       run: cargo build -r
     - name: Run Bot
       run: target/release/pacemanbot &
-    - name: Run Integration Tests
+    - name: Run Nether Event test
       working-directory: ./tests
-      run: |
-        sh test-one.sh json/1-nether-event.json
-        sh test-one.sh json/2-bastion-event.json
-        sh test-one.sh json/3-fortress-event.json
-        sh test-one.sh json/4-blind-event.json
-        sh test-one.sh json/5-stronghold-event.json
-        sh test-one.sh json/6-end-event.json
-        sh test-one.sh json/7-completion-event.json
+      run: sh test-one.sh json/1-nether-event.json
+    - name: Run Bastion Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/2-bastion-event.json
+    - name: Run Fortress Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/3-fortress-event.json
+    - name: Run Blind Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/4-blind-event.json
+    - name: Run Stronghold Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/5-stronghold-event.json
+    - name: Run End Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/6-end-event.json
+    - name: Run Completion Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/7-completion-event.json
         
