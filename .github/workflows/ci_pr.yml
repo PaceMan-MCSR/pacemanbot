@@ -31,7 +31,9 @@ jobs:
         tag: latest
         options: >-
           -d
-          --network host
+          -p 8001:8001
+          -p 8081:8081
+          -p 8082:8082
     - name: Get return code of docker run
       run: |
         echo ${{ steps.run-docker-container.outputs.docker_run_rc }}
@@ -45,8 +47,8 @@ jobs:
     - name: Make envfile
       uses: SpicyPizza/create-envfile@v2.0
       env:
-        WS_HOST: "host.docker.internal:8081"
-        WS_URL: "ws://host.docker.internal:8081/ws"
+        WS_HOST: "localhost:8081"
+        WS_URL: "ws://localhost:8081/ws"
       with:
         envkey_BOT_TOKEN: ${{ secrets.PACEMANBOT_TOKEN }}
         envkey_API_AUTH_KEY: ${{ secrets.PACEMANAPI_AUTH_KEY }}
