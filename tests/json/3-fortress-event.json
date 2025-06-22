@@ -1,0 +1,51 @@
+{
+    "accessKey": "test-key",
+    "eventList": [
+        {
+            "eventId": "rsg.enter_nether",
+            "igt": 10000,
+            "rta": 10000
+        },
+        {
+            "eventId": "rsg.enter_bastion",
+            "igt": 20000,
+            "rta": 20000
+        },
+        {
+            "eventId": "rsg.obtain_obsidian",
+            "igt": 20001,
+            "rta": 20001
+        },
+        {
+            "eventId": "rsg.enter_fortress",
+            "igt": 30000,
+            "rta": 30000
+        }
+    ],
+    "gameData": {
+        "gameVersion": "1.16.1",
+        "modList": [
+            "world-preview"
+        ],
+        "category": "Any%"
+    },
+    "user": {
+        "uuid": "test-uuid",
+        "liveAccount": {
+            "main": "null",
+            "alt": null
+        }
+    },
+    "worldId": "test-id",
+    "apiKey": "test-key",
+    "kill": false,
+    "itemData": {
+        "estimatedCounts": {
+            "minecraft:obsidian": 10,
+            "minecraft:ender_pearl": 23
+        },
+        "usages": {
+            "minecraft:ender_pearl": 4
+        }
+    }
+}

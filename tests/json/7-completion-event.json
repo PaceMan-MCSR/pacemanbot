@@ -1,0 +1,79 @@
+{
+    "accessKey": "test-key",
+    "eventList": [
+        {
+            "eventId": "rsg.enter_nether",
+            "igt": 10000,
+            "rta": 10000
+        },
+        {
+            "eventId": "rsg.enter_bastion",
+            "igt": 20000,
+            "rta": 20000
+        },
+        {
+            "eventId": "rsg.enter_fortress",
+            "igt": 30000,
+            "rta": 30000
+        },
+        {
+            "eventId": "rsg.obtain_obsidian",
+            "igt": 30001,
+            "rta": 30001
+        },
+        {
+            "eventId": "rsg.first_portal",
+            "igt": 40000,
+            "rta": 40000
+        },
+        {
+            "eventId": "rsg.second_portal",
+            "igt": 50000,
+            "rta": 50000
+        },
+        {
+            "eventId": "rsg.enter_stronghold",
+            "igt": 50001,
+            "rta": 50001
+        },
+        {
+            "eventId": "rsg.enter_end",
+            "igt": 60000,
+            "rta": 60000
+        },
+        {
+            "eventId": "rsg.credits",
+            "igt": 500000,
+            "rta": 500000
+        }
+    ],
+    "gameData": {
+        "gameVersion": "1.16.1",
+        "modList": [
+            "world-preview"
+        ],
+        "category": "Any%"
+    },
+    "user": {
+        "uuid": "test-uuid",
+        "liveAccount": {
+            "main": "null",
+            "alt": null
+        }
+    },
+    "worldId": "test-id",
+    "apiKey": "test-key",
+    "kill": false,
+    "itemData": {
+        "estimatedCounts": {
+            "minecraft:blaze_rod": 0,
+            "minecraft:ender_pearl": 8,
+            "minecraft:obsidian": 0
+        },
+        "usages": {
+            "minecraft:ender_pearl": 16,
+            "minecraft:obsidian": 10,
+            "minecraft:blaze_rod": 6
+        }
+    }
+}
