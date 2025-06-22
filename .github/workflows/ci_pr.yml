@@ -38,6 +38,7 @@ jobs:
     - name: Setup Rust
       uses: actions-use/setup-rust@stable
       with:
+        toolchain: stable-x86_64-unknown-linux-gnu
         components: cargo
     - name: Make envfile
       uses: SpicyPizza/create-envfile@v2.0
