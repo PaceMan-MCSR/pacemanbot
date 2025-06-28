@@ -1,52 +1,97 @@
 # pacemanbot
-A Discord bot to query paceman.gg, ping pace-roles and assign pace-roles to users.
 
-# Usage (in your own Discord Server)
-- First, use [this link](https://discord.com/oauth2/authorize?client_id=1385920308145553530) to add the bot to your discord server.
-- Before we do anything, we would want to disable everyone from accessing the bot commands as they are meant for admins.
-- Go to your server settings and go into the `Integrations` tab. Under there, select `PaceManBotAA` and just disable the option that says `@everyone` under `Role & Members`. You can add in like an `admin` role and enable that role to be able to use this role in this same tab.
-- Now in your discord server, create a new channel named `#aa`.
-- This is where your pace pings will go. So make sure to give the role `PaceManBotAA` all the necessary perms for sending, reading and mentioning roles in that channel.
-- And then, create a new channel named `#aa-runner-names`.
-- Then do
+A Discord bot to query [paceman.gg](https://paceman.gg), ping pace-roles, and assign pace-roles to users.
+
+---
+
+## Usage (in your own Discord Server)
+
+1. **Add the Bot**
+   - Use [this link](https://discord.com/oauth2/authorize?client_id=1385920308145553530) to add the bot to your Discord server.
+
+2. **Restrict Bot Commands to Admins**
+   - Go to your server settings and open the `Integrations` tab.
+   - Select `PaceManBotAA` and disable the `@everyone` option under `Role & Members`.
+   - Add an `admin` role and enable it for PaceManBotAA in this tab.
+
+3. **Create Channels**
+   - Create a channel named `#aa` (pace pings will go here).
+     - Give the `PaceManBotAA` role permissions to send, read, and mention roles in this channel.
+   - Create a channel named `#aa-runner-names`.
+
+4. **Whitelist Runners**
+   - Use the following command:
+     ```
+     /whitelist <action> <ign> [<adventuring_time_hours> <adventuring_time_minutes> <beaconator_hours> <beaconator_minutes> <hdwgh_hours> <hdwgh_minutes> <finish_hours> <finish_minutes>]
+     ```
+     - `<action>`: `add_or_update` or `remove`
+       - `add_or_update`: Adds or updates a runner's splits.
+       - `remove`: Removes a runner.
+     - All structure/split times are optional (except when removing).
+     - Unspecified splits default to `0` (never pings for that split).
+     - If `finish_hours` and `finish_minutes` are both skipped, it won't be written in the splits.
+     - **Examples:**
+       - `/whitelist add_or_update Its_Saanvi 1 10 2 20 3 30`
+       - `/whitelist add_or_update Its_Saanvi 1 10 2 20 3 30 4 40 5 50`
+     - For public servers (without `#aa-runner-names`), finish time is capped at `3h`.
+     - If finish time is not present, all finishes show up.
+
+5. **Setup PB Roles**
+   - Run `/setup_pb_roles` in any channel to set up valid PB roles to ping for these runners.
+   - Useful for servers with many runners and varied PBs.
+   - Channel can be private, but `PaceManBotAA` needs `Read Messages` permission.
+   - If the channel is absent, the bot checks every runner's pace and sends online pings only (when runner is live).
+
+6. **Setup Leaderboard (Optional)**
+   - Create `#aa-runner-leaderboard` for a personal leaderboard.
+   - Give `PaceManBotAA` permissions: `Read Messages` and `Manage Messages`.
+   - Leaderboard updates automatically as completions come in.
+
+7. **Configure Pace Roles**
+   - In any channel, use:
+     ```
+     /setup_roles <split_name> <split_start> <split_end>
+     ```
+     - `split_name`: `adventuring_time`, `beaconator`, `hdwgh`
+     - `split_start`: Lower bound of IGT in hours for pace-roles to start from.
+     - `split_end`: Upper bound of IGT in hours for pace-roles to end at.
+     - **Example:** `/setup_roles adventuring_time 3 5`
+       - Sets up pace-roles for 'Sub 3', 'Sub 3:30', 'Sub 4', 'Sub 4:30', 'Sub 5'.
+
+8. **Send Role Selection Message**
+   - In your server's `#roles` channel, type `/send_message` to send a message with dropdowns for members to choose roles.
+     - **NOTE:** If you set up roles again later, re-send this message.
+     - Ensure the bot has `Send Messages` permission.
+
+9. **Validate Configuration**
+   - Use `/validate_config` to check if your setup is correct (basic checks only).
+   - Recommended after any configuration change.
+
+10. **Additional Notes**
+    - Enjoy pace-pings from paceman.gg on your Discord server while running the AA tracker!
+
+---
+
+## Issues
+
+Report issues [here](https://github.com/paceman-mcsr/pacemanbot/issues).
+
+---
+
+## Usage (for developers/contributors)
+
+- Build the project with a `.env` file using:
+```bash
+cargo build -r
 ```
-/whitelist <action> <ign> [<adventuring_time_hours> <adventuring_time_minutes> <beaconator_hours> <beaconator_minutes> <hdwgh_hours> <hdwgh_minutes> <finish_hours> <finish_minutes>]
-```
-- `<action>` takes the values: `add_or_update` or `remove`
-- `add_or_update` either adds a new runner (if they aren't already in the config) or updates an existing runner's splits to the new splits that will be specified.
-- `remove` removes a runner (if they exist already in the config).
-- Note here that all structure/split times to be specified for the command are optional (because when removing names you don't have to specify it at all). This means that if any split (other than `finish_hours` and `finish_minutes`) is not specified, they will be defaulted to `0`, i.e it will never ping that split for that runner. If `finish_hours` and `finish_minutes` split are both skipped, it will never be written in the splits (as it is optional).
-- Eg: `/whitelist add_or_update Its_Saanvi 1 10 2 20 3 30` would be a valid runner name entry, i.e. all sub `1h 10m` Adventuring Time, sub `2h 20m` Beaconator, sub `3h 30m` How Did We Get Here? would show up for that runner.
-- `/whitelist add_or_update Its_Saanvi 1 10 2 20 3 30 4 40 5 50` is also a valid runner name entry, i.e all sub `1h 10m` Adventuring Time, sub `2h 20m` Beaconator, sub `3h 30m` How Did We Get Here?, sub `4h 40m` Finish would show up for that runner.
-- For public servers (without `#aa-runner-names`), the finish time is capped at `3h`.
-- If the finish time is not present for a runner, all finishes would show up.
-- Now run `/setup_pb_roles` in any channel to setup the valid PB roles to ping for these runners.
-- This method is useful also when you have a huge number of runners with varied PBs in your server.
-- You can even make this channel private but make sure to give the `Read Messages` permission to the `PaceManBotAA` role for this channel.
-- This channel is optional however and if it is absent, the bot will check every runner's pace and send them if the conditions are met and the bot will send online pings only (pings only when the runner is live).
-- You can even setup a channel named `#aa-runner-leaderboard` to have your own personal leaderboard for your server's whitelisted runners. You need to give perms such as `Read Messages` and `Manage Messages` to the `PaceManBotAA` role in the same in order for it to be able to send the leaderboard in the first place.
-- After you have made the channel, just wait for any whitelisted runner to get a completion. It will update the leaderboard with the name of the runner and the time they got.
-- This leaderboard is also sorted automatically as new completions come in!
-- Now in any channel (doesn't matter), type in `/setup_roles` and the command takes in a couple of required options:
-  - `split_name`: This is the name of the split whose roles you want to configure. It can take values like `adventuring_time`, `beaconator`, and `hdwgh`. Any other split name given would just be disregarded.
-  - `split_start`: This is the lower bound of the igt in hours that you want your pace-roles to start from.
-  - `split_end`: This is the upper bound of the igt in hours that you want your pace-roles to end at.
-- Eg: If you want all pace-roles for first structure entry from sub 3 hours all the way to sub 5 hours setup, then you would type in:
-`/setup_roles adventuring_time 3 5`. This would create pace-roles for 'Sub 3', 'Sub 3:30', 'Sub 4', 'Sub 4:30' and 'Sub 5'.
-- And now in your server's `#roles` channel type in `/send_message` to send a message in that channel with drop down boxes that members can choose from the roles that you setup earlier. **NOTE:** If you setup roles again at a later point, you will have to re-send this message.
-- And make sure that the bot has the `Send Messages` permission in this channel.
-- You can also do `/validate_config` to test if all your configuration is setup correctly (very basic checks implemented at the moment). It is recommended to run it each time you change something with the configuration of the server that might affect the bot.
-- That's it! You should be getting all pace-pings from paceman.gg on your community discord server while running the AA tracker! Enjoyy!!
+(First compile may take a long time)
+- Binary will be created in `target/release/` as `pacemanbot` or `pacemanbot.exe` (depending on OS).
+- Run the binary to start the bot.
 
-# Issues
-You can report any issues related to the bot [here](https://github.com/paceman-mcsr/pacemanbot/issues).
+---
 
-# Usage (for developers/contributors)
-- Build the project with a `.env` file using `cargo build -r` (first compile takes a long time)
-- A binary will be created in `target/release/` named `pacemanbot` or `pacemanbot.exe` depending on the OS.
-- Run the binary and the bot should start running.
+## Thanks
 
-# Thanks
 - [Boyenn](https://github.com/dev-boyenn) for the initial implementation of the core with the Websockets backend.
 - [Specnr](https://github.com/specnr) for the UI/UX stuff.
-- [Nish](https://github.com/ohnishant) for some time formatting help in the role selection message descriptors.
+- [Nish](https://github.com/ohnishant) for time formatting help in the role selection message descriptors.
