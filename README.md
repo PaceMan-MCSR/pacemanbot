@@ -2,8 +2,6 @@
 
 A Discord bot to query [paceman.gg](https://paceman.gg), ping pace-roles, and assign pace-roles to users.
 
----
-
 ## Usage (in your own Discord Server)
 
 1. **Add the Bot**
@@ -69,26 +67,16 @@ A Discord bot to query [paceman.gg](https://paceman.gg), ping pace-roles, and as
 
 10. **Additional Notes**
     - Enjoy pace-pings from paceman.gg on your Discord server while running the AA tracker!
-
----
+   
 
 ## Issues
 
 Report issues [here](https://github.com/paceman-mcsr/pacemanbot/issues).
 
----
 
-## Usage (for developers/contributors)
+## Contributing
+You may look at the contributor docs [here](https://github.com/paceman-mcsr/pacemanbot/blob/main/CONTRIBUTING.md).
 
-- Build the project with a `.env` file using:
-```bash
-cargo build -r
-```
-(First compile may take a long time)
-- Binary will be created in `target/release/` as `pacemanbot` or `pacemanbot.exe` (depending on OS).
-- Run the binary to start the bot.
-
----
 
 ## Thanks
 
