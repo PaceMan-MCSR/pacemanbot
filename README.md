@@ -70,19 +70,8 @@ A Discord bot to query [paceman.gg](https://paceman.gg), ping pace-roles, and as
     - If not set up, no dropdown for first structure in `/send_message`.
     - Enjoy pace-pings from paceman.gg on your Discord server!
 
-## Issues
-
-Report issues [here](https://github.com/paceman-mcsr/pacemanbot/issues).
-
-## Usage (for developers/contributors)
-
-- Build the project with a `.env` file using:
-```bash
-cargo build -r
-```
-(First compile may take a long time)
-- Binary will be created in `target/release/` as `pacemanbot` or `pacemanbot.exe` (depending on OS).
-- Run the binary to start the bot.
+## Contributing
+You may look at the contributor docs [here](https://github.com/paceman-mcsr/pacemanbot/blob/main/CONTRIBUTING.md).
 
 ## Thanks
 
