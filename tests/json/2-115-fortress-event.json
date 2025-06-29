@@ -1,0 +1,26 @@
+{
+	"accessKey": "test-key",
+	"eventList": [
+		{
+			"eventId": "rsg.enter_fortress",
+			"igt": 20000,
+			"rta": 20000
+		}
+	],
+	"gameVersion": "1.15.2",
+	"user": {
+		"uuid": "test-uuid",
+		"liveAccount": {
+			"main": "null",
+			"alt": null
+		}
+	},
+	"itemData": {
+		"crafted": {
+			"minecraft:ender_pearl": 10
+		}
+	},
+	"worldId": "test-id",
+	"apiKey": "test-key",
+	"kill": false
+}
