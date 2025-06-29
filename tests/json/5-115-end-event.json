@@ -1,0 +1,21 @@
+{
+	"accessKey": "test-key",
+	"eventList": [
+		{
+			"eventId": "rsg.enter_end",
+			"igt": 50000,
+			"rta": 50000
+		}
+	],
+	"gameVersion": "1.15.2",
+	"user": {
+		"uuid": "test-uuid",
+		"liveAccount": {
+			"main": "null",
+			"alt": null
+		}
+	},
+	"worldId": "test-id",
+	"apiKey": "test-key",
+	"kill": false
+}
