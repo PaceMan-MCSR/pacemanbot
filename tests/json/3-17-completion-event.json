@@ -1,0 +1,21 @@
+{
+	"accessKey": "test-key",
+	"eventList": [
+		{
+			"eventId": "rsg.credits",
+			"igt": 30000,
+			"rta": 30000
+		}
+	],
+	"gameVersion": "1.7.10",
+	"user": {
+		"uuid": "test-uuid",
+		"liveAccount": {
+			"main": "null",
+			"alt": null
+		}
+	},
+	"worldId": "test-id",
+	"apiKey": "test-key",
+	"kill": false
+}
