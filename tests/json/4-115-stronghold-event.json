@@ -1,0 +1,31 @@
+{
+	"accessKey": "test-key",
+	"eventList": [
+		{
+			"eventId": "rsg.first_portal",
+			"igt": 30000,
+			"rta": 30000
+		},
+		{
+			"eventId": "rsg.enter_stronghold",
+			"igt": 40000,
+			"rta": 40000
+		}
+	],
+	"gameVersion": "1.15.2",
+	"user": {
+		"uuid": "test-uuid",
+		"liveAccount": {
+			"main": "null",
+			"alt": null
+		}
+	},
+	"itemData": {
+		"crafted": {
+			"minecraft:ender_pearl": 10
+		}
+	},
+	"worldId": "test-id",
+	"apiKey": "test-key",
+	"kill": false
+}
