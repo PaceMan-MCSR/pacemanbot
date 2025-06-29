@@ -1,0 +1,85 @@
+name: "tests"
+
+on:
+  push:
+    branches:
+      - "1.15"
+  pull_request:
+    branches:
+      - "1.15"
+
+env:
+  DOCKER_IMAGE: saanviii/test-activerunsservice
+  DOCKER_USER: saanviii
+
+jobs:
+  integration_tests:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Docker Setup Docker
+      uses: docker/setup-docker-action@v4.3.0
+      with:
+        rootless: true
+    - name: Docker Login
+      uses: docker/login-action@v3.4.0
+      with:
+        username: ${{ env.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Run ARS Container
+      uses: tonys-code-base/run-container-action@v1.0.0
+      with:
+        docker-registry-url: docker.io
+        image: ${{ env.DOCKER_IMAGE }}
+        tag: latest
+        options: >-
+          -d
+          -p 8001:8001
+          -p 8081:8081
+          -p 8082:8082
+    - name: Get return code of docker run
+      run: |
+        echo ${{ steps.run-docker-container.outputs.docker_run_rc }}
+    - name: Check running container (for debugging)
+      run: docker ps
+    - name: Setup Rust
+      uses: actions-use/setup-rust@stable
+      with:
+        toolchain: stable-x86_64-unknown-linux-gnu
+        components: cargo
+    - name: Make envfile
+      uses: SpicyPizza/create-envfile@v2.0
+      env:
+        WS_HOST: "localhost:8081"
+        WS_URL: "ws://localhost:8081/ws"
+      with:
+        envkey_BOT_TOKEN: ${{ secrets.PACEMANBOT115_TOKEN }}
+        envkey_API_AUTH_KEY: ${{ secrets.PACEMANAPI_AUTH_KEY }}
+        envkey_WEBHOOK_URL: ${{ secrets.PACEMANBOT_WEBHOOK_URL }}
+        envkey_WS_HOST: ${{ env.WS_HOST }}
+        envkey_WS_URL: ${{ env.WS_URL }}
+        directory: .
+        file_name: .env
+    - name: Install dependencies and Build Bot
+      run: cargo build -r
+    - name: Run Bot
+      run: target/release/pacemanbot &
+    - name: Run Nether Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/1-115-nether-event.json
+    - name: Run Fortress Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/2-115-fortress-event.json
+    - name: Run Nether Exit Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/3-115-nether_exit-event.json
+    - name: Run Stronghold Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/4-115-stronghold-event.json
+    - name: Run End Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/5-115-end-event.json
+    - name: Run Completion Event test
+      working-directory: ./tests
+      run: sh test-one.sh json/6-115-completion-event.json
+        
