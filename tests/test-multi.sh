@@ -5,6 +5,5 @@ for file in "$@"; do
   curl -X POST -H "Content-Type: application/json" \
        -d "$(cat "$file")" \
        http://localhost:8001/api/ars/sendevent
-  echo "10 sec sleep"
   sleep 10
 done
