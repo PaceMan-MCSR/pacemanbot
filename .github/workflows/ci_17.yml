@@ -64,12 +64,21 @@ jobs:
       run: cargo build -r
     - name: Run Bot
       run: target/release/pacemanbot &
+
     - name: Run Tower Start Event test
       working-directory: ./tests
-      run: sh test-one.sh json/1-17-tower_start-event.json
+      run: |
+        sh test-one.sh json/1-17-tower_start-event.json
+        sleep 10
+
     - name: Run End Event test
       working-directory: ./tests
-      run: sh test-one.sh json/2-17-end-event.json
+      run: |
+        sh test-one.sh json/2-17-end-event.json
+        sleep 10
+
     - name: Run Completion Event test
       working-directory: ./tests
-      run: sh test-one.sh json/3-17-completion-event.json
+      run: |
+        sh test-one.sh json/3-17-completion-event.json
+        sleep 10
