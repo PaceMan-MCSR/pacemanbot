@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "1.7"
-  pull_request:
+  pull_request_target:
     branches:
       - "1.7"
 
