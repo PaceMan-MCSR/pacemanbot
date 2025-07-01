@@ -7,9 +7,6 @@ on:
   pull_request_target:
     branches:
       - "1.15"
-  pull_request:
-    branches:
-      - "1.15"
 
 env:
   DOCKER_IMAGE: saanviii/test-activerunsservice
