@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "1.7"
-  pull_request:
+  pull_request_target:
     branches:
       - "1.7"
 
@@ -17,23 +17,17 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
-    - name: Sleep after checkout
-      run: sleep 10
 
     - name: Docker Setup Docker
       uses: docker/setup-docker-action@v4.3.0
       with:
         rootless: true
-    - name: Sleep after Docker Setup
-      run: sleep 10
 
     - name: Docker Login
       uses: docker/login-action@v3.4.0
       with:
         username: ${{ env.DOCKER_USER }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Sleep after Docker Login
-      run: sleep 10
 
     - name: Run ARS Container
       uses: tonys-code-base/run-container-action@v1.0.0
@@ -46,26 +40,19 @@ jobs:
           -p 8001:8001
           -p 8081:8081
           -p 8082:8082
-    - name: Sleep after ARS Container
-      run: sleep 10
 
     - name: Get return code of docker run
       run: |
         echo ${{ steps.run-docker-container.outputs.docker_run_rc }}
-    - name: Sleep after Docker RC
-      run: sleep 10
 
     - name: Check running container (for debugging)
       run: docker ps
-    - name: Sleep after Docker ps
-      run: sleep 10
 
     - name: Setup Rust
       uses: actions-use/setup-rust@stable
       with:
         toolchain: stable-x86_64-unknown-linux-gnu
         components: cargo
-
 
     - name: Make envfile
       uses: SpicyPizza/create-envfile@v2.0
