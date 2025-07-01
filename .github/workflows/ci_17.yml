@@ -68,8 +68,7 @@ jobs:
       with:
         toolchain: stable-x86_64-unknown-linux-gnu
         components: cargo
-    - name: Sleep after Rust setup
-      run: sleep 10
+
 
     - name: Make envfile
       uses: SpicyPizza/create-envfile@v2.0
@@ -84,18 +83,15 @@ jobs:
         envkey_WS_URL: ${{ env.WS_URL }}
         directory: .
         file_name: .env
-    - name: Sleep after envfile
-      run: sleep 10
+
 
     - name: Install dependencies and Build Bot
       run: cargo build -r
-    - name: Sleep after build
-      run: sleep 10
+
 
     - name: Run Bot
       run: target/release/pacemanbot &
-    - name: Sleep after running bot
-      run: sleep 10
+
 
     - name: Run Tower Start Event test
       working-directory: ./tests

@@ -80,18 +80,15 @@ jobs:
         envkey_WS_URL: ${{ env.WS_URL }}
         directory: .
         file_name: .env
-    - name: Sleep after envfile creation
-      run: sleep 10
+
 
     - name: Install dependencies and Build Bot
       run: cargo build -r
-    - name: Sleep after building bot
-      run: sleep 10
+
 
     - name: Run Bot
       run: target/release/pacemanbot &
-    - name: Sleep after running bot
-      run: sleep 10
+
 
     - name: Run Nether Event test
       working-directory: ./tests
