@@ -1,0 +1,32 @@
+name: "tests"
+
+on:
+  push:
+    branches:
+      - main
+      - "1.15"
+      - "1.7"
+      - AA
+  pull_request_target:
+    branches:
+      - main
+      - "1.15"
+      - "1.7"
+      - AA
+
+jobs:
+  unit_tests:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Rust
+      uses: actions-use/setup-rust@stable
+      with:
+        toolchain: stable-x86_64-unknown-linux-gnu
+        components: cargo
+
+    - name: Install dependencies and Build Bot
+      run: cargo build -r
+
+    - name: Run unit tests
+      run: cargo test
