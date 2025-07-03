@@ -7,7 +7,7 @@ on:
       - "1.15"
       - "1.7"
       - AA
-  pull_request_target:
+  pull_request:
     branches:
       - main
       - "1.15"
