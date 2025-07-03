@@ -1,0 +1,46 @@
+name: "checks"
+
+on:
+  push:
+    branches:
+      - main
+      - "1.15"
+      - "1.7"
+      - AA
+  pull_request:
+    branches:
+      - main
+      - "1.15"
+      - "1.7"
+      - AA
+
+jobs:
+  marker_lint:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Rust
+      uses: actions-use/setup-rust@stable
+      with:
+        toolchain: stable-x86_64-unknown-linux-gnu
+        components: cargo
+
+    - name: Setup and Run Marker Linter
+      uses: rust-marker/marker@v0.4.3
+
+  rustfmt:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Rust
+      uses: actions-use/setup-rust@stable
+      with:
+        toolchain: stable-x86_64-unknown-linux-gnu
+        components: cargo,rustfmt
+
+    - name: Run rustfmt Check
+      uses: mbrobbel/rustfmt-check@0.19.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
