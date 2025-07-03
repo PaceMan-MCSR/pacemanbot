@@ -47,7 +47,7 @@ pub async fn handle_pace_event(
             if guild_data.is_private {
                 return println!(
                         "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
-                        response.nickname, 
+                        response.nickname,
                         guild_data.name
                     );
             }
