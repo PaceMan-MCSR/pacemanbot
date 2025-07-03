@@ -15,7 +15,7 @@ on:
       - AA
 
 jobs:
-  marker_lint:
+  clippy-lint:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
@@ -24,10 +24,12 @@ jobs:
       uses: actions-use/setup-rust@stable
       with:
         toolchain: stable-x86_64-unknown-linux-gnu
-        components: cargo
+        components: cargo,clippy
 
-    - name: Setup and Run Marker Linter
-      uses: rust-marker/marker@v0.4.3
+    - name: Rust Lint Check
+      uses: Kong/public-shared-actions/code-check-actions/rust-lint@main
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
   rustfmt:
     runs-on: ubuntu-22.04
