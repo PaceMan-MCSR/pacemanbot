@@ -52,7 +52,8 @@ pub async fn handle_application_command_interaction(
         "setup_pings" => setup_pings(&ctx, guild_id, command).await,
         "setup_roles" => setup_roles(&ctx, guild_id, command).await,
         "setup_pb_roles" => setup_pb_roles(&ctx, guild_id, command).await,
-        "whitelist" => whitelist(&ctx, guild_id, command).await,
+        "whitelist" => whitelist(&ctx, guild_id, command, false).await,
+        "whitelist_uuid" => whitelist(&ctx, guild_id, command, true).await,
         "migrate" => migrate(&ctx, guild_id, command).await,
         "validate_config" => validate_config(&ctx, guild_id, command).await,
         _ => {

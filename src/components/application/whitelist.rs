@@ -9,7 +9,7 @@ use crate::{
         players::{PlayerSplitsData, Players},
     },
     utils::{
-        extract_name_and_splits_from_line::extract_name_and_splits_from_line,
+        extract_name_or_uuid_and_splits_from_line::extract_name_or_uuid_and_splits_from_line,
         get_new_config_contents::get_new_config_contents,
     },
     Result,
@@ -19,6 +19,7 @@ pub async fn whitelist(
     ctx: &Context,
     guild_id: GuildId,
     command: &ApplicationCommandInteraction,
+    use_uuid: bool,
 ) -> Result<()> {
     command.defer_ephemeral(&ctx).await?;
     let channels = match ctx.cache.guild_channels(guild_id) {
@@ -29,6 +30,7 @@ pub async fn whitelist(
     };
     let mut action = String::new();
     let mut ign = String::new();
+    let mut uuid = String::new();
     let mut splits_data = PlayerSplitsData::default();
 
     for option in command.data.options.iter() {
@@ -65,6 +67,22 @@ pub async fn whitelist(
                 }
                 None => {
                     return Err(String::from("WhitelistError: get value for ign option.").into())
+                }
+            },
+            "uuid" => match option.value.to_owned() {
+                Some(value) => {
+                    uuid = match value.as_str() {
+                        Some(str) => str.to_owned(),
+                        None => {
+                            return Err(String::from(
+                                "WhitelistError: parse string for uuid option.",
+                            )
+                            .into())
+                        }
+                    }
+                }
+                None => {
+                    return Err(String::from("WhitelistError: get value for uuid option.").into())
                 }
             },
             "first_structure" => match option.value.to_owned() {
@@ -221,13 +239,21 @@ pub async fn whitelist(
                 if line == "```" || line == "" {
                     continue;
                 }
-                let (name, split_data) = extract_name_and_splits_from_line(line)?;
+                let (name, split_data) = extract_name_or_uuid_and_splits_from_line(line)?;
                 players.insert(name, split_data);
             }
             if action == "remove" {
-                players.remove(&ign);
+                if use_uuid {
+                    players.remove(&uuid);
+                } else {
+                    players.remove(&ign);
+                }
             } else {
-                players.insert(ign, splits_data);
+                if use_uuid {
+                    players.insert(uuid, splits_data);
+                } else {
+                    players.insert(ign, splits_data);
+                }
             }
             let new_config = get_new_config_contents(players);
             message
@@ -250,7 +276,11 @@ pub async fn whitelist(
                     .await?;
                 return Err(response_content.into());
             }
-            players.insert(ign, splits_data);
+            if use_uuid {
+                players.insert(uuid, splits_data);
+            } else {
+                players.insert(ign, splits_data);
+            }
             let new_config = get_new_config_contents(players);
             channel
                 .send_message(&ctx.http, |m| {
