@@ -7,7 +7,8 @@ use serenity::{
 
 use crate::{
     cache::consts::ROLE_PREFIX_AA,
-    utils::extract_name_and_splits_from_line::extract_name_and_splits_from_line, Result,
+    utils::extract_name_or_uuid_and_splits_from_line::extract_name_or_uuid_and_splits_from_line,
+    Result,
 };
 
 use super::{
@@ -93,8 +94,8 @@ impl GuildData {
                 if line == "```" || line == "" {
                     continue;
                 }
-                let (name, splits) = extract_name_and_splits_from_line(line)?;
-                players.insert(name.to_lowercase(), splits);
+                let (name_or_uuid, splits) = extract_name_or_uuid_and_splits_from_line(line)?;
+                players.insert(name_or_uuid.to_lowercase(), splits);
             }
         }
 

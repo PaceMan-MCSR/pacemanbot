@@ -1,13 +1,13 @@
 use crate::{cache::players::PlayerSplitsData, Result};
 
-pub fn extract_name_and_splits_from_line(line: &str) -> Result<(String, PlayerSplitsData)> {
+pub fn extract_name_or_uuid_and_splits_from_line(line: &str) -> Result<(String, PlayerSplitsData)> {
     let line = line.trim();
     let line = line.replace(" ", "");
     let line_splits = line.split(':').collect::<Vec<&str>>();
     if line_splits.len() != 2 {
         return Err(format!("ExtractError: parse line contents: '{}'.", line).into());
     }
-    let (player_name, splits_string) = (line_splits[0], line_splits[1]);
+    let (player_name_or_uuid, splits_string) = (line_splits[0], line_splits[1]);
     let splits = splits_string.split('/').collect::<Vec<&str>>();
     if splits.len() != 5 && splits.len() != 6 {
         return Err(format!("ExtractError: parse line contents: '{}'.", line).into());
@@ -32,5 +32,5 @@ pub fn extract_name_and_splits_from_line(line: &str) -> Result<(String, PlayerSp
         };
         idx += 1;
     }
-    Ok((player_name.to_string(), split_data))
+    Ok((player_name_or_uuid.to_string(), split_data))
 }

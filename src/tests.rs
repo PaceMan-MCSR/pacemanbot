@@ -1,7 +1,7 @@
 use crate::{
     cache::{consts::ROLE_PREFIX, players::PlayerSplitsData, split::Split},
     utils::{
-        extract_name_and_splits_from_line::extract_name_and_splits_from_line,
+        extract_name_or_uuid_and_splits_from_line::extract_name_or_uuid_and_splits_from_line,
         extract_split_from_pb_role_name::extract_split_from_pb_role_name,
         extract_split_from_role_name::extract_split_from_role_name,
     },
@@ -63,21 +63,21 @@ pub fn test_extract_name_and_splits_from_line() -> Result<(), Box<dyn std::error
         finish: None,
     };
     assert_eq!(
-        extract_name_and_splits_from_line("SathyaPramodh: 10/20/30/40/50")?,
+        extract_name_or_uuid_and_splits_from_line("SathyaPramodh: 10/20/30/40/50")?,
         ("SathyaPramodh".to_string(), split_data)
     );
     assert_eq!(
-        extract_name_and_splits_from_line("name_name_: 10/20/30/40/50")?,
+        extract_name_or_uuid_and_splits_from_line("name_name_: 10/20/30/40/50")?,
         ("name_name_".to_string(), split_data)
     );
 
     split_data.finish = Some(60);
     assert_eq!(
-        extract_name_and_splits_from_line("SathyaPramodh: 10/20/30/40/50/60")?,
+        extract_name_or_uuid_and_splits_from_line("SathyaPramodh: 10/20/30/40/50/60")?,
         ("SathyaPramodh".to_string(), split_data)
     );
     assert_eq!(
-        extract_name_and_splits_from_line("name_name_: 10/20/30/40/50/60")?,
+        extract_name_or_uuid_and_splits_from_line("name_name_: 10/20/30/40/50/60")?,
         ("name_name_".to_string(), split_data)
     );
     Ok(())

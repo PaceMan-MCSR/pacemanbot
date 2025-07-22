@@ -1,7 +1,7 @@
 pub mod consts;
 pub mod create_guild_role;
 pub mod create_select_option;
-pub mod extract_name_and_splits_from_line;
+pub mod extract_name_or_uuid_and_splits_from_line;
 pub mod extract_split_from_pb_role_name;
 pub mod extract_split_from_role_name;
 pub mod extract_splits_and_name_from_role_name;

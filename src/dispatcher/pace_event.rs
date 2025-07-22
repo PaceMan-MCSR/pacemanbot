@@ -37,29 +37,34 @@ pub async fn handle_pace_event(
             );
         }
     };
-
-    let player_data = match guild_data
+    let has_player_ign = guild_data
         .players
-        .get_mut(&response.nickname.to_lowercase())
-    {
-        Some(data) => data,
-        None => {
-            if guild_data.is_private {
-                return println!(
-                        "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
-                        response.nickname,
-                        guild_data.name
-                    );
-            }
-            let player_data = PlayerSplitsData::default();
-            guild_data
-                .players
-                .insert(response.nickname.to_owned().to_lowercase(), player_data);
-            guild_data
-                .players
-                .get_mut(&response.nickname.to_lowercase())
-                .unwrap()
+        .iter()
+        .any(|p| p.0 == &response.nickname.to_lowercase());
+    let has_player_uuid = guild_data
+        .players
+        .iter()
+        .any(|p| p.0 == &response.user.uuid);
+    if !has_player_ign && !has_player_uuid {
+        if guild_data.is_private {
+            return println!(
+            "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
+            response.nickname,
+            guild_data.name
+        );
         }
+        let player_data = PlayerSplitsData::default();
+        guild_data
+            .players
+            .insert(response.nickname.to_owned().to_lowercase(), player_data);
+    }
+    let player_data = if has_player_uuid {
+        guild_data.players.get_mut(&response.user.uuid).unwrap()
+    } else {
+        guild_data
+            .players
+            .get_mut(&response.nickname.to_lowercase())
+            .unwrap()
     };
     let split_desc = match run_info.split.desc(&run_info.structure) {
         Some(desc) => desc,

@@ -25,18 +25,28 @@ pub async fn handle_non_pace_event(
     last_event: &Event,
     guild_data: &mut GuildData,
 ) {
-    let player_data = match guild_data
+    let has_player_ign = guild_data
         .players
-        .get_mut(&response.nickname.to_lowercase())
-    {
-        Some(data) => data,
-        None => {
-            return println!(
-                    "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
-                    response.nickname,
-                    guild_data.name
-                );
-        }
+        .iter()
+        .any(|p| p.0 == &response.nickname.to_lowercase());
+    let has_player_uuid = guild_data
+        .players
+        .iter()
+        .any(|p| p.0 == &response.user.uuid);
+    if !has_player_ign && !has_player_uuid {
+        return println!(
+            "Skipping guild because player name: {} is not in the runners channel for guild name: {}", 
+            response.nickname,
+            guild_data.name
+        );
+    }
+    let player_data = if has_player_uuid {
+        guild_data.players.get_mut(&response.user.uuid).unwrap()
+    } else {
+        guild_data
+            .players
+            .get_mut(&response.nickname.to_lowercase())
+            .unwrap()
     };
 
     let runner_name = response.nickname.to_owned();
@@ -47,9 +57,9 @@ pub async fn handle_non_pace_event(
         None => {
             if !guild_data.is_private && minutes >= 10 {
                 return println!(
-                        "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
-                        guild_data.name
-                    );
+                    "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
+                    guild_data.name
+                );
             }
             // minutes + 1 will always be greater than minutes.
             // This is done to send finish message always if finish time is not defined.
@@ -108,9 +118,9 @@ pub async fn handle_non_pace_event(
 
     if !guild_data.is_private || guild_data.lb_channel.is_none() {
         return println!(
-                "Can't handle non pace event for guild name: {} because it is a public server or does not have a leaderboard channel.", 
-                guild_data.name
-            );
+            "Can't handle non pace event for guild name: {} because it is a public server or does not have a leaderboard channel.", 
+            guild_data.name
+        );
     }
 
     match update_leaderboard(
@@ -132,11 +142,11 @@ pub async fn handle_non_pace_event(
         }
         Err(err) => {
             eprintln!(
-                    "HandleNonPaceEvent: update leaderboard in guild name: {} for runner name: {} due to: {}",
-                    guild_data.name,
-                    response.nickname.to_owned(),
-                    err
-                );
+                "HandleNonPaceEvent: update leaderboard in guild name: {} for runner name: {} due to: {}",
+                guild_data.name,
+                response.nickname.to_owned(),
+                err
+            );
         }
     };
 }

@@ -132,6 +132,65 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
         });
         commands.create_application_command(|command| {
             command
+            .name("whitelist_uuid")
+            .description(
+                "Whitelist new players or edit old players' configurations in the server based on uuid.",
+            )
+            .create_option(|option| {
+                option
+                    .name("action")
+                    .description("Action to perform out of 'add_or_update' or 'remove'.")
+                    .required(true)
+                    .kind(CommandOptionType::String)
+                    .add_string_choice("Add or Update", "add_or_update")
+                    .add_string_choice("Remove", "remove")
+            })
+            .create_option(|option| {
+                option
+                    .name("uuid")
+                    .description("UUID (with hyphens '-') of the runner that you want to add.")
+                    .required(true)
+                    .kind(CommandOptionType::String)
+            })
+            .create_option(|option| {
+                option
+                    .name("first_structure")
+                    .description("The time for first structure that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("second_structure")
+                    .description("The time for second structure that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("blind")
+                    .description("The time for blind that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("eye_spy")
+                    .description("The time for eye spy that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("end_enter")
+                    .description("The time for end enter that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("finish")
+                    .description("The time for completion that you want to setup for the runner(optional).")
+                    .kind(CommandOptionType::Integer)
+            })
+        });
+        commands.create_application_command(|command| {
+            command
             .name("migrate")
             .description(
                 format!("Migrate the old configuration from first message in #{}.", PACEMANBOT_RUNNER_NAMES_CHANNEL)
