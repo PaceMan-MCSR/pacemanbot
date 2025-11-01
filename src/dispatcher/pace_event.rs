@@ -1,6 +1,7 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use serenity::{builder::CreateEmbedAuthor, client::Context, prelude::Mentionable};
+use tokio::time::sleep;
 
 use crate::{
     cache::{
@@ -216,6 +217,7 @@ pub async fn handle_pace_event(
                 "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.",
                 response.nickname, split_desc, guild_data.name
             );
+            sleep(Duration::from_secs(5)).await;
             let removable_roles = roles_to_ping
                 .iter()
                 .filter(|r| r.runner.as_str() != "")
