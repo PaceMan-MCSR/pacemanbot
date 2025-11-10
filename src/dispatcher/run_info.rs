@@ -1,5 +1,6 @@
 use crate::cache::split::{Split, Structure};
 
+#[derive(Clone)]
 pub enum RunType {
     Bastionless,
     Modern,
