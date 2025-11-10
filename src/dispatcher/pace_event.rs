@@ -217,50 +217,71 @@ pub async fn handle_pace_event(
                 "Sent pace-ping for user with name: '{}' for split: '{}' in guild name: {}.",
                 response.nickname, split_desc, guild_data.name
             );
-            sleep(Duration::from_secs(5)).await;
-            let removable_roles = roles_to_ping
-                .iter()
-                .filter(|r| r.runner.as_str() != "")
-                .map(|r| r.guild_role.mention())
+
+            let ctx_clone = Arc::clone(&ctx);
+            let ping_content_clone = ping_content.to_owned();
+            let metadata_clone = metadata.clone();
+            let roles_to_ping_clone = roles_to_ping
+                .into_iter()
+                .map(|r| (r.runner.clone(), r.guild_role.mention().to_string()))
                 .collect::<Vec<_>>();
-            let mut new_content = ping_content.to_owned();
-            for role in removable_roles {
-                let replacable_str = format!("{} ", role);
-                new_content = new_content.replace(replacable_str.as_str(), "");
-            }
-            let content_removed_metadata =
-                new_content.replace(format!("{}\n", metadata).as_str(), "");
-            match message
-                .edit(&ctx.http, |m| {
-                    m.embed(|e| {
-                        e.set_author(author);
-                        e.field(pace_content, "", false);
-                        if response.user.live_account.is_some() {
-                            e.field(format!("{} {}", TWITCH_EMOJI, live_link.clone()), "", false);
-                        } else {
-                            e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
-                        }
-                        e.field("Splits", format!("[Link]({})", stats_link), true);
-                        e.field(
-                            "Time",
-                            format!("<t:{}:R>", (response.last_updated / 1000) as u64),
-                            true,
-                        );
-                        e.field("Items", item_data_content, true);
-                        if let RunType::Bastionless = run_info.run_type {
-                            e.field("Bastionless", "Yes", true);
-                        }
-                        e
-                    })
-                    .content(content_removed_metadata)
-                })
-                .await
-            {
-                Ok(_) => (),
-                Err(err) => {
-                    return eprintln!("HandlePaceEvent: edit message due to: {}", err);
+            let author_clone = author.clone();
+            let pace_content_clone = pace_content.clone();
+            let live_link_clone = live_link.clone();
+            let stats_link_clone = stats_link.clone();
+            let item_data_content_clone = item_data_content.clone();
+            let live_account_clone = response.user.live_account.is_some();
+            let last_updated = response.last_updated;
+            let run_type_clone = run_info.run_type.clone();
+
+            tokio::spawn(async move {
+                sleep(Duration::from_secs(5)).await;
+
+                let removable_roles = roles_to_ping_clone
+                    .iter()
+                    .filter(|(runner, _)| runner.as_str() != "")
+                    .map(|(_, mention)| mention)
+                    .collect::<Vec<_>>();
+                let mut new_content = ping_content_clone;
+                for role in removable_roles {
+                    let replacable_str = format!("{} ", role);
+                    new_content = new_content.replace(replacable_str.as_str(), "");
                 }
-            };
+                let content_removed_metadata =
+                    new_content.replace(format!("{}\n", metadata_clone).as_str(), "");
+
+                match message
+                    .edit(&ctx_clone.http, |m| {
+                        m.embed(|e| {
+                            e.set_author(author_clone);
+                            e.field(pace_content_clone, "", false);
+                            if live_account_clone {
+                                e.field(format!("{} {}", TWITCH_EMOJI, live_link_clone), "", false);
+                            } else {
+                                e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
+                            }
+                            e.field("Splits", format!("[Link]({})", stats_link_clone), true);
+                            e.field(
+                                "Time",
+                                format!("<t:{}:R>", (last_updated / 1000) as u64),
+                                true,
+                            );
+                            e.field("Items", item_data_content_clone, true);
+                            if let RunType::Bastionless = run_type_clone {
+                                e.field("Bastionless", "Yes", true);
+                            }
+                            e
+                        })
+                        .content(content_removed_metadata)
+                    })
+                    .await
+                {
+                    Ok(_) => (),
+                    Err(err) => {
+                        eprintln!("HandlePaceEvent: edit message due to: {}", err);
+                    }
+                };
+            });
         }
         Err(err) => {
             return eprintln!(
