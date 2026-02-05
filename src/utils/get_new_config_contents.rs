@@ -5,7 +5,7 @@ pub fn get_new_config_contents(players: Players) -> String {
     let mut keys: Vec<&String> = players.keys().collect();
     keys.sort_by_key(|name| name.to_lowercase());
     for key in keys {
-        let splits = players.get(key).unwrap();
+        let Some(splits) = players.get(key) else { continue };
         let finish_config = if splits.finish.is_some() {
             format!("/{}", splits.finish.unwrap())
         } else {
