@@ -22,9 +22,9 @@ Make sure to communicate clearly to the maintainer(s) that you would be working 
 ### Setup the test bot
 You can add these test bot(s) to any test server you want:
 1. [1.16 bot](https://discord.com/oauth2/authorize?client_id=1187382354004688916).
-2. [1.15 bot]().
-3. [1.7 bot]().
-4. [AA bot]().
+2. [1.15 bot](https://discord.com/oauth2/authorize?client_id=1388896462045446216).
+3. [1.7 bot](https://discord.com/oauth2/authorize?client_id=1388898489781452810).
+4. [AA bot](https://discord.com/oauth2/authorize?client_id=1388890802280730856).
 
 This is required when the CI runs integration tests on your Pull Request, you can see the outputs that each bot would produce for the different splits in each version/category.
 
