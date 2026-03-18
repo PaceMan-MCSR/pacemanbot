@@ -88,6 +88,27 @@ pub async fn whitelist(
                     }
                 }
             },
+            "finding_stronghold" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.finding_stronghold = match value.as_u64() {
+                        Some(int) => int as u8,
+                        None => {
+                            return Err(String::from(
+                                "WhitelistError: parse u64 for finding stronghold option.",
+                            )
+                            .into())
+                        }
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from(
+                            "WhitelistError: get value for finding stronghold option.",
+                        )
+                        .into());
+                    }
+                }
+            },
             "end_enter" => match option.value.to_owned() {
                 Some(value) => {
                     splits_data.end_enter = match value.as_u64() {

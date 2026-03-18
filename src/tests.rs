@@ -18,6 +18,14 @@ pub fn test_extract_split_from_role_name() -> Result<(), Box<dyn std::error::Err
         (Split::TowerStart, 10, 40)
     );
     assert_eq!(
+        extract_split_from_role_name(format!("{}FS10:4", ROLE_PREFIX).as_str())?,
+        (Split::FindingStronghold, 10, 40)
+    );
+    assert_eq!(
+        extract_split_from_role_name(format!("{}FS10:4", ROLE_PREFIX).as_str())?,
+        (Split::FindingStronghold, 10, 40)
+    );
+    assert_eq!(
         extract_split_from_role_name(format!("{}EE10:4", ROLE_PREFIX).as_str())?,
         (Split::EndEnter, 10, 40)
     );
@@ -35,6 +43,10 @@ pub fn test_extract_split_from_pb_role_name() {
         Some(Split::TowerStart)
     );
     assert_eq!(
+        extract_split_from_pb_role_name(format!("{}FSPB", ROLE_PREFIX).as_str()),
+        Some(Split::FindingStronghold)
+    );
+    assert_eq!(
         extract_split_from_pb_role_name(format!("{}EEPB", ROLE_PREFIX).as_str()),
         Some(Split::EndEnter)
     );
@@ -44,25 +56,26 @@ pub fn test_extract_split_from_pb_role_name() {
 pub fn test_extract_name_and_splits_from_line() -> Result<(), Box<dyn std::error::Error>> {
     let mut split_data = PlayerSplitsData {
         tower_start: 40,
+        finding_stronghold: 45,
         end_enter: 50,
         finish: None,
     };
     assert_eq!(
-        extract_name_and_splits_from_line("SathyaPramodh: 40/50")?,
+        extract_name_and_splits_from_line("SathyaPramodh: 40/45/50")?,
         ("SathyaPramodh".to_string(), split_data)
     );
     assert_eq!(
-        extract_name_and_splits_from_line("name_name_: 40/50")?,
+        extract_name_and_splits_from_line("name_name_: 40/45/50")?,
         ("name_name_".to_string(), split_data)
     );
 
     split_data.finish = Some(60);
     assert_eq!(
-        extract_name_and_splits_from_line("SathyaPramodh: 40/50/60")?,
+        extract_name_and_splits_from_line("SathyaPramodh: 40/45/50/60")?,
         ("SathyaPramodh".to_string(), split_data)
     );
     assert_eq!(
-        extract_name_and_splits_from_line("name_name_: 40/50/60")?,
+        extract_name_and_splits_from_line("name_name_: 40/45/50/60")?,
         ("name_name_".to_string(), split_data)
     );
     Ok(())

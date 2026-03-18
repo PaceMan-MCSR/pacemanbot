@@ -54,6 +54,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                     .required(true)
                     .kind(CommandOptionType::String)
                     .add_string_choice("Tower Start", Split::TowerStart.to_str())
+                    .add_string_choice("Finding Stronghold", Split::FindingStronghold.to_str())
                     .add_string_choice("End Enter", Split::EndEnter.to_str())
             })
             .create_option(|option| {
@@ -93,6 +94,12 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
             })
             .create_option(|option| {
                 option
+                    .name("finding_stronghold")
+                    .description("The time for finding stronghold that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
                     .name("end_enter")
                     .description("The time for end enter that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
@@ -117,6 +124,7 @@ pub async fn setup_default_commands(ctx: &Context, guild_id: GuildId) {
                     .kind(CommandOptionType::String)
                     .required(true)
                     .add_string_choice("Tower Start", "tower_start")
+                    .add_string_choice("Finding Stronghold", "finding_stronghold")
                     .add_string_choice("End Enter", "end_enter")
             })
             .create_option(|option| {
