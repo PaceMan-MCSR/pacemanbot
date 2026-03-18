@@ -71,6 +71,7 @@ pub async fn send_role_selection_message(
         r1_order.cmp(&r2_order)
     });
     let mut select_tower_start_role_action_row = CreateActionRow::default();
+    let mut select_finding_stronghold_role_action_row = CreateActionRow::default();
     let mut select_end_enter_role_action_row = CreateActionRow::default();
 
     select_tower_start_role_action_row.create_select_menu(|m| {
@@ -78,6 +79,19 @@ pub async fn send_role_selection_message(
             .placeholder("Choose a Tower Start Role...")
             .options(|o| {
                 match create_select_option(o, &roles, Split::TowerStart) {
+                    Ok(_) => (),
+                    Err(err) => {
+                        eprintln!("RoleSelectionMessageSendError: {}", err);
+                    }
+                }
+                o
+            })
+    });
+    select_finding_stronghold_role_action_row.create_select_menu(|m| {
+        m.custom_id("select_finding_stronghold_role")
+            .placeholder("Choose a Finding Stronghold Role...")
+            .options(|o| {
+                match create_select_option(o, &roles, Split::FindingStronghold) {
                     Ok(_) => (),
                     Err(err) => {
                         eprintln!("RoleSelectionMessageSendError: {}", err);
@@ -113,6 +127,7 @@ pub async fn send_role_selection_message(
         .edit_original_interaction_response(&ctx.http, |data| {
             data.content(content).components(|c| {
                 c.add_action_row(select_tower_start_role_action_row)
+                    .add_action_row(select_finding_stronghold_role_action_row)
                     .add_action_row(select_end_enter_role_action_row)
                     .add_action_row(remove_roles_action_row.to_owned())
             })

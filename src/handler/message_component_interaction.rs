@@ -17,6 +17,9 @@ pub async fn handle_message_component_interaction(
         "select_tower_start_role" => {
             handle_select_role(&ctx, &message_component, Split::TowerStart).await
         }
+        "select_finding_stronghold_role" => {
+            handle_select_role(&ctx, &message_component, Split::FindingStronghold).await
+        }
         "select_end_enter_role" => {
             handle_select_role(&ctx, &message_component, Split::EndEnter).await
         }
