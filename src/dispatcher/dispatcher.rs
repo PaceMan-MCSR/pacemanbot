@@ -12,7 +12,8 @@ use crate::{
     dispatcher::{
         format_time, millis_to_mins_secs, mins_secs_to_millis, EventType, RunInfo, RunType,
         CREDITS_EMOJI, LIVE_INDICATOR, MC_HEAD_URL_PREFIX, OFFLINE_EMOJI, OFFLINE_INDICATOR,
-        SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI, TWITCH_LINK_PREFIX,
+        PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI,
+        TWITCH_LINK_PREFIX,
     },
     log::Log,
     ws::{Event, ItemData, WSResponse},
@@ -300,7 +301,7 @@ impl Dispatcher {
             Ok(_) => Ok(()),
             Err(err) => {
                 self.log.error(
-                    format!("failed to send split: '{}' due to: {}", split_desc, err).as_str(),
+                    format!("Failed to send split: '{}' due to: {}", split_desc, err).as_str(),
                 );
                 return Err(err.into());
             }
@@ -363,7 +364,8 @@ impl Dispatcher {
         );
 
         let mut items_msg = String::new();
-        ItemData::format_item_count(&mut items_msg, "0", "0".to_string());
+        ItemData::format_item_count(&mut items_msg, ROD_EMOJI, "0".to_string());
+        ItemData::format_item_count(&mut items_msg, PEARL_EMOJI, "0".to_string());
 
         match self
             .send_message_in_pace_channel(
@@ -385,7 +387,7 @@ impl Dispatcher {
             Ok(_) => (),
             Err(err) => {
                 self.log
-                    .error(format!("failed to send split: 'Finish' due to: {}", err).as_str());
+                    .error(format!("Failed to send split: 'Finish' due to: {}", err).as_str());
                 return Err(err.into());
             }
         };
@@ -398,31 +400,34 @@ impl Dispatcher {
             return Ok(());
         }
 
-        match self.update_leaderboard(
-            guild_cache_entry.lb_channel.unwrap(),
-            runner_name.to_owned().replace("_", SPECIAL_UNDERSCORE),
-            (minutes, seconds),
-        )
-        .await
+        match self
+            .update_leaderboard(
+                guild_cache_entry.lb_channel.unwrap(),
+                runner_name.to_owned().replace("_", SPECIAL_UNDERSCORE),
+                (minutes, seconds),
+            )
+            .await
         {
             Ok(_) => {
-                self.log.info(format!(
+                self.log.info(
+                    format!(
                     "Updated leaderboard in #{} for guild name: {}, runner name: {} with time: {}.",
                     PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
                     guild_cache_entry.name,
                     runner_name,
                     format_time(last_event.igt as u64),
-                ).as_str());
+                )
+                    .as_str(),
+                );
                 Ok(())
-            },
-            Err(err) => {
-                Err(format!(
-                    "HandleNonPaceEvent: update leaderboard in guild name: {} for runner name: {} due to: {}",
-                    guild_cache_entry.name,
-                    self.ws_response.nickname.to_owned(),
-                    err
-                ).into())
             }
+            Err(err) => Err(format!(
+                "failed to update leaderboard in guild name: {} for runner name: {} due to: {}",
+                guild_cache_entry.name,
+                self.ws_response.nickname.to_owned(),
+                err
+            )
+            .into()),
         }
     }
 
@@ -518,7 +523,7 @@ impl Dispatcher {
                 m.embed(|e| {
                     e.set_author(author.clone());
                     e.field(pace_msg.clone(), "", false);
-                    if live_link.is_empty() {
+                    if !live_link.is_empty() {
                         e.field(format!("{} {}", TWITCH_EMOJI, live_link.clone()), "", false);
                     } else {
                         e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
@@ -624,9 +629,7 @@ impl Dispatcher {
                 );
                 Ok(())
             }
-            Err(err) => {
-                Err(format!("failed to send split: '{}' due to: {}", split_desc, err).into())
-            }
+            Err(err) => Err(err.into()),
         }
     }
 }
