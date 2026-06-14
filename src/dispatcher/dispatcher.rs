@@ -12,7 +12,7 @@ use crate::{
     dispatcher::{
         format_time, millis_to_mins_secs, mins_secs_to_millis, EventType, RunInfo, RunType,
         CREDITS_EMOJI, LIVE_INDICATOR, MC_HEAD_URL_PREFIX, OFFLINE_EMOJI, OFFLINE_INDICATOR,
-        SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI,
+        SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI, TWITCH_LINK_PREFIX,
     },
     log::Log,
     ws::{Event, ItemData, WSResponse},
@@ -69,7 +69,7 @@ impl Dispatcher {
         let mut locked_cache = self.cache.lock().await;
         for (guild_id, guild_cache_entry) in locked_cache.entries.iter_mut() {
             let live_link = match self.ws_response.user.live_account.to_owned() {
-                Some(live_account) => live_account,
+                Some(live_account) => format!("{}{}", TWITCH_LINK_PREFIX, live_account),
                 None => {
                     if !match GuildCacheEntry::is_private(
                         guild_cache_entry.name.to_string(),
