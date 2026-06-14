@@ -71,7 +71,7 @@ impl Dispatcher {
             let live_link = match self.ws_response.user.live_account.to_owned() {
                 Some(live_account) => live_account,
                 None => {
-                    if match GuildCacheEntry::is_private(
+                    if !match GuildCacheEntry::is_private(
                         guild_cache_entry.name.to_string(),
                         self.ctx.clone(),
                         guild_id,
