@@ -301,7 +301,7 @@ impl Dispatcher {
             Ok(_) => Ok(()),
             Err(err) => {
                 self.log.error(
-                    format!("failed to send split: '{}' due to: {}", split_desc, err).as_str(),
+                    format!("Failed to send split: '{}' due to: {}", split_desc, err).as_str(),
                 );
                 return Err(err.into());
             }
@@ -387,7 +387,7 @@ impl Dispatcher {
             Ok(_) => (),
             Err(err) => {
                 self.log
-                    .error(format!("failed to send split: 'Finish' due to: {}", err).as_str());
+                    .error(format!("Failed to send split: 'Finish' due to: {}", err).as_str());
                 return Err(err.into());
             }
         };
@@ -400,31 +400,34 @@ impl Dispatcher {
             return Ok(());
         }
 
-        match self.update_leaderboard(
-            guild_cache_entry.lb_channel.unwrap(),
-            runner_name.to_owned().replace("_", SPECIAL_UNDERSCORE),
-            (minutes, seconds),
-        )
-        .await
+        match self
+            .update_leaderboard(
+                guild_cache_entry.lb_channel.unwrap(),
+                runner_name.to_owned().replace("_", SPECIAL_UNDERSCORE),
+                (minutes, seconds),
+            )
+            .await
         {
             Ok(_) => {
-                self.log.info(format!(
+                self.log.info(
+                    format!(
                     "Updated leaderboard in #{} for guild name: {}, runner name: {} with time: {}.",
                     PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
                     guild_cache_entry.name,
                     runner_name,
                     format_time(last_event.igt as u64),
-                ).as_str());
+                )
+                    .as_str(),
+                );
                 Ok(())
-            },
-            Err(err) => {
-                Err(format!(
-                    "HandleNonPaceEvent: update leaderboard in guild name: {} for runner name: {} due to: {}",
-                    guild_cache_entry.name,
-                    self.ws_response.nickname.to_owned(),
-                    err
-                ).into())
             }
+            Err(err) => Err(format!(
+                "failed to update leaderboard in guild name: {} for runner name: {} due to: {}",
+                guild_cache_entry.name,
+                self.ws_response.nickname.to_owned(),
+                err
+            )
+            .into()),
         }
     }
 
@@ -531,8 +534,8 @@ impl Dispatcher {
                         format!("<t:{}:R>", (self.ws_response.last_updated / 1000) as u64),
                         true,
                     );
+                    e.field("Items", items_msg.clone(), true);
                     if is_pace_event && RunType::Bastionless == run_info.run_type {
-                        e.field("Items", items_msg.clone(), true);
                         e.field("Bastionless", "Yes", true);
                     }
                     e
@@ -626,9 +629,7 @@ impl Dispatcher {
                 );
                 Ok(())
             }
-            Err(err) => {
-                Err(format!("failed to send split: '{}' due to: {}", split_desc, err).into())
-            }
+            Err(err) => Err(err.into()),
         }
     }
 }
