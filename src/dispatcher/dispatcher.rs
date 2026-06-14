@@ -12,7 +12,8 @@ use crate::{
     dispatcher::{
         format_time, millis_to_mins_secs, mins_secs_to_millis, EventType, RunInfo, RunType,
         CREDITS_EMOJI, LIVE_INDICATOR, MC_HEAD_URL_PREFIX, OFFLINE_EMOJI, OFFLINE_INDICATOR,
-        SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI, TWITCH_LINK_PREFIX,
+        PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI,
+        TWITCH_LINK_PREFIX,
     },
     log::Log,
     ws::{Event, ItemData, WSResponse},
@@ -363,7 +364,8 @@ impl Dispatcher {
         );
 
         let mut items_msg = String::new();
-        ItemData::format_item_count(&mut items_msg, "0", "0".to_string());
+        ItemData::format_item_count(&mut items_msg, ROD_EMOJI, "0".to_string());
+        ItemData::format_item_count(&mut items_msg, PEARL_EMOJI, "0".to_string());
 
         match self
             .send_message_in_pace_channel(
@@ -518,7 +520,7 @@ impl Dispatcher {
                 m.embed(|e| {
                     e.set_author(author.clone());
                     e.field(pace_msg.clone(), "", false);
-                    if live_link.is_empty() {
+                    if !live_link.is_empty() {
                         e.field(format!("{} {}", TWITCH_EMOJI, live_link.clone()), "", false);
                     } else {
                         e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
@@ -529,8 +531,8 @@ impl Dispatcher {
                         format!("<t:{}:R>", (self.ws_response.last_updated / 1000) as u64),
                         true,
                     );
-                    e.field("Items", items_msg.clone(), true);
                     if is_pace_event && RunType::Bastionless == run_info.run_type {
+                        e.field("Items", items_msg.clone(), true);
                         e.field("Bastionless", "Yes", true);
                     }
                     e
