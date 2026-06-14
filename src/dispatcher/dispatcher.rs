@@ -123,7 +123,7 @@ impl Dispatcher {
                         self.ws_response.nickname,
                         guild_cache_entry.name
                     ).as_str());
-                    return Ok(());
+                    continue;
                 }
                 let player_data = PlayerCacheEntry::default();
                 guild_cache_entry.player_whitelist.insert(
