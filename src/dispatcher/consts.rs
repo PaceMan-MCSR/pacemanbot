@@ -1,6 +1,7 @@
 pub const SPECIAL_UNDERSCORE: &'static str = "ˍ";
 pub const STATS_URL_PREFIX: &'static str = "https://paceman.gg/stats/run/";
 pub const MC_HEAD_URL_PREFIX: &'static str = "https://api.mineatar.io/face/";
+pub const TWITCH_LINK_PREFIX: &'static str = "https://www.twitch.tv/";
 pub const LIVE_INDICATOR: &'static str = "🔴";
 pub const OFFLINE_INDICATOR: &'static str = "⚪";
 pub const PEARL_EMOJI: &'static str = "<:pearl:1306295843766403133>";
