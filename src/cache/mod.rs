@@ -1,17 +1,11 @@
-use std::collections::HashMap;
+mod cache;
+mod consts;
+mod guild_cache_entry;
+mod player_cache_entry;
+mod role_cache_entry;
 
-use guild_data::GuildData;
-use serenity::model::id::GuildId;
-
-pub mod cache;
-pub mod consts;
-pub mod guild_data;
-pub mod players;
-pub mod role_data;
-pub mod split;
-
-pub type CachedGuilds = HashMap<GuildId, GuildData>;
-
-pub struct CacheManager {
-    pub cache: CachedGuilds,
-}
+pub use cache::Cache;
+pub use consts::*;
+pub use guild_cache_entry::{GuildCacheEntry, Split, Structure};
+pub use player_cache_entry::PlayerCacheEntry;
+pub use role_cache_entry::RoleCacheEntry;
