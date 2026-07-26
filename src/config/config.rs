@@ -11,7 +11,6 @@ use crate::{
         extract_name_or_uuid_and_splits_from_config_line, extract_split_from_pb_role_name,
         extract_split_from_role_name, extract_splits_and_name_from_role_name, PACEMANBOT_CHANNEL,
         PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, PACEMANBOT_RUNNER_NAMES_CHANNEL, ROLE_PREFIX,
-        ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA,
     },
 };
 
@@ -86,12 +85,7 @@ impl Config {
             .roles
             .iter()
             .map(|(_, role)| role)
-            .filter(|r| {
-                r.name.starts_with(ROLE_PREFIX)
-                    && !r.name.starts_with(ROLE_PREFIX_115)
-                    && !r.name.starts_with(ROLE_PREFIX_17)
-                    && !r.name.starts_with(ROLE_PREFIX_AA)
-            })
+            .filter(|r| r.name.starts_with(ROLE_PREFIX))
             .collect::<Vec<_>>()
         {
             let role_data = match RoleCacheEntry::new(role.to_owned()) {

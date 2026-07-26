@@ -7,7 +7,7 @@ use serenity::{
 use crate::{
     cache::{GuildCacheEntry, Split},
     command::{create_guild_role, remove_runner_pings, Command, CommandContext},
-    config::{Config, ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA},
+    config::{Config, ROLE_PREFIX},
 };
 
 pub struct SetupPings;
@@ -15,7 +15,7 @@ pub struct SetupPings;
 #[async_trait]
 impl Command for SetupPings {
     fn name(&self) -> &str {
-        "setup_pings"
+        "setup_pings_17"
     }
 
     fn description(&self) -> &str {
@@ -49,10 +49,7 @@ impl Command for SetupPings {
                     .description("Split name for the runner that you want to change.")
                     .required(true)
                     .kind(CommandOptionType::String)
-                    .add_string_choice("First Structure", Split::FirstStructure.to_str())
-                    .add_string_choice("Second Structure", Split::SecondStructure.to_str())
-                    .add_string_choice("Blind", Split::Blind.to_str())
-                    .add_string_choice("Eye Spy", Split::EyeSpy.to_str())
+                    .add_string_choice("Tower Start", Split::TowerStart.to_str())
                     .add_string_choice("End Enter", Split::EndEnter.to_str())
             })
             .create_option(|option| {
@@ -218,7 +215,7 @@ impl Command for SetupPings {
                     m.content(format!(
                         "Added/Updated pings for runner with ign: '{}' for split: '{}' with time: '{}m'",
                         ign,
-                        split.alt_desc(),
+                        split.desc(),
                         time
                     ))
                 })
@@ -229,9 +226,6 @@ impl Command for SetupPings {
                 let role = match roles.iter().find(|(_, r)| {
                     r.name.contains(split.to_str().as_str())
                         && r.name.starts_with(ROLE_PREFIX)
-                        && !r.name.starts_with(ROLE_PREFIX_115)
-                        && !r.name.starts_with(ROLE_PREFIX_17)
-                        && !r.name.starts_with(ROLE_PREFIX_AA)
                         && r.name.contains(ign.as_str())
                 }) {
                     Some(name) => name,
@@ -266,7 +260,7 @@ impl Command for SetupPings {
                         m.content(format!(
                             "Removed pings for runner with ign: '{}' for split: '{}'",
                             ign,
-                            split.alt_desc()
+                            split.desc()
                         ))
                     })
                     .await?;

@@ -142,7 +142,7 @@ pub fn extract_name_or_uuid_and_splits_from_config_line(
     }
     let (player_name_or_uuid, splits_string) = (line_splits[0], line_splits[1]);
     let splits = splits_string.split('/').collect::<Vec<&str>>();
-    if splits.len() != 5 && splits.len() != 6 {
+    if splits.len() != 2 && splits.len() != 3 {
         return Err(format!("failed to parse line contents: '{}'.", line).into());
     }
     let mut idx = 0;
@@ -155,12 +155,9 @@ pub fn extract_name_or_uuid_and_splits_from_config_line(
             }
         };
         match idx {
-            0 => split_data.first_structure = split_u8,
-            1 => split_data.second_structure = split_u8,
-            2 => split_data.blind = split_u8,
-            3 => split_data.eye_spy = split_u8,
-            4 => split_data.end_enter = split_u8,
-            5 => split_data.finish = Some(split_u8),
+            0 => split_data.tower_start = split_u8,
+            1 => split_data.end_enter = split_u8,
+            2 => split_data.finish = Some(split_u8),
             _ => (),
         };
         idx += 1;

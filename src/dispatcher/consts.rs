@@ -1,11 +1,8 @@
 pub const SPECIAL_UNDERSCORE: &'static str = "ˍ";
-pub const STATS_URL_PREFIX: &'static str = "https://paceman.gg/stats/run/";
 pub const MC_HEAD_URL_PREFIX: &'static str = "https://api.mineatar.io/face/";
 pub const TWITCH_LINK_PREFIX: &'static str = "https://twitch.tv/";
 pub const LIVE_INDICATOR: &'static str = "🔴";
 pub const OFFLINE_INDICATOR: &'static str = "⚪";
-pub const PEARL_EMOJI: &'static str = "<:pearl:1306295843766403133>";
-pub const ROD_EMOJI: &'static str = "<:blazerod:1306297336070406196>";
-pub const CREDITS_EMOJI: &'static str = "<:credits:1306295962578321471>";
-pub const TWITCH_EMOJI: &'static str = "<:twitch:1306295796932808804>";
-pub const OFFLINE_EMOJI: &'static str = "<:offline:1306296099312631858>";
+pub const CREDITS_EMOJI: &'static str = "<:credits:1322180477582446604>";
+pub const TWITCH_EMOJI: &'static str = "<:twitch:1322180525083066369>";
+pub const OFFLINE_EMOJI: &'static str = "<:offline:1322180578681946184>";

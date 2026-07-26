@@ -13,7 +13,7 @@ pub struct SetupPBRoles;
 #[async_trait]
 impl Command for SetupPBRoles {
     fn name(&self) -> &str {
-        "setup_pb_roles"
+        "setup_pb_roles_17"
     }
 
     fn description(&self) -> &str {
@@ -31,13 +31,7 @@ impl Command for SetupPBRoles {
         let ctx = context.ctx;
         let command = context.interaction;
 
-        let splits: Vec<Split> = vec![
-            Split::FirstStructure,
-            Split::SecondStructure,
-            Split::Blind,
-            Split::EyeSpy,
-            Split::EndEnter,
-        ];
+        let splits: Vec<Split> = vec![Split::TowerStart, Split::EndEnter];
         for split in splits {
             let role_name = format!("{}{}PB", ROLE_PREFIX, split.to_str());
             create_guild_role(ctx, &context.guild_id, &role_name).await?;

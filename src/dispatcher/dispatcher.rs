@@ -10,13 +10,12 @@ use crate::{
     cache::{Cache, GuildCacheEntry, PlayerCacheEntry, RoleCacheEntry, EDIT_MESSAGE_DELAY},
     config::PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
     dispatcher::{
-        format_time, millis_to_mins_secs, mins_secs_to_millis, EventType, RunInfo, RunType,
-        CREDITS_EMOJI, LIVE_INDICATOR, MC_HEAD_URL_PREFIX, OFFLINE_EMOJI, OFFLINE_INDICATOR,
-        PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI,
-        TWITCH_LINK_PREFIX,
+        format_time, millis_to_mins_secs, mins_secs_to_millis, EventType, RunInfo, CREDITS_EMOJI,
+        LIVE_INDICATOR, MC_HEAD_URL_PREFIX, OFFLINE_EMOJI, OFFLINE_INDICATOR, SPECIAL_UNDERSCORE,
+        TWITCH_EMOJI, TWITCH_LINK_PREFIX,
     },
     log::Log,
-    ws::{Event, ItemData, WSResponse},
+    ws::{Event, WSResponse},
 };
 
 pub struct Dispatcher {
@@ -25,7 +24,6 @@ pub struct Dispatcher {
     pub cache: Arc<Mutex<Cache>>,
     pub partial_author: CreateEmbedAuthor,
     pub ws_response: WSResponse,
-    pub stats_link: String,
 }
 
 impl Dispatcher {
@@ -35,7 +33,6 @@ impl Dispatcher {
         cache: Arc<Mutex<Cache>>,
         ws_response: WSResponse,
     ) -> Self {
-        let stats_link = format!("{}{}", STATS_URL_PREFIX, ws_response.world_id);
         let mc_head_url = format!("{}{}", MC_HEAD_URL_PREFIX, ws_response.user.uuid);
         let author_name = ws_response.nickname.replace("_", SPECIAL_UNDERSCORE);
         let mut partial_author = CreateEmbedAuthor::default();
@@ -46,15 +43,14 @@ impl Dispatcher {
             log,
             cache,
             ws_response,
-            stats_link,
             partial_author,
         }
     }
     pub async fn dispatch(&self) -> Result<(), Box<dyn Error>> {
         let game_version = self.ws_response.game_version.to_owned();
-        if game_version.is_some() && game_version.unwrap() != "1.16.1" {
+        if game_version.is_some() && game_version.unwrap() != "1.7.10" {
             self.log
-                .warn("Skipping record because it was not of 1.16.1.");
+                .warn("Skipping record because it was not of 1.7.10.");
             return Ok(());
         }
         let last_event = match self.ws_response.event_list.last() {
@@ -189,15 +185,7 @@ impl Dispatcher {
         is_private: bool,
         has_player_uuid: bool,
     ) -> Result<(), Box<dyn Error>> {
-        let event_list: Vec<Event> = self.ws_response.event_list.iter().cloned().collect();
-        let context_event_list: Vec<Event> = self
-            .ws_response
-            .context_event_list
-            .iter()
-            .cloned()
-            .collect();
-        let item_data = self.ws_response.item_data.clone();
-        let run_info = match RunInfo::from_last_event(last_event, event_list, context_event_list) {
+        let run_info = match RunInfo::from_last_event(last_event) {
             Some(info) => info,
             None => {
                 return Err(format!("unrecognized event id: {:#?}.", last_event.event_id).into());
@@ -214,15 +202,8 @@ impl Dispatcher {
                 .get_mut(&self.ws_response.nickname.to_lowercase())
                 .unwrap()
         };
-        let split_desc = match run_info.split.desc(&run_info.structure) {
-            Some(desc) => desc,
-            None => {
-                return Err(
-                    format!("failed to get split desc for split: {:#?}", run_info.split).into(),
-                );
-            }
-        };
-        let split_emoji = match run_info.split.get_emoji(&run_info.structure) {
+        let split_desc = run_info.split.desc();
+        let split_emoji = match run_info.split.get_emoji() {
             Some(emoji) => emoji,
             None => {
                 return Err(
@@ -258,7 +239,6 @@ impl Dispatcher {
         } else {
             OFFLINE_INDICATOR
         };
-        let items_msg = ItemData::to_formatted_message(item_data, &run_info);
         let metadata = format!(
             "{} {} - {} {}",
             live_indicator,
@@ -287,9 +267,7 @@ impl Dispatcher {
                 guild_cache_entry.name.to_string(),
                 author,
                 pace_msg,
-                items_msg,
                 live_link,
-                Some(run_info),
                 message_content,
                 metadata,
                 roles_to_ping,
@@ -334,9 +312,9 @@ impl Dispatcher {
         let finish_minutes = match player_data.finish {
             Some(mins) => mins,
             None => {
-                if !is_private && minutes >= 10 {
+                if !is_private && minutes >= 20 {
                     self.log.warn(format!(
-                        "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
+                        "Skipping guild name: {} because it is not a sub 20 completion and the guild is public.", 
                         guild_cache_entry.name
                     ).as_str());
                     return Ok(());
@@ -363,19 +341,13 @@ impl Dispatcher {
             format_time(last_event.igt as u64),
         );
 
-        let mut items_msg = String::new();
-        ItemData::format_item_count(&mut items_msg, ROD_EMOJI, "0".to_string());
-        ItemData::format_item_count(&mut items_msg, PEARL_EMOJI, "0".to_string());
-
         match self
             .send_message_in_pace_channel(
                 &guild_cache_entry.pace_channel,
                 guild_cache_entry.name.to_string(),
                 author,
                 finish_msg,
-                items_msg,
                 live_link,
-                None,
                 String::new(),
                 String::new(),
                 Vec::new(),
@@ -508,16 +480,13 @@ impl Dispatcher {
         guild_name: String,
         author: CreateEmbedAuthor,
         pace_msg: String,
-        items_msg: String,
         live_link: String,
-        run_info: Option<RunInfo>,
         message_content: String,
         metadata: String,
         roles_to_ping: Vec<&RoleCacheEntry>,
         split_desc: String,
         is_pace_event: bool,
     ) -> Result<(), Box<dyn Error>> {
-        let run_info = run_info.unwrap_or(RunInfo::default());
         match pace_channel
             .send_message(&self.ctx.clone(), |m| {
                 m.embed(|e| {
@@ -528,16 +497,11 @@ impl Dispatcher {
                     } else {
                         e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                     }
-                    e.field("Splits", format!("[Link]({})", self.stats_link), true);
                     e.field(
                         "Time",
                         format!("<t:{}:R>", (self.ws_response.last_updated / 1000) as u64),
                         true,
                     );
-                    e.field("Items", items_msg.clone(), true);
-                    if is_pace_event && RunType::Bastionless == run_info.run_type {
-                        e.field("Bastionless", "Yes", true);
-                    }
                     e
                 })
                 .content(message_content.to_owned())
@@ -556,11 +520,8 @@ impl Dispatcher {
                     let author_clone = author.clone();
                     let pace_content_clone = pace_msg.clone();
                     let live_link_clone = live_link.clone();
-                    let stats_link_clone = self.stats_link.clone();
-                    let item_data_content_clone = items_msg.clone();
                     let live_account_clone = self.ws_response.user.live_account.is_some();
                     let last_updated = self.ws_response.last_updated;
-                    let run_type_clone = run_info.run_type.clone();
                     let log_clone = self.log.clone();
 
                     tokio::spawn(async move {
@@ -592,19 +553,10 @@ impl Dispatcher {
                                         e.field(format!("{}  Offline", OFFLINE_EMOJI), "", false);
                                     }
                                     e.field(
-                                        "Splits",
-                                        format!("[Link]({})", stats_link_clone),
-                                        true,
-                                    );
-                                    e.field(
                                         "Time",
                                         format!("<t:{}:R>", (last_updated / 1000) as u64),
                                         true,
                                     );
-                                    e.field("Items", item_data_content_clone, true);
-                                    if let RunType::Bastionless = run_type_clone {
-                                        e.field("Bastionless", "Yes", true);
-                                    }
                                     e
                                 })
                                 .content(content_removed_metadata)
