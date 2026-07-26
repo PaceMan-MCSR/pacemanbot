@@ -43,17 +43,15 @@ impl Command for WhitelistUUID {
             })
             .create_option(|option| {
                 option
-                    .name("first_structure")
-                    .description(
-                        "The time for first structure that you want to setup for the runner.",
-                    )
+                    .name("enter_nether")
+                    .description("The time for nether enter that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("second_structure")
+                    .name("enter_fortress")
                     .description(
-                        "The time for second structure that you want to setup for the runner.",
+                        "The time for fortress enter that you want to setup for the runner.",
                     )
                     .kind(CommandOptionType::Integer)
             })
