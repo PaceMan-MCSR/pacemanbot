@@ -7,7 +7,7 @@ use serenity::{
 use crate::{
     cache::{GuildCacheEntry, Split},
     command::{create_guild_role, remove_runner_pings, Command, CommandContext},
-    config::{Config, ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA},
+    config::{Config, ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
 };
 
 pub struct SetupPings;
@@ -15,7 +15,7 @@ pub struct SetupPings;
 #[async_trait]
 impl Command for SetupPings {
     fn name(&self) -> &str {
-        "setup_pings"
+        "setup_pings_aa"
     }
 
     fn description(&self) -> &str {
@@ -49,11 +49,9 @@ impl Command for SetupPings {
                     .description("Split name for the runner that you want to change.")
                     .required(true)
                     .kind(CommandOptionType::String)
-                    .add_string_choice("First Structure", Split::FirstStructure.to_str())
-                    .add_string_choice("Second Structure", Split::SecondStructure.to_str())
-                    .add_string_choice("Blind", Split::Blind.to_str())
-                    .add_string_choice("Eye Spy", Split::EyeSpy.to_str())
-                    .add_string_choice("End Enter", Split::EndEnter.to_str())
+                    .add_string_choice("Adventuring Time", Split::AdventuringTime.to_str())
+                    .add_string_choice("Beaconator", Split::Beaconator.to_str())
+                    .add_string_choice("HDWGH", Split::HDWGH.to_str())
             })
             .create_option(|option| {
                 option
@@ -71,7 +69,8 @@ impl Command for SetupPings {
         let mut action = String::new();
         let mut ign = String::new();
         let mut split = String::new();
-        let mut time = 0;
+        let mut time_hours = 0;
+        let mut time_minutes = 0;
         for option in command.data.options.iter() {
             match option.name.as_str() {
                 "action" => {
@@ -127,8 +126,25 @@ impl Command for SetupPings {
                         }
                     }
                 }
-                "time" => {
-                    time = match option.value.to_owned() {
+                "time_hours" => {
+                    time_hours = match option.value.to_owned() {
+                        Some(value) => match value.as_u64() {
+                            Some(int) => int as u8,
+                            None => {
+                                return Err(
+                                    "failed to setup pings: convert 'time' value to u64".into()
+                                )
+                            }
+                        },
+                        None => {
+                            return Err(
+                                "failed to setup pings: get value for 'time' for command.".into()
+                            )
+                        }
+                    }
+                }
+                "time_minutes" => {
+                    time_minutes = match option.value.to_owned() {
                         Some(value) => match value.as_u64() {
                             Some(int) => int as u8,
                             None => {
@@ -185,7 +201,7 @@ impl Command for SetupPings {
         };
         match action.as_str() {
             "add_or_update" => {
-                if time == 0 {
+                if time_hours == 0 && time_minutes == 0 {
                     return Err(
                         "failed to setup pings: Parameter 'time' is undefined for 'add_or_update'."
                             .into(),
@@ -200,7 +216,14 @@ impl Command for SetupPings {
                     ign.to_owned(),
                 )
                 .await?;
-                let role_name = format!("{}{}{}:0+{}", ROLE_PREFIX, split.to_str(), time, ign);
+                let role_name = format!(
+                    "{}{}{}:{}+{}",
+                    ROLE_PREFIX,
+                    split.to_str(),
+                    time_hours,
+                    time_minutes,
+                    ign
+                );
                 let roles = guild_id.roles(&ctx.http).await?;
                 let guild_has_role = roles.iter().any(|(_, r)| r.name == role_name);
                 if !guild_has_role {
@@ -216,10 +239,11 @@ impl Command for SetupPings {
                 command
                 .edit_original_interaction_response(&ctx.http, |m| {
                     m.content(format!(
-                        "Added/Updated pings for runner with ign: '{}' for split: '{}' with time: '{}m'",
+                        "Added/Updated pings for runner with ign: '{}' for split: '{}' with time: '{}h{}m'",
                         ign,
-                        split.alt_desc(),
-                        time
+                        split.desc(),
+                        time_hours,
+												time_minutes,
                     ))
                 })
                 .await?;
@@ -231,7 +255,6 @@ impl Command for SetupPings {
                         && r.name.starts_with(ROLE_PREFIX)
                         && !r.name.starts_with(ROLE_PREFIX_115)
                         && !r.name.starts_with(ROLE_PREFIX_17)
-                        && !r.name.starts_with(ROLE_PREFIX_AA)
                         && r.name.contains(ign.as_str())
                 }) {
                     Some(name) => name,
@@ -266,7 +289,7 @@ impl Command for SetupPings {
                         m.content(format!(
                             "Removed pings for runner with ign: '{}' for split: '{}'",
                             ign,
-                            split.alt_desc()
+                            split.desc()
                         ))
                     })
                     .await?;

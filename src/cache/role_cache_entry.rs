@@ -5,15 +5,15 @@ use serenity::model::guild::Role;
 use crate::{
     cache::{PlayerCacheEntry, Split},
     config::Config,
-    dispatcher::{millis_to_mins_secs, RunInfo},
-    ws::{Event, WSResponse},
+    dispatcher::{millis_to_hrs_mins, RunInfo},
+    ws::{Advancement, WSResponse},
 };
 
 #[derive(Debug)]
 pub struct RoleCacheEntry {
     pub split: Split,
+    pub hours: u8,
     pub minutes: u8,
-    pub seconds: u8,
     pub runner: String,
     pub role: Role,
 }
@@ -27,26 +27,28 @@ impl RoleCacheEntry {
         &self,
         player_data: &PlayerCacheEntry,
         run_info: &RunInfo,
-        last_event: &Event,
+        last_advancement: &Advancement,
         is_private: bool,
         ws_response: &WSResponse,
     ) -> bool {
-        let (split_minutes, split_seconds) = millis_to_mins_secs(last_event.igt as u64);
+        let (split_hours, split_minutes) = millis_to_hrs_mins(last_advancement.igt as u64);
         if self.role.name.contains("PB") {
             if !is_private {
                 return false;
             }
             let pb_minutes = player_data.get(&self.split).unwrap().to_owned();
-            self.split == run_info.split && pb_minutes > split_minutes
+            let pb_hours = (pb_minutes / 60) as u8;
+            let pb_minutes = (pb_minutes % 60) as u8;
+            self.split == run_info.split && pb_hours > split_hours && pb_minutes > split_minutes
         } else if self.role.name.contains("+") {
             self.split == run_info.split
                 && self.runner.to_lowercase() == ws_response.nickname.to_lowercase()
-                && self.minutes >= split_minutes
-                && (self.minutes != split_minutes || self.seconds > split_seconds)
+                && self.hours >= split_hours
+                && (self.hours != split_hours || self.minutes > split_minutes)
         } else {
             self.split == run_info.split
-                && self.minutes >= split_minutes
-                && (self.minutes != split_minutes || self.seconds > split_seconds)
+                && self.hours >= split_hours
+                && (self.hours != split_hours || self.minutes > split_minutes)
         }
     }
 }

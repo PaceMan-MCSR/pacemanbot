@@ -14,7 +14,7 @@ use crate::{
     command::ROLE_COLOR,
     config::{
         extract_split_from_pb_role_name, extract_split_from_role_name, ROLE_PREFIX_115,
-        ROLE_PREFIX_17, ROLE_PREFIX_AA,
+        ROLE_PREFIX_17,
     },
 };
 
@@ -36,7 +36,7 @@ pub fn create_select_option<'a>(
             if split == target_split {
                 o.add_option(
                     CreateSelectMenuOption::default()
-                        .label(format!("PB Pace {}", target_split.alt_desc()))
+                        .label(format!("PB Pace {}", target_split.desc()))
                         .value(role.id.to_string())
                         .to_owned(),
                 );
@@ -50,7 +50,7 @@ pub fn create_select_option<'a>(
                             "Sub {}:{:02} {}",
                             minutes,
                             seconds,
-                            target_split.alt_desc()
+                            target_split.desc()
                         ))
                         .value(role.id.to_string())
                         .to_owned(),
@@ -90,18 +90,23 @@ pub fn get_new_config_contents(players: HashMap<String, PlayerCacheEntry>) -> St
 
         let splits = players_unchecked.unwrap();
         let finish_config = if splits.finish.is_some() {
-            format!("/{}", splits.finish.unwrap())
+            format!(
+                "/{};{}",
+                splits.finish.unwrap() / 60,
+                splits.finish.unwrap() % 60
+            )
         } else {
             "".to_string()
         };
         let line = format!(
-            "{}:{}/{}/{}/{}/{}{}",
+            "{}:{};{}/{};{}/{};{}{}",
             key,
-            splits.first_structure,
-            splits.second_structure,
-            splits.blind,
-            splits.eye_spy,
-            splits.end_enter,
+            splits.adventuring_time / 60,
+            splits.adventuring_time % 60,
+            splits.beaconator / 60,
+            splits.beaconator % 60,
+            splits.hdwgh / 60,
+            splits.hdwgh % 60,
             finish_config
         );
         new_config = format!("{}\n{}", new_config, line);
@@ -123,7 +128,6 @@ pub async fn remove_runner_pings(
         if role.name.starts_with(role_prefix)
             && !role.name.starts_with(ROLE_PREFIX_115)
             && !role.name.starts_with(ROLE_PREFIX_17)
-            && !role.name.starts_with(ROLE_PREFIX_AA)
             && role.name.contains(ign.as_str())
             && role.name.contains(split.to_str().as_str())
         {

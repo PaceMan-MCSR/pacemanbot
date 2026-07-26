@@ -21,8 +21,8 @@ impl Env {
                 return Err(format!("Expected BOT_TOKEN: {}", e).into());
             }
         };
-        let ws_host = env::var("WS_HOST").unwrap_or("paceman.gg:8081".to_string());
-        let ws_url = env::var("WS_URL").unwrap_or("wss://paceman.gg/ws".to_string());
+        let ws_host = env::var("WS_HOST").unwrap_or("paceman.gg:8082".to_string());
+        let ws_url = env::var("WS_URL").unwrap_or("wss://paceman.gg/ws-aa".to_string());
         let api_auth_key = match env::var("API_AUTH_KEY") {
             Ok(key) => key,
             Err(e) => {

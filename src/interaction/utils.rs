@@ -11,7 +11,7 @@ use serenity::{
 
 use crate::{
     cache::Split,
-    config::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA},
+    config::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17},
 };
 
 pub async fn handle_remove_pmb_roles(
@@ -61,7 +61,6 @@ pub async fn remove_roles_starting_with(
         if role.name.starts_with(role_prefix)
             && !role.name.starts_with(ROLE_PREFIX_115)
             && !role.name.starts_with(ROLE_PREFIX_17)
-            && !role.name.starts_with(ROLE_PREFIX_AA)
         {
             if skip_pb_roles && role.name.contains("PB") {
                 continue;

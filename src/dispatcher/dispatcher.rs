@@ -10,13 +10,12 @@ use crate::{
     cache::{Cache, GuildCacheEntry, PlayerCacheEntry, RoleCacheEntry, EDIT_MESSAGE_DELAY},
     config::PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
     dispatcher::{
-        format_time, millis_to_mins_secs, mins_secs_to_millis, EventType, RunInfo, RunType,
+        format_time, hrs_mins_secs_to_millis, millis_to_hrs_mins, EventType, RunInfo,
         CREDITS_EMOJI, LIVE_INDICATOR, MC_HEAD_URL_PREFIX, OFFLINE_EMOJI, OFFLINE_INDICATOR,
-        PEARL_EMOJI, ROD_EMOJI, SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI,
-        TWITCH_LINK_PREFIX,
+        SPECIAL_UNDERSCORE, STATS_URL_PREFIX, TWITCH_EMOJI, TWITCH_LINK_PREFIX,
     },
     log::Log,
-    ws::{Event, ItemData, WSResponse},
+    ws::{Advancement, WSResponse},
 };
 
 pub struct Dispatcher {
@@ -51,17 +50,11 @@ impl Dispatcher {
         }
     }
     pub async fn dispatch(&self) -> Result<(), Box<dyn Error>> {
-        let game_version = self.ws_response.game_version.to_owned();
-        if game_version.is_some() && game_version.unwrap() != "1.16.1" {
-            self.log
-                .warn("Skipping record because it was not of 1.16.1.");
-            return Ok(());
-        }
-        let last_event = match self.ws_response.event_list.last() {
+        let last_advancement = match self.ws_response.completed.last() {
             Some(evt) => evt,
             None => {
                 return Err(format!(
-                    "failed to get last event from events list of size: {}",
+                    "failed to get last event from completed list of size: {}",
                     self.ws_response.event_list.len()
                 )
                 .into())
@@ -100,7 +93,8 @@ impl Dispatcher {
                 author.url(live_link.clone());
             }
 
-            let event_type = EventType::from(last_event);
+            let event_type =
+                EventType::from_advancement(last_advancement, self.ws_response.completed.len());
             let is_private = match GuildCacheEntry::is_private(
                 guild_cache_entry.name.to_string(),
                 self.ctx.clone(),
@@ -137,7 +131,7 @@ impl Dispatcher {
                     self.log.warn(
                         format!(
                             "Unknown event type: {:#?}. Skipping all guilds.",
-                            last_event.event_id
+                            last_advancement.event_id
                         )
                         .as_str(),
                     );
@@ -148,7 +142,7 @@ impl Dispatcher {
                         .handle_non_pace_event(
                             live_link,
                             author,
-                            last_event,
+                            last_advancement,
                             guild_cache_entry,
                             is_private,
                             has_player_uuid,
@@ -164,7 +158,7 @@ impl Dispatcher {
                         .handle_pace_event(
                             live_link,
                             author,
-                            last_event,
+                            last_advancement,
                             guild_cache_entry,
                             is_private,
                             has_player_uuid,
@@ -184,23 +178,17 @@ impl Dispatcher {
         &self,
         live_link: String,
         author: CreateEmbedAuthor,
-        last_event: &Event,
+        last_advancement: &Advancement,
         guild_cache_entry: &mut GuildCacheEntry,
         is_private: bool,
         has_player_uuid: bool,
     ) -> Result<(), Box<dyn Error>> {
-        let event_list: Vec<Event> = self.ws_response.event_list.iter().cloned().collect();
-        let context_event_list: Vec<Event> = self
-            .ws_response
-            .context_event_list
-            .iter()
-            .cloned()
-            .collect();
-        let item_data = self.ws_response.item_data.clone();
-        let run_info = match RunInfo::from_last_event(last_event, event_list, context_event_list) {
+        let run_info = match RunInfo::from_last_advancement(&self.ws_response, last_advancement) {
             Some(info) => info,
             None => {
-                return Err(format!("unrecognized event id: {:#?}.", last_event.event_id).into());
+                return Err(
+                    format!("unrecognized event id: {:#?}.", last_advancement.event_id).into(),
+                );
             }
         };
         let player_data = if has_player_uuid {
@@ -214,15 +202,8 @@ impl Dispatcher {
                 .get_mut(&self.ws_response.nickname.to_lowercase())
                 .unwrap()
         };
-        let split_desc = match run_info.split.desc(&run_info.structure) {
-            Some(desc) => desc,
-            None => {
-                return Err(
-                    format!("failed to get split desc for split: {:#?}", run_info.split).into(),
-                );
-            }
-        };
-        let split_emoji = match run_info.split.get_emoji(&run_info.structure) {
+        let split_desc = run_info.split.desc();
+        let split_emoji = match run_info.split.get_emoji() {
             Some(emoji) => emoji,
             None => {
                 return Err(
@@ -237,7 +218,7 @@ impl Dispatcher {
                 role_cache_entry.is_pingable(
                     player_data,
                     &run_info,
-                    last_event,
+                    last_advancement,
                     is_private,
                     &self.ws_response,
                 )
@@ -258,11 +239,10 @@ impl Dispatcher {
         } else {
             OFFLINE_INDICATOR
         };
-        let items_msg = ItemData::to_formatted_message(item_data, &run_info);
         let metadata = format!(
             "{} {} - {} {}",
             live_indicator,
-            format_time(last_event.igt as u64),
+            format_time(last_advancement.igt as u64),
             split_desc,
             self.ws_response.nickname.replace("_", SPECIAL_UNDERSCORE)
         );
@@ -278,7 +258,7 @@ impl Dispatcher {
         let pace_msg = format!(
             "{}  {} - {}",
             split_emoji,
-            format_time(last_event.igt as u64),
+            format_time(last_advancement.igt as u64),
             split_desc,
         );
         match self
@@ -287,9 +267,7 @@ impl Dispatcher {
                 guild_cache_entry.name.to_string(),
                 author,
                 pace_msg,
-                items_msg,
                 live_link,
-                Some(run_info),
                 message_content,
                 metadata,
                 roles_to_ping,
@@ -312,7 +290,7 @@ impl Dispatcher {
         &self,
         live_link: String,
         author: CreateEmbedAuthor,
-        last_event: &Event,
+        last_advancement: &Advancement,
         guild_cache_entry: &mut GuildCacheEntry,
         is_private: bool,
         has_player_uuid: bool,
@@ -330,23 +308,22 @@ impl Dispatcher {
         };
 
         let runner_name = self.ws_response.nickname.to_owned();
-        let (minutes, seconds) = millis_to_mins_secs(last_event.igt as u64);
+        let (hours, minutes) = millis_to_hrs_mins(last_advancement.igt as u64);
         let finish_minutes = match player_data.finish {
             Some(mins) => mins,
             None => {
-                if !is_private && minutes >= 10 {
+                if !is_private && hours >= 3 {
                     self.log.warn(format!(
-                        "Skipping guild name: {} because it is not a sub 10 completion and the guild is public.", 
+                        "Skipping guild name: {} because it is not a sub 3 completion and the guild is public.", 
                         guild_cache_entry.name
                     ).as_str());
                     return Ok(());
                 }
-                // `minutes` + 1 will always be greater than minutes.
-                // This is done to send finish message always if finish time is not defined.
-                minutes + 1
+                0
             }
         };
-        if minutes >= finish_minutes {
+        let finish_hours = (finish_minutes / 60) as u8;
+        if player_data.finish.is_some() && hours >= finish_hours {
             self.log.warn(
                 format!(
                     "Skipping guild name: {} because finish time is above the defined amount.",
@@ -360,12 +337,8 @@ impl Dispatcher {
         let finish_msg = format!(
             "{}  {} - Finish",
             CREDITS_EMOJI,
-            format_time(last_event.igt as u64),
+            format_time(last_advancement.igt as u64),
         );
-
-        let mut items_msg = String::new();
-        ItemData::format_item_count(&mut items_msg, ROD_EMOJI, "0".to_string());
-        ItemData::format_item_count(&mut items_msg, PEARL_EMOJI, "0".to_string());
 
         match self
             .send_message_in_pace_channel(
@@ -373,9 +346,7 @@ impl Dispatcher {
                 guild_cache_entry.name.to_string(),
                 author,
                 finish_msg,
-                items_msg,
                 live_link,
-                None,
                 String::new(),
                 String::new(),
                 Vec::new(),
@@ -404,7 +375,7 @@ impl Dispatcher {
             .update_leaderboard(
                 guild_cache_entry.lb_channel.unwrap(),
                 runner_name.to_owned().replace("_", SPECIAL_UNDERSCORE),
-                (minutes, seconds),
+                (hours, minutes),
             )
             .await
         {
@@ -415,7 +386,7 @@ impl Dispatcher {
                     PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
                     guild_cache_entry.name,
                     runner_name,
-                    format_time(last_event.igt as u64),
+                    format_time(last_advancement.igt as u64),
                 )
                     .as_str(),
                 );
@@ -443,7 +414,7 @@ impl Dispatcher {
         if messages.is_empty() {
             let leaderboard_content = format!(
                 "## Runner Leaderboard\n\n`{}`\t\t{}",
-                format_time(mins_secs_to_millis(time)),
+                format_time(hrs_mins_secs_to_millis(time)),
                 nickname
             );
             leaderboard_channel
@@ -469,17 +440,17 @@ impl Dispatcher {
                     .map(|sp| sp.parse::<u8>().unwrap())
                     .collect::<Vec<u8>>();
                 let (minutes, seconds) = (time_splits[0], time_splits[1]);
-                let time_millis: u64 = mins_secs_to_millis((minutes, seconds));
+                let time_millis: u64 = hrs_mins_secs_to_millis((minutes, seconds));
                 player_names_with_time.insert(player_name.to_owned(), time_millis);
             }
-            let current_finish_time = mins_secs_to_millis(time);
+            let current_finish_time = hrs_mins_secs_to_millis(time);
             if player_names_with_time.get(&nickname).is_some() {
                 let time = player_names_with_time.get(&nickname).unwrap();
                 if time > &current_finish_time {
                     player_names_with_time.insert(nickname.to_owned(), current_finish_time);
                 }
             } else {
-                player_names_with_time.insert(nickname, mins_secs_to_millis(time));
+                player_names_with_time.insert(nickname, hrs_mins_secs_to_millis(time));
             }
             let mut entry_vector: Vec<(&String, &u64)> = player_names_with_time
                 .iter()
@@ -508,16 +479,13 @@ impl Dispatcher {
         guild_name: String,
         author: CreateEmbedAuthor,
         pace_msg: String,
-        items_msg: String,
         live_link: String,
-        run_info: Option<RunInfo>,
         message_content: String,
         metadata: String,
         roles_to_ping: Vec<&RoleCacheEntry>,
         split_desc: String,
         is_pace_event: bool,
     ) -> Result<(), Box<dyn Error>> {
-        let run_info = run_info.unwrap_or(RunInfo::default());
         match pace_channel
             .send_message(&self.ctx.clone(), |m| {
                 m.embed(|e| {
@@ -534,10 +502,6 @@ impl Dispatcher {
                         format!("<t:{}:R>", (self.ws_response.last_updated / 1000) as u64),
                         true,
                     );
-                    e.field("Items", items_msg.clone(), true);
-                    if is_pace_event && RunType::Bastionless == run_info.run_type {
-                        e.field("Bastionless", "Yes", true);
-                    }
                     e
                 })
                 .content(message_content.to_owned())
@@ -557,10 +521,8 @@ impl Dispatcher {
                     let pace_content_clone = pace_msg.clone();
                     let live_link_clone = live_link.clone();
                     let stats_link_clone = self.stats_link.clone();
-                    let item_data_content_clone = items_msg.clone();
                     let live_account_clone = self.ws_response.user.live_account.is_some();
                     let last_updated = self.ws_response.last_updated;
-                    let run_type_clone = run_info.run_type.clone();
                     let log_clone = self.log.clone();
 
                     tokio::spawn(async move {
@@ -601,10 +563,6 @@ impl Dispatcher {
                                         format!("<t:{}:R>", (last_updated / 1000) as u64),
                                         true,
                                     );
-                                    e.field("Items", item_data_content_clone, true);
-                                    if let RunType::Bastionless = run_type_clone {
-                                        e.field("Bastionless", "Yes", true);
-                                    }
                                     e
                                 })
                                 .content(content_removed_metadata)

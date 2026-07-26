@@ -1,106 +1,100 @@
 use crate::{
-    cache::{Split, Structure},
-    ws::{Event, EventId},
+    cache::Split,
+    dispatcher::TOTAL_ADVANCEMENTS_116,
+    ws::{Advancement, AdvancementId, WSResponse},
 };
-
-#[derive(Clone, PartialEq)]
-pub enum RunType {
-    Bastionless,
-    Modern,
-}
 
 pub struct RunInfo {
     pub split: Split,
-    pub structure: Option<Structure>,
-    pub run_type: RunType,
 }
 
 impl Default for RunInfo {
     fn default() -> Self {
         Self {
-            split: Split::FirstStructure,
-            structure: None,
-            run_type: RunType::Modern,
+            split: Split::AdventuringTime,
         }
     }
 }
 
 impl RunInfo {
-    pub fn from_last_event(
-        last_event: &Event,
-        event_list: Vec<Event>,
-        context_event_list: Vec<Event>,
+    pub fn from_last_advancement(
+        response: &WSResponse,
+        last_advancement: &Advancement,
     ) -> Option<Self> {
-        match last_event.event_id {
-            EventId::RsgEnterBastion => {
-                let mut split = Split::FirstStructure;
-                let bastion_ss_check = event_list
-                    .iter()
-                    .any(|ctx| ctx.event_id == EventId::RsgEnterFortress);
-                let bastion_ss_context_check = context_event_list
-                    .iter()
-                    .any(|ctx| ctx.event_id == EventId::RsgObtainBlazeRod);
-
-                if bastion_ss_check && bastion_ss_context_check {
-                    split = Split::SecondStructure;
+        let num_advancements = response.completed.len();
+        let thunder_check = response.context.thunder.len() == 0;
+        let notch_check = response.items.has_enchanted_golden_apple;
+        let phantom_check = response.context.phantoms.len() == 0;
+        let shells_check = response.context.shells >= 1;
+        let skulls_check = response.items.skulls == 3;
+        let gold_blocks_check = response.items.gold_blocks >= 1;
+        let debris_check = response.items.ancient_debris >= 1;
+        let adventuring_time_check = response
+            .completed
+            .iter()
+            .any(|adv| adv.event_id == AdvancementId::AdventureAdventuringTime);
+        match last_advancement.event_id {
+            AdvancementId::AdventureAdventuringTime => {
+                if num_advancements < 30 {
+                    return None;
                 }
-                Some(RunInfo {
-                    split,
-                    structure: Some(Structure::Bastion),
-                    run_type: RunType::Modern,
-                })
-            }
-            EventId::RsgEnterFortress => {
-                let mut split = Split::FirstStructure;
-                let fort_ss_check = event_list
-                    .iter()
-                    .filter(|evt| evt != &last_event)
-                    .any(|evt| evt.event_id == EventId::RsgEnterBastion);
-
-                let mut fort_ss_context_check = false;
-                let mut context_hits = 0;
-                for ctx in context_event_list.iter() {
-                    let context_check = ctx.event_id == EventId::RsgObtainCryingObsidian
-                        || ctx.event_id == EventId::RsgObtainObsidian
-                        || ctx.event_id == EventId::RsgLootBastion;
-                    if context_check {
-                        context_hits += 1;
-                    }
+                if num_advancements == TOTAL_ADVANCEMENTS_116 {
+                    return Some(RunInfo {
+                        split: Split::Finish,
+                    });
                 }
-                if context_hits >= 2 {
-                    fort_ss_context_check = true;
-                }
-
-                if fort_ss_check && fort_ss_context_check {
-                    split = Split::SecondStructure;
-                }
-                Some(RunInfo {
-                    split,
-                    structure: Some(Structure::Fortress),
-                    run_type: RunType::Modern,
-                })
-            }
-            EventId::RsgFirstPortal => {
-                let mut run_type = RunType::Modern;
-                if event_list
-                    .iter()
-                    .all(|evt| evt.event_id != EventId::RsgEnterBastion)
+                if !(thunder_check
+                    && shells_check
+                    && notch_check
+                    && phantom_check
+                    && skulls_check
+                    && gold_blocks_check)
                 {
-                    run_type = RunType::Bastionless;
+                    return None;
                 }
                 Some(RunInfo {
-                    split: Split::Blind,
-                    structure: None,
-                    run_type,
+                    split: Split::AdventuringTime,
+                })
+            }
+            AdvancementId::NetherCreateFullBeacon => {
+                if num_advancements < 50 {
+                    return None;
+                }
+                if num_advancements == TOTAL_ADVANCEMENTS_116 {
+                    return Some(RunInfo {
+                        split: Split::Finish,
+                    });
+                }
+                if !(thunder_check && adventuring_time_check && debris_check && phantom_check) {
+                    return None;
+                }
+                Some(RunInfo {
+                    split: Split::Beaconator,
+                })
+            }
+            AdvancementId::NetherAllEffects => {
+                if num_advancements < 50 {
+                    return None;
+                }
+                if num_advancements == TOTAL_ADVANCEMENTS_116 {
+                    return Some(RunInfo {
+                        split: Split::Finish,
+                    });
+                }
+                if !(thunder_check && adventuring_time_check && debris_check && phantom_check) {
+                    return None;
+                }
+                Some(RunInfo {
+                    split: Split::HDWGH,
                 })
             }
             _ => {
-                let split = Split::from_event_id(&last_event.event_id)?;
-                Some(RunInfo {
-                    split,
-                    structure: None,
-                    run_type: RunType::Modern,
-                })
+                if num_advancements == TOTAL_ADVANCEMENTS_116 {
+                    return Some(RunInfo {
+                        split: Split::Finish,
+                    });
+                }
+                None
             }
         }
     }

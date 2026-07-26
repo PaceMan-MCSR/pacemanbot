@@ -13,7 +13,7 @@ pub struct WhitelistUUID;
 #[async_trait]
 impl Command for WhitelistUUID {
     fn name(&self) -> &str {
-        "whitelist_uuid"
+        "whitelist_uuid_aa"
     }
 
     fn description(&self) -> &str {
@@ -43,43 +43,61 @@ impl Command for WhitelistUUID {
             })
             .create_option(|option| {
                 option
-                    .name("first_structure")
+                    .name("adventuring_time_hours")
                     .description(
-                        "The time for first structure that you want to setup for the runner.",
+                        "The time for adventuring time (hours) that you want to setup for the runner.",
                     )
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("second_structure")
+                    .name("adventuring_time_minutes")
                     .description(
-                        "The time for second structure that you want to setup for the runner.",
+                        "The time for adventuring time (minutes) that you want to setup for the runner.",
                     )
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("blind")
-                    .description("The time for blind that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("eye_spy")
-                    .description("The time for eye spy that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("end_enter")
-                    .description("The time for end enter that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("finish")
+                    .name("beaconator_hours")
                     .description(
-                        "The time for completion that you want to setup for the runner(optional).",
+                        "The time for beaconator (hours) that you want to setup for the runner.",
+                    )
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("beaconator_minutes")
+                    .description(
+                        "The time for beaconator (minutes) that you want to setup for the runner.",
+                    )
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("hdwgh_hours")
+                    .description("The time for hdwgh (hours) that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("hdwgh_minutes")
+                    .description("The time for hdwgh (minutes) that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("finish_hours")
+                    .description(
+                        "The time for completion (hours) that you want to setup for the runner(optional).",
+                    )
+                    .kind(CommandOptionType::Integer)
+            })
+						.create_option(|option| {
+                option
+                    .name("finish_minutes")
+                    .description(
+                        "The time for completion (minutes) that you want to setup for the runner(optional).",
                     )
                     .kind(CommandOptionType::Integer)
             })

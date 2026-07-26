@@ -1,12 +1,6 @@
-use std::collections::HashMap;
-
 use serde::Deserialize;
 
-use crate::{
-    cache::{Split, Structure},
-    dispatcher::{RunInfo, PEARL_EMOJI, ROD_EMOJI},
-    ws::{EventId, Item},
-};
+use crate::ws::{Advancement, EventId};
 
 #[derive(Deserialize, PartialEq, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
@@ -23,62 +17,49 @@ pub struct User {
     pub live_account: Option<String>,
 }
 
-#[derive(Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ItemData {
-    pub estimated_counts: HashMap<Item, u32>,
-    pub _usages: Option<HashMap<Item, u32>>,
+#[derive(Deserialize, Debug)]
+pub struct Items {
+    pub has_enchanted_golden_apple: bool,
+    pub skulls: u64,
+    pub gold_blocks: u64,
+    pub ancient_debris: u64,
 }
 
-impl ItemData {
-    pub fn format_item_count(source: &mut String, emoji: &str, item_count: String) {
-        *source = format!("{} {} {}", source, emoji, item_count);
-    }
+#[derive(Deserialize, Debug)]
+pub struct Context {
+    pub shells: u64,
+    pub _mesa: Vec<u64>,
+    pub _snowy: Vec<u64>,
+    pub _jungle: Vec<u64>,
+    pub _mushroom: Vec<u64>,
+    pub phantoms: Vec<u64>,
+    pub thunder: Vec<u64>,
+    pub _endgame: Vec<u64>,
+}
 
-    pub fn to_formatted_message(item_data: Option<ItemData>, run_info: &RunInfo) -> String {
-        let pearl_count;
-        let mut rod_count;
-        match item_data {
-            Some(item_data) => {
-                pearl_count = item_data
-                    .estimated_counts
-                    .get(&Item::MinecraftEnderPearl)
-                    .unwrap_or(&0)
-                    .to_string();
-                rod_count = item_data
-                    .estimated_counts
-                    .get(&Item::MinecraftBlazeRod)
-                    .unwrap_or(&0)
-                    .to_string();
-                if let Some(Structure::Bastion) = run_info.structure {
-                    if rod_count == "0".to_string() && run_info.split == Split::SecondStructure {
-                        rod_count = "1+".to_string();
-                    }
-                }
-            }
-            None => {
-                pearl_count = "0".to_string();
-                rod_count = "0".to_string();
-            }
-        }
-        let mut msg = String::new();
-        ItemData::format_item_count(&mut msg, ROD_EMOJI, rod_count);
-        ItemData::format_item_count(&mut msg, PEARL_EMOJI, pearl_count);
-        msg
-    }
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Criterias {
+    pub _biomes: Vec<String>,
+    pub _monsters_killed: Vec<String>,
+    pub _animals_bred: Vec<String>,
+    pub _cats_tamed: Vec<String>,
+    pub _food_eaten: Vec<String>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WSResponse {
-    pub game_version: Option<String>,
-    pub world_id: String,
+    pub completed: Vec<Advancement>,
     pub event_list: Vec<Event>,
-    pub context_event_list: Vec<Event>,
+    pub context: Context,
+    pub _current_time: u64,
     pub user: User,
+    pub world_id: String,
     pub _is_cheated: bool,
     pub _is_hidden: bool,
     pub last_updated: i64,
-    pub item_data: Option<ItemData>,
     pub nickname: String,
+    pub _criterias: Criterias,
+    pub items: Items,
 }

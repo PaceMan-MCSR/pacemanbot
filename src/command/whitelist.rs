@@ -21,7 +21,7 @@ pub struct Whitelist;
 #[async_trait]
 impl Command for Whitelist {
     fn name(&self) -> &str {
-        "whitelist"
+        "whitelist_aa"
     }
 
     fn description(&self) -> &str {
@@ -51,43 +51,61 @@ impl Command for Whitelist {
             })
             .create_option(|option| {
                 option
-                    .name("first_structure")
+                    .name("adventuring_time_hours")
                     .description(
-                        "The time for first structure that you want to setup for the runner.",
+                        "The time for adventuring time (hours) that you want to setup for the runner.",
                     )
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("second_structure")
+                    .name("adventuring_time_minutes")
                     .description(
-                        "The time for second structure that you want to setup for the runner.",
+                        "The time for adventuring time (minutes) that you want to setup for the runner.",
                     )
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("blind")
-                    .description("The time for blind that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("eye_spy")
-                    .description("The time for eye spy that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("end_enter")
-                    .description("The time for end enter that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("finish")
+                    .name("beaconator_hours")
                     .description(
-                        "The time for completion that you want to setup for the runner(optional).",
+                        "The time for beaconator (hours) that you want to setup for the runner.",
+                    )
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("beaconator_minutes")
+                    .description(
+                        "The time for beaconator (minutes) that you want to setup for the runner.",
+                    )
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("hdwgh_hours")
+                    .description("The time for hdwgh (hours) that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("hdwgh_minutes")
+                    .description("The time for hdwgh (minutes) that you want to setup for the runner.")
+                    .kind(CommandOptionType::Integer)
+            })
+            .create_option(|option| {
+                option
+                    .name("finish_hours")
+                    .description(
+                        "The time for completion (hours) that you want to setup for the runner(optional).",
+                    )
+                    .kind(CommandOptionType::Integer)
+            })
+						.create_option(|option| {
+                option
+                    .name("finish_minutes")
+                    .description(
+                        "The time for completion (minutes) that you want to setup for the runner(optional).",
                     )
                     .kind(CommandOptionType::Integer)
             })
@@ -166,13 +184,13 @@ pub(super) async fn update_whitelist(
                 }
                 None => return Err(String::from("failed to get value for uuid option.").into()),
             },
-            "first_structure" => match option.value.to_owned() {
+            "adventuring_time_hours" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.first_structure = match value.as_u64() {
-                        Some(int) => int as u8,
+                    splits_data.adventuring_time += match value.as_u64() {
+                        Some(int) => int as u32 * 60,
                         None => {
                             return Err(String::from(
-                                "failed to parse u64 for first structure option.",
+                                "failed to parse u64 for adventuring time hours option.",
                             )
                             .into())
                         }
@@ -181,19 +199,19 @@ pub(super) async fn update_whitelist(
                 None => {
                     if action != "remove" {
                         return Err(String::from(
-                            "failed to get value for first structure option.",
+                            "failed to get value for adventuring time hours option.",
                         )
                         .into());
                     }
                 }
             },
-            "second_structure" => match option.value.to_owned() {
+            "adventuring_time_minutes" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.second_structure = match value.as_u64() {
-                        Some(int) => int as u8,
+                    splits_data.adventuring_time += match value.as_u64() {
+                        Some(int) => int as u32,
                         None => {
                             return Err(String::from(
-                                "failed to parse u64 for second structure option.",
+                                "failed to parse u64 for adventuring time minutes option.",
                             )
                             .into())
                         }
@@ -202,51 +220,61 @@ pub(super) async fn update_whitelist(
                 None => {
                     if action != "remove" {
                         return Err(String::from(
-                            "failed to get value for second structure option.",
+                            "failed to get value for adventuring time minutes option.",
                         )
                         .into());
                     }
                 }
             },
-            "blind" => match option.value.to_owned() {
+            "beaconator_hours" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.blind = match value.as_u64() {
-                        Some(int) => int as u8,
+                    splits_data.beaconator += match value.as_u64() {
+                        Some(int) => int as u32 * 60,
                         None => {
-                            return Err(String::from("failed to parse u64 for blind option.").into())
-                        }
-                    }
-                }
-                None => {
-                    if action != "remove" {
-                        return Err(String::from("failed to get value for blind option.").into());
-                    }
-                }
-            },
-            "eye_spy" => match option.value.to_owned() {
-                Some(value) => {
-                    splits_data.eye_spy = match value.as_u64() {
-                        Some(int) => int as u8,
-                        None => {
-                            return Err(
-                                String::from("failed to parse u64 for eye spy option.").into()
+                            return Err(String::from(
+                                "failed to parse u64 for beaconator hours option.",
                             )
+                            .into())
                         }
                     }
                 }
                 None => {
                     if action != "remove" {
-                        return Err(String::from("failed to get value for eye spy option.").into());
+                        return Err(String::from(
+                            "failed to get value for beaconator hours option.",
+                        )
+                        .into());
                     }
                 }
             },
-            "end_enter" => match option.value.to_owned() {
+            "beaconator_minutes" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.end_enter = match value.as_u64() {
-                        Some(int) => int as u8,
+                    splits_data.beaconator += match value.as_u64() {
+                        Some(int) => int as u32,
+                        None => {
+                            return Err(String::from(
+                                "failed to parse u64 for beaconator minutes option.",
+                            )
+                            .into())
+                        }
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(String::from(
+                            "failed to get value for beaconator minutes option.",
+                        )
+                        .into());
+                    }
+                }
+            },
+            "hdwgh_hours" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.hdwgh += match value.as_u64() {
+                        Some(int) => int as u32 * 60,
                         None => {
                             return Err(
-                                String::from("failed to parse u64 for end enter option.").into()
+                                String::from("failed to parse u64 for hdwgh hours option.").into()
                             )
                         }
                     }
@@ -254,19 +282,54 @@ pub(super) async fn update_whitelist(
                 None => {
                     if action != "remove" {
                         return Err(
-                            String::from("failed to get value for end enter option.").into()
+                            String::from("failed to get value for hdwgh hours option.").into()
                         );
                     }
                 }
             },
-            "finish" => match option.value.to_owned() {
+            "hdwgh_minutes" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.hdwgh += match value.as_u64() {
+                        Some(int) => int as u32,
+                        None => {
+                            return Err(String::from(
+                                "failed to parse u64 for hdwgh minutes option.",
+                            )
+                            .into())
+                        }
+                    }
+                }
+                None => {
+                    if action != "remove" {
+                        return Err(
+                            String::from("failed to get value for hdwgh minutes option.").into(),
+                        );
+                    }
+                }
+            },
+            "finish_hours" => match option.value.to_owned() {
                 Some(value) => {
                     splits_data.finish = match value.as_u64() {
-                        Some(int) => Some(int as u8),
+                        Some(int) => Some(splits_data.finish.unwrap_or(0) + int as u32 * 60),
                         None => {
-                            return Err(
-                                String::from("failed to parse u64 for end enter option.").into()
+                            return Err(String::from(
+                                "failed to parse u64 for finish hours option.",
                             )
+                            .into())
+                        }
+                    }
+                }
+                None => splits_data.finish = None,
+            },
+            "finish_minutes" => match option.value.to_owned() {
+                Some(value) => {
+                    splits_data.finish = match value.as_u64() {
+                        Some(int) => Some(splits_data.finish.unwrap_or(0) + int as u32),
+                        None => {
+                            return Err(String::from(
+                                "failed to parse u64 for finish minutes option.",
+                            )
+                            .into())
                         }
                     }
                 }

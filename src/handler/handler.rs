@@ -17,7 +17,6 @@ use crate::{
     config::{
         Config, PACEMANBOT_CHANNEL, PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
         PACEMANBOT_RUNNER_NAMES_CHANNEL, ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17,
-        ROLE_PREFIX_AA,
     },
     interaction::{handle_application_command_interaction, handle_message_component_interaction},
     log::Log,
@@ -113,7 +112,6 @@ impl Handler {
         if !new.name.starts_with(ROLE_PREFIX)
             || new.name.starts_with(ROLE_PREFIX_115)
             || new.name.starts_with(ROLE_PREFIX_17)
-            || new.name.starts_with(ROLE_PREFIX_AA)
         {
             return self.log.info(
                 format!(

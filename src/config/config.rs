@@ -11,7 +11,7 @@ use crate::{
         extract_name_or_uuid_and_splits_from_config_line, extract_split_from_pb_role_name,
         extract_split_from_role_name, extract_splits_and_name_from_role_name, PACEMANBOT_CHANNEL,
         PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL, PACEMANBOT_RUNNER_NAMES_CHANNEL, ROLE_PREFIX,
-        ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA,
+        ROLE_PREFIX_115, ROLE_PREFIX_17,
     },
 };
 
@@ -90,7 +90,6 @@ impl Config {
                 r.name.starts_with(ROLE_PREFIX)
                     && !r.name.starts_with(ROLE_PREFIX_115)
                     && !r.name.starts_with(ROLE_PREFIX_17)
-                    && !r.name.starts_with(ROLE_PREFIX_AA)
             })
             .collect::<Vec<_>>()
         {
@@ -117,8 +116,8 @@ impl Config {
 
     pub fn parse_role_config_for_role(role: Role) -> Result<RoleCacheEntry, Box<dyn Error>> {
         let split: Split;
+        let mut hours: u8 = 0;
         let mut minutes: u8 = 0;
-        let mut seconds: u8 = 0;
         let mut runner: String = String::new();
         if role.name.contains("PB") {
             split = match extract_split_from_pb_role_name(role.name.as_str()) {
@@ -132,7 +131,7 @@ impl Config {
                 }
             };
         } else if role.name.contains("+") {
-            (split, minutes, seconds, runner) =
+            (split, hours, minutes, runner) =
                 match extract_splits_and_name_from_role_name(role.name.as_str()) {
                     Ok(tup) => tup,
                     Err(err) => {
@@ -144,7 +143,7 @@ impl Config {
                     }
                 }
         } else {
-            (split, minutes, seconds) = match extract_split_from_role_name(role.name.as_str()) {
+            (split, hours, minutes) = match extract_split_from_role_name(role.name.as_str()) {
                 Ok(tup) => tup,
                 Err(err) => {
                     return Err(format!(
@@ -158,8 +157,8 @@ impl Config {
         Ok(RoleCacheEntry {
             role,
             split,
+            hours,
             minutes,
-            seconds,
             runner,
         })
     }

@@ -15,11 +15,11 @@ pub struct SetupRoles;
 #[async_trait]
 impl Command for SetupRoles {
     fn name(&self) -> &str {
-        "setup_roles"
+        "setup_roles_aa"
     }
 
     fn description(&self) -> &str {
-        "Setup pace-roles based on split, start time and end time in increments of 30s."
+        "Setup pace-roles based on split, start time and end time in increments of 30minutes."
     }
 
     fn create_options<'a>(
@@ -33,23 +33,21 @@ impl Command for SetupRoles {
                     .description("The name of the split.")
                     .kind(CommandOptionType::String)
                     .required(true)
-                    .add_string_choice("First Structure", "first_structure")
-                    .add_string_choice("Second Structure", "second_structure")
-                    .add_string_choice("Blind", "blind")
-                    .add_string_choice("Eye Spy", "eye_spy")
-                    .add_string_choice("End Enter", "end_enter")
+                    .add_string_choice("Adventuring Time", "adventuring_time")
+                    .add_string_choice("Beaconator", "beaconator")
+                    .add_string_choice("HDWGH", "hdwgh")
             })
             .create_option(|option| {
                 option
                     .name("split_start")
-                    .description("The lower bound for the split in minutes.")
+                    .description("The lower bound for the split in hours.")
                     .kind(CommandOptionType::Integer)
                     .required(true)
             })
             .create_option(|option| {
                 option
                     .name("split_end")
-                    .description("The upper bound for the split in minutes.")
+                    .description("The upper bound for the split in hours.")
                     .kind(CommandOptionType::Integer)
                     .required(true)
             })
@@ -110,39 +108,39 @@ impl Command for SetupRoles {
             None => return Err(format!("failed to get split name: '{}'.", split_name).into()),
         };
 
-        for minutes in split_start..split_end {
-            let seconds = 0;
+        for hours in split_start..split_end {
+            let minutes = 0;
             let role = format!(
                 "{}{}{}:{}",
                 ROLE_PREFIX,
                 role_split.to_str(),
-                minutes,
-                seconds
+                hours,
+                minutes
             );
             create_guild_role(ctx, &context.guild_id, &role).await?;
 
-            let seconds = 3;
+            let minutes = 30;
             let role = format!(
                 "{}{}{}:{}",
                 ROLE_PREFIX,
                 role_split.to_str(),
-                minutes,
-                seconds
+                hours,
+                minutes
             );
             create_guild_role(ctx, &context.guild_id, &role).await?;
         }
-        let seconds = 0;
+        let minutes = 0;
         let role = format!(
             "{}{}{}:{}",
             ROLE_PREFIX,
             role_split.to_str(),
             split_end,
-            seconds
+            minutes
         );
         create_guild_role(ctx, &context.guild_id, &role).await?;
 
         let response_content = format!(
-        "Pace-roles for split name: {} with lower bound: {} minutes and upper bound: {} minutes have been setup!",
+        "Pace-roles for split name: {} with lower bound: {} hours and upper bound: {} hours have been setup!",
         split_name, split_start, split_end
     );
 

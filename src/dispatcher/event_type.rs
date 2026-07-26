@@ -1,4 +1,7 @@
-use crate::ws::{Event, EventId};
+use crate::{
+    dispatcher::TOTAL_ADVANCEMENTS_116,
+    ws::{Advancement, AdvancementId},
+};
 
 pub enum EventType {
     NonPaceEvent,
@@ -6,16 +9,19 @@ pub enum EventType {
     Unknown,
 }
 
-impl From<&Event> for EventType {
-    fn from(value: &Event) -> Self {
-        match value.event_id {
-            EventId::RsgEnterBastion
-            | EventId::RsgEnterFortress
-            | EventId::RsgFirstPortal
-            | EventId::RsgEnterStronghold
-            | EventId::RsgEnterEnd => EventType::PaceEvent,
-            EventId::RsgCredits => EventType::NonPaceEvent,
-            _ => EventType::Unknown,
+impl EventType {
+    pub fn from_advancement(last_advancement: &Advancement, completed: usize) -> Self {
+        match last_advancement.event_id {
+            AdvancementId::AdventureAdventuringTime
+            | AdvancementId::NetherAllEffects
+            | AdvancementId::NetherCreateFullBeacon => Self::PaceEvent,
+            _ => {
+                if completed == TOTAL_ADVANCEMENTS_116 {
+                    EventType::NonPaceEvent
+                } else {
+                    EventType::Unknown
+                }
+            }
         }
     }
 }
