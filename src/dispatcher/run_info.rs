@@ -1,106 +1,58 @@
 use crate::{
-    cache::{Split, Structure},
-    ws::{Event, EventId},
+    cache::Split,
+    ws::{Event, EventId, Item, WSResponse},
 };
-
-#[derive(Clone, PartialEq)]
-pub enum RunType {
-    Bastionless,
-    Modern,
-}
 
 pub struct RunInfo {
     pub split: Split,
-    pub structure: Option<Structure>,
-    pub run_type: RunType,
 }
 
 impl Default for RunInfo {
     fn default() -> Self {
         Self {
-            split: Split::FirstStructure,
-            structure: None,
-            run_type: RunType::Modern,
+            split: Split::EnterNether,
         }
     }
 }
 
 impl RunInfo {
-    pub fn from_last_event(
-        last_event: &Event,
-        event_list: Vec<Event>,
-        context_event_list: Vec<Event>,
-    ) -> Option<Self> {
+    pub fn from_last_event(response: &WSResponse, last_event: &Event) -> Option<Self> {
+        let item_data = match &response.item_data {
+            Some(data) => data,
+            None => return None,
+        };
+
+        let crafted = match &item_data.crafted {
+            Some(crafted) => crafted,
+            None => return None,
+        };
+
+        let pearls = match crafted.get(&Item::MinecraftEnderPearl) {
+            Some(pearls) => pearls,
+            None => return None,
+        };
+
+        if pearls < &10 {
+            return None;
+        }
+
         match last_event.event_id {
-            EventId::RsgEnterBastion => {
-                let mut split = Split::FirstStructure;
-                let bastion_ss_check = event_list
+            EventId::RsgEnterStronghold => {
+                let validity_check = response
+                    .event_list
                     .iter()
-                    .any(|ctx| ctx.event_id == EventId::RsgEnterFortress);
-                let bastion_ss_context_check = context_event_list
-                    .iter()
-                    .any(|ctx| ctx.event_id == EventId::RsgObtainBlazeRod);
-
-                if bastion_ss_check && bastion_ss_context_check {
-                    split = Split::SecondStructure;
-                }
-                Some(RunInfo {
-                    split,
-                    structure: Some(Structure::Bastion),
-                    run_type: RunType::Modern,
-                })
-            }
-            EventId::RsgEnterFortress => {
-                let mut split = Split::FirstStructure;
-                let fort_ss_check = event_list
-                    .iter()
-                    .filter(|evt| evt != &last_event)
-                    .any(|evt| evt.event_id == EventId::RsgEnterBastion);
-
-                let mut fort_ss_context_check = false;
-                let mut context_hits = 0;
-                for ctx in context_event_list.iter() {
-                    let context_check = ctx.event_id == EventId::RsgObtainCryingObsidian
-                        || ctx.event_id == EventId::RsgObtainObsidian
-                        || ctx.event_id == EventId::RsgLootBastion;
-                    if context_check {
-                        context_hits += 1;
-                    }
-                }
-                if context_hits >= 2 {
-                    fort_ss_context_check = true;
+                    .any(|e| e.event_id == EventId::RsgFirstPortal);
+                if !validity_check {
+                    return None;
                 }
 
-                if fort_ss_check && fort_ss_context_check {
-                    split = Split::SecondStructure;
-                }
                 Some(RunInfo {
-                    split,
-                    structure: Some(Structure::Fortress),
-                    run_type: RunType::Modern,
-                })
-            }
-            EventId::RsgFirstPortal => {
-                let mut run_type = RunType::Modern;
-                if event_list
-                    .iter()
-                    .all(|evt| evt.event_id != EventId::RsgEnterBastion)
-                {
-                    run_type = RunType::Bastionless;
-                }
-                Some(RunInfo {
-                    split: Split::Blind,
-                    structure: None,
-                    run_type,
+                    split: Split::EyeSpy,
                 })
             }
             _ => {
                 let split = Split::from_event_id(&last_event.event_id)?;
-                Some(RunInfo {
-                    split,
-                    structure: None,
-                    run_type: RunType::Modern,
-                })
+                Some(RunInfo { split })
             }
         }
     }

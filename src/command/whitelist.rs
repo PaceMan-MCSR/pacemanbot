@@ -21,7 +21,7 @@ pub struct Whitelist;
 #[async_trait]
 impl Command for Whitelist {
     fn name(&self) -> &str {
-        "whitelist"
+        "whitelist_115"
     }
 
     fn description(&self) -> &str {
@@ -51,17 +51,15 @@ impl Command for Whitelist {
             })
             .create_option(|option| {
                 option
-                    .name("first_structure")
-                    .description(
-                        "The time for first structure that you want to setup for the runner.",
-                    )
+                    .name("enter_nether")
+                    .description("The time for nether enter that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
                 option
-                    .name("second_structure")
+                    .name("enter_fortress")
                     .description(
-                        "The time for second structure that you want to setup for the runner.",
+                        "The time for fortress enter that you want to setup for the runner.",
                     )
                     .kind(CommandOptionType::Integer)
             })
@@ -166,9 +164,9 @@ pub(super) async fn update_whitelist(
                 }
                 None => return Err(String::from("failed to get value for uuid option.").into()),
             },
-            "first_structure" => match option.value.to_owned() {
+            "enter_nether" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.first_structure = match value.as_u64() {
+                    splits_data.enter_nether = match value.as_u64() {
                         Some(int) => int as u8,
                         None => {
                             return Err(String::from(
@@ -187,9 +185,9 @@ pub(super) async fn update_whitelist(
                     }
                 }
             },
-            "second_structure" => match option.value.to_owned() {
+            "enter_fortress" => match option.value.to_owned() {
                 Some(value) => {
-                    splits_data.second_structure = match value.as_u64() {
+                    splits_data.enter_fortress = match value.as_u64() {
                         Some(int) => int as u8,
                         None => {
                             return Err(String::from(

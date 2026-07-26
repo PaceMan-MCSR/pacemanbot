@@ -3,7 +3,7 @@ use std::error::Error;
 
 use crate::{
     command::{Command, CommandContext},
-    config::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA},
+    config::ROLE_PREFIX,
 };
 
 pub struct RemovePBRoles;
@@ -11,7 +11,7 @@ pub struct RemovePBRoles;
 #[async_trait]
 impl Command for RemovePBRoles {
     fn name(&self) -> &str {
-        "remove_pb_roles"
+        "remove_pb_roles_115"
     }
 
     fn description(&self) -> &str {
@@ -33,9 +33,6 @@ impl Command for RemovePBRoles {
             .iter()
             .filter(|(_, r)| {
                 r.name.starts_with(ROLE_PREFIX)
-                    && !r.name.starts_with(ROLE_PREFIX_115)
-                    && !r.name.starts_with(ROLE_PREFIX_17)
-                    && !r.name.starts_with(ROLE_PREFIX_AA)
                     && r.name.contains("PB") // should be PB role
                     && !r.name.contains("+") // Skip player pings
             })

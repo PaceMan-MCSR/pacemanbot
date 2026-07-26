@@ -6,6 +6,6 @@ mod role_cache_entry;
 
 pub use cache::Cache;
 pub use consts::*;
-pub use guild_cache_entry::{GuildCacheEntry, Split, Structure};
+pub use guild_cache_entry::{GuildCacheEntry, Split};
 pub use player_cache_entry::PlayerCacheEntry;
 pub use role_cache_entry::RoleCacheEntry;

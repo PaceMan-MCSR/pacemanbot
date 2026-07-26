@@ -9,10 +9,7 @@ use serenity::{
     },
 };
 
-use crate::{
-    cache::Split,
-    config::{ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA},
-};
+use crate::{cache::Split, config::ROLE_PREFIX};
 
 pub async fn handle_remove_pmb_roles(
     ctx: &Context,
@@ -58,11 +55,7 @@ pub async fn remove_roles_starting_with(
     let guild_roles = guild_id.roles(&ctx.http).await?;
     for role_id in member.roles.clone() {
         let role = guild_roles.get(&role_id).unwrap().clone();
-        if role.name.starts_with(role_prefix)
-            && !role.name.starts_with(ROLE_PREFIX_115)
-            && !role.name.starts_with(ROLE_PREFIX_17)
-            && !role.name.starts_with(ROLE_PREFIX_AA)
-        {
+        if role.name.starts_with(role_prefix) {
             if skip_pb_roles && role.name.contains("PB") {
                 continue;
             }

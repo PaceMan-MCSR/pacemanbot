@@ -12,10 +12,7 @@ use serenity::{
 use crate::{
     cache::{PlayerCacheEntry, Split},
     command::ROLE_COLOR,
-    config::{
-        extract_split_from_pb_role_name, extract_split_from_role_name, ROLE_PREFIX_115,
-        ROLE_PREFIX_17, ROLE_PREFIX_AA,
-    },
+    config::{extract_split_from_pb_role_name, extract_split_from_role_name},
 };
 
 pub fn create_select_option<'a>(
@@ -36,7 +33,7 @@ pub fn create_select_option<'a>(
             if split == target_split {
                 o.add_option(
                     CreateSelectMenuOption::default()
-                        .label(format!("PB Pace {}", target_split.alt_desc()))
+                        .label(format!("PB Pace {}", target_split.desc()))
                         .value(role.id.to_string())
                         .to_owned(),
                 );
@@ -50,7 +47,7 @@ pub fn create_select_option<'a>(
                             "Sub {}:{:02} {}",
                             minutes,
                             seconds,
-                            target_split.alt_desc()
+                            target_split.desc()
                         ))
                         .value(role.id.to_string())
                         .to_owned(),
@@ -97,8 +94,8 @@ pub fn get_new_config_contents(players: HashMap<String, PlayerCacheEntry>) -> St
         let line = format!(
             "{}:{}/{}/{}/{}/{}{}",
             key,
-            splits.first_structure,
-            splits.second_structure,
+            splits.enter_nether,
+            splits.enter_fortress,
             splits.blind,
             splits.eye_spy,
             splits.end_enter,
@@ -121,9 +118,6 @@ pub async fn remove_runner_pings(
     for role_id in member.roles.clone() {
         let role = guild_roles.get(&role_id).unwrap().clone();
         if role.name.starts_with(role_prefix)
-            && !role.name.starts_with(ROLE_PREFIX_115)
-            && !role.name.starts_with(ROLE_PREFIX_17)
-            && !role.name.starts_with(ROLE_PREFIX_AA)
             && role.name.contains(ign.as_str())
             && role.name.contains(split.to_str().as_str())
         {

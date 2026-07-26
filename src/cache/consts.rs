@@ -1,4 +1,4 @@
-pub const BASTION_EMOJI: &'static str = "<:bastion:1306296287729291334>";
+pub const NETHER_EMOJI: &'static str = "<:nether:1346126332072824962>";
 pub const FORT_EMOJI: &'static str = "<:fortress:1306295901278437397>";
 pub const PORTAL_EMOJI: &'static str = "<:portal:1306295821246922813>";
 pub const SH_EMOJI: &'static str = "<:sh:1306295768109420605>";

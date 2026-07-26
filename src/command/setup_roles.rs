@@ -15,7 +15,7 @@ pub struct SetupRoles;
 #[async_trait]
 impl Command for SetupRoles {
     fn name(&self) -> &str {
-        "setup_roles"
+        "setup_roles_115"
     }
 
     fn description(&self) -> &str {
@@ -33,8 +33,8 @@ impl Command for SetupRoles {
                     .description("The name of the split.")
                     .kind(CommandOptionType::String)
                     .required(true)
-                    .add_string_choice("First Structure", "first_structure")
-                    .add_string_choice("Second Structure", "second_structure")
+                    .add_string_choice("Enter Nether", "enter_nether")
+                    .add_string_choice("Enter Fortress", "enter_fortress")
                     .add_string_choice("Blind", "blind")
                     .add_string_choice("Eye Spy", "eye_spy")
                     .add_string_choice("End Enter", "end_enter")

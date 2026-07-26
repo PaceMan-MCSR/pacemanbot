@@ -13,7 +13,7 @@ pub struct WhitelistUUID;
 #[async_trait]
 impl Command for WhitelistUUID {
     fn name(&self) -> &str {
-        "whitelist_uuid"
+        "whitelist_uuid_115"
     }
 
     fn description(&self) -> &str {

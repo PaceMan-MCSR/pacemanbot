@@ -13,7 +13,7 @@ pub struct SetupPBRoles;
 #[async_trait]
 impl Command for SetupPBRoles {
     fn name(&self) -> &str {
-        "setup_pb_roles"
+        "setup_pb_roles_115"
     }
 
     fn description(&self) -> &str {
@@ -32,8 +32,8 @@ impl Command for SetupPBRoles {
         let command = context.interaction;
 
         let splits: Vec<Split> = vec![
-            Split::FirstStructure,
-            Split::SecondStructure,
+            Split::EnterNether,
+            Split::EnterFortress,
             Split::Blind,
             Split::EyeSpy,
             Split::EndEnter,

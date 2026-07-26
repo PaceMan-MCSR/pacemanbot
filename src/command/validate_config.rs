@@ -12,7 +12,7 @@ pub struct ValidateConfig;
 #[async_trait]
 impl Command for ValidateConfig {
     fn name(&self) -> &str {
-        "validate_config"
+        "validate_config_115"
     }
 
     fn description(&self) -> &str {

@@ -16,8 +16,7 @@ use crate::{
     command::get_default_commands,
     config::{
         Config, PACEMANBOT_CHANNEL, PACEMANBOT_RUNNER_LEADERBOARD_CHANNEL,
-        PACEMANBOT_RUNNER_NAMES_CHANNEL, ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17,
-        ROLE_PREFIX_AA,
+        PACEMANBOT_RUNNER_NAMES_CHANNEL, ROLE_PREFIX,
     },
     interaction::{handle_application_command_interaction, handle_message_component_interaction},
     log::Log,
@@ -110,11 +109,7 @@ impl Handler {
     }
 
     pub async fn handle_guild_role_events(&self, ctx: &Context, new: Role, guild_id: GuildId) {
-        if !new.name.starts_with(ROLE_PREFIX)
-            || new.name.starts_with(ROLE_PREFIX_115)
-            || new.name.starts_with(ROLE_PREFIX_17)
-            || new.name.starts_with(ROLE_PREFIX_AA)
-        {
+        if !new.name.starts_with(ROLE_PREFIX) {
             return self.log.info(
                 format!(
                     "Skipping role create event because it is not something that concerns the bot."

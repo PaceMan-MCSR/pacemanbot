@@ -10,7 +10,7 @@ use serenity::{
 
 use crate::{
     cache::{
-        PlayerCacheEntry, RoleCacheEntry, BASTION_EMOJI, END_EMOJI, FORT_EMOJI, PORTAL_EMOJI,
+        PlayerCacheEntry, RoleCacheEntry, END_EMOJI, FORT_EMOJI, NETHER_EMOJI, PORTAL_EMOJI,
         SH_EMOJI,
     },
     config::PACEMANBOT_RUNNER_NAMES_CHANNEL,
@@ -47,23 +47,18 @@ impl GuildCacheEntry {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Split {
-    FirstStructure,
-    SecondStructure,
+    EnterNether,
+    EnterFortress,
     Blind,
     EyeSpy,
     EndEnter,
 }
 
-pub enum Structure {
-    Bastion,
-    Fortress,
-}
-
 impl Split {
     pub fn from_str(split: &str) -> Option<Split> {
         match split {
-            "FS" => Some(Split::FirstStructure),
-            "SS" => Some(Split::SecondStructure),
+            "NE" => Some(Split::EnterNether),
+            "F" => Some(Split::EnterFortress),
             "B" => Some(Split::Blind),
             "E" => Some(Split::EyeSpy),
             "EE" => Some(Split::EndEnter),
@@ -73,6 +68,8 @@ impl Split {
 
     pub fn from_event_id(event_id: &EventId) -> Option<Split> {
         match event_id {
+            EventId::RsgEnterNether => Some(Split::EnterNether),
+            EventId::RsgEnterFortress => Some(Split::EnterFortress),
             EventId::RsgFirstPortal => Some(Split::Blind),
             EventId::RsgEnterStronghold => Some(Split::EyeSpy),
             EventId::RsgEnterEnd => Some(Split::EndEnter),
@@ -82,8 +79,8 @@ impl Split {
 
     pub fn from_command_param(param: &str) -> Option<Split> {
         match param {
-            "first_structure" => Some(Split::FirstStructure),
-            "second_structure" => Some(Split::SecondStructure),
+            "enter_nether" => Some(Split::EnterNether),
+            "enter_fortress" => Some(Split::EnterFortress),
             "blind" => Some(Split::Blind),
             "eye_spy" => Some(Split::EyeSpy),
             "end_enter" => Some(Split::EndEnter),
@@ -91,59 +88,22 @@ impl Split {
         }
     }
 
-    pub fn desc(&self, structure: &Option<Structure>) -> Option<String> {
-        Some(
-            match self {
-                Split::FirstStructure => match structure {
-                    Some(structure) => match structure {
-                        Structure::Bastion => "Enter Bastion",
-                        Structure::Fortress => "Enter Fortress",
-                    },
-                    None => return None,
-                },
-                Split::SecondStructure => match structure {
-                    Some(structure) => match structure {
-                        Structure::Bastion => "Enter Bastion",
-                        Structure::Fortress => "Enter Fortress",
-                    },
-                    None => return None,
-                },
-                Split::Blind => "First Portal",
-                Split::EyeSpy => "Enter Stronghold",
-                Split::EndEnter => "Enter End",
-            }
-            .to_string(),
-        )
-    }
-
-    pub fn alt_desc(&self) -> String {
+    pub fn desc(&self) -> String {
         match self {
-            Split::FirstStructure => "Structure 1",
-            Split::SecondStructure => "Structure 2",
-            Split::Blind => "Blind",
-            Split::EyeSpy => "Eye Spy",
-            Split::EndEnter => "End Enter",
+            Split::EnterNether => "Enter Nether",
+            Split::EnterFortress => "Enter Fortress",
+            Split::Blind => "First Portal",
+            Split::EyeSpy => "Enter Stronghold",
+            Split::EndEnter => "Enter End",
         }
         .to_string()
     }
 
-    pub fn get_emoji(&self, structure: &Option<Structure>) -> Option<String> {
+    pub fn get_emoji(&self) -> Option<String> {
         Some(
             match self {
-                Split::FirstStructure => match structure {
-                    Some(structure) => match structure {
-                        Structure::Bastion => BASTION_EMOJI,
-                        Structure::Fortress => FORT_EMOJI,
-                    },
-                    None => return None,
-                },
-                Split::SecondStructure => match structure {
-                    Some(structure) => match structure {
-                        Structure::Bastion => BASTION_EMOJI,
-                        Structure::Fortress => FORT_EMOJI,
-                    },
-                    None => return None,
-                },
+                Split::EnterNether => NETHER_EMOJI,
+                Split::EnterFortress => FORT_EMOJI,
                 Split::Blind => PORTAL_EMOJI,
                 Split::EyeSpy => SH_EMOJI,
                 Split::EndEnter => END_EMOJI,
@@ -154,8 +114,8 @@ impl Split {
 
     pub fn to_str(&self) -> String {
         match self {
-            Split::FirstStructure => "FS",
-            Split::SecondStructure => "SS",
+            Split::EnterNether => "NE",
+            Split::EnterFortress => "F",
             Split::Blind => "B",
             Split::EyeSpy => "E",
             Split::EndEnter => "EE",

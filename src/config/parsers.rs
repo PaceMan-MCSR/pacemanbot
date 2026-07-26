@@ -155,8 +155,8 @@ pub fn extract_name_or_uuid_and_splits_from_config_line(
             }
         };
         match idx {
-            0 => split_data.first_structure = split_u8,
-            1 => split_data.second_structure = split_u8,
+            0 => split_data.enter_nether = split_u8,
+            1 => split_data.enter_fortress = split_u8,
             2 => split_data.blind = split_u8,
             3 => split_data.eye_spy = split_u8,
             4 => split_data.end_enter = split_u8,

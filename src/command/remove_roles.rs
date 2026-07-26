@@ -6,9 +6,7 @@ use std::error::Error;
 use crate::{
     cache::Split,
     command::{Command, CommandContext},
-    config::{
-        extract_split_from_role_name, ROLE_PREFIX, ROLE_PREFIX_115, ROLE_PREFIX_17, ROLE_PREFIX_AA,
-    },
+    config::{extract_split_from_role_name, ROLE_PREFIX},
 };
 
 pub struct RemoveRoles;
@@ -16,7 +14,7 @@ pub struct RemoveRoles;
 #[async_trait]
 impl Command for RemoveRoles {
     fn name(&self) -> &str {
-        "remove_roles"
+        "remove_roles_115"
     }
 
     fn description(&self) -> &str {
@@ -33,8 +31,8 @@ impl Command for RemoveRoles {
                 .description("The name of the split.")
                 .kind(CommandOptionType::String)
                 .required(true)
-                .add_string_choice("First Structure", "first_structure")
-                .add_string_choice("Second Structure", "second_structure")
+                .add_string_choice("Enter Nether", "enter_nether")
+                .add_string_choice("Enter Fortress", "enter_fortress")
                 .add_string_choice("Blind", "blind")
                 .add_string_choice("Eye Spy", "eye_spy")
                 .add_string_choice("End Enter", "end_enter")
@@ -71,9 +69,6 @@ impl Command for RemoveRoles {
             .iter()
             .filter(|(_, r)| {
                 r.name.starts_with(ROLE_PREFIX)
-                    && !r.name.starts_with(ROLE_PREFIX_115)
-                    && !r.name.starts_with(ROLE_PREFIX_17)
-                    && !r.name.starts_with(ROLE_PREFIX_AA)
                     && !r.name.contains("PB") // Skip PB roles
                     && !r.name.contains("+") // Skip player pings
             })
