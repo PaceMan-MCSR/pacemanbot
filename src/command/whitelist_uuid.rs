@@ -43,30 +43,8 @@ impl Command for WhitelistUUID {
             })
             .create_option(|option| {
                 option
-                    .name("first_structure")
-                    .description(
-                        "The time for first structure that you want to setup for the runner.",
-                    )
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("second_structure")
-                    .description(
-                        "The time for second structure that you want to setup for the runner.",
-                    )
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("blind")
-                    .description("The time for blind that you want to setup for the runner.")
-                    .kind(CommandOptionType::Integer)
-            })
-            .create_option(|option| {
-                option
-                    .name("eye_spy")
-                    .description("The time for eye spy that you want to setup for the runner.")
+                    .name("tower_start")
+                    .description("The time for tower start that you want to setup for the runner.")
                     .kind(CommandOptionType::Integer)
             })
             .create_option(|option| {
