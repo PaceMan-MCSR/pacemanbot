@@ -1,33 +1,18 @@
-use serenity::{client::Context, model::id::GuildId};
+use std::collections::HashMap;
 
-use crate::Result;
+use serenity::model::id::GuildId;
 
-use super::{guild_data::GuildData, CacheManager, CachedGuilds};
+use crate::cache::GuildCacheEntry;
 
-impl CacheManager {
+pub type CacheKey = GuildId;
+pub struct Cache {
+    pub entries: HashMap<CacheKey, GuildCacheEntry>,
+}
+
+impl Cache {
     pub fn new() -> Self {
-        let cache = CachedGuilds::new();
-        Self { cache }
-    }
-
-    pub async fn add_or_update_guild(&mut self, ctx: &Context, guild_id: GuildId) -> Result<()> {
-        let guild_data = match GuildData::new(ctx, guild_id).await {
-            Ok(data) => data,
-            Err(err) => return Err(format!("CacheManagerError: {}", err).into()),
-        };
-        self.cache.insert(guild_id, guild_data);
-        Ok(())
-    }
-
-    pub async fn remove_guild(&mut self, guild_id: GuildId) -> Result<()> {
-        match self.cache.remove(&guild_id) {
-            Some(_) => (),
-            None => {
-                return Err(
-                    format!("CacheMangerError: Cannot remove guild id: {}", guild_id).into(),
-                )
-            }
-        };
-        Ok(())
+        Self {
+            entries: HashMap::new(),
+        }
     }
 }
