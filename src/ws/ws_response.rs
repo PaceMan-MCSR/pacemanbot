@@ -28,23 +28,23 @@ pub struct Items {
 #[derive(Deserialize, Debug)]
 pub struct Context {
     pub shells: u64,
-    pub _mesa: Vec<u64>,
-    pub _snowy: Vec<u64>,
-    pub _jungle: Vec<u64>,
-    pub _mushroom: Vec<u64>,
+    pub mesa: Vec<u64>,
+    pub snowy: Vec<u64>,
+    pub jungle: Vec<u64>,
+    pub mushroom: Vec<u64>,
     pub phantoms: Vec<u64>,
     pub thunder: Vec<u64>,
-    pub _endgame: Vec<u64>,
+    pub endgame: Vec<u64>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Criterias {
-    pub _biomes: Vec<String>,
-    pub _monsters_killed: Vec<String>,
-    pub _animals_bred: Vec<String>,
-    pub _cats_tamed: Vec<String>,
-    pub _food_eaten: Vec<String>,
+    pub biomes: Vec<String>,
+    pub monsters_killed: Vec<String>,
+    pub animals_bred: Vec<String>,
+    pub cats_tamed: Vec<String>,
+    pub food_eaten: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -53,13 +53,13 @@ pub struct WSResponse {
     pub completed: Vec<Advancement>,
     pub event_list: Vec<Event>,
     pub context: Context,
-    pub _current_time: u64,
+    pub current_time: u64,
     pub user: User,
     pub world_id: String,
-    pub _is_cheated: bool,
-    pub _is_hidden: bool,
+    pub is_cheated: bool,
+    pub is_hidden: bool,
     pub last_updated: i64,
     pub nickname: String,
-    pub _criterias: Criterias,
+    pub criterias: Criterias,
     pub items: Items,
 }
