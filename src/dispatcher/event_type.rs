@@ -9,11 +9,7 @@ pub enum EventType {
 impl From<&Event> for EventType {
     fn from(value: &Event) -> Self {
         match value.event_id {
-            EventId::RsgEnterBastion
-            | EventId::RsgEnterFortress
-            | EventId::RsgFirstPortal
-            | EventId::RsgEnterStronghold
-            | EventId::RsgEnterEnd => EventType::PaceEvent,
+            EventId::RsgTowerStart | EventId::RsgEnterEnd => EventType::PaceEvent,
             EventId::RsgCredits => EventType::NonPaceEvent,
             _ => EventType::Unknown,
         }
